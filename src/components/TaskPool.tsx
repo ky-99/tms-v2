@@ -1,6 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import { Button } from "./Button";
 import { Input } from "./Input";
+import { TaskHoverPopup } from "./TaskHoverPopup";
 import { cn } from "../lib/utils";
 import type { TaskHierarchy } from "../types/task";
 
@@ -256,22 +257,23 @@ export function TaskPool(props: TaskPoolProps) {
           <For each={filteredTasks()}>
             {(task) => (
               <div class="space-y-1">
-                <div
-                  onClick={(e) => {
-                    if (task.children && task.children.length > 0) {
-                      e.stopPropagation();
-                      toggleExpand(task.id);
-                    }
-                  }}
-                  class={cn(
-                    "group flex items-center gap-3 rounded-lg bg-card p-3 transition-colors select-none",
-                    task.status === "completed" && "opacity-60",
-                    props.queueTaskIds.has(task.id)
-                      ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
-                      : "hover:bg-secondary/50",
-                    task.children && task.children.length > 0 && "cursor-pointer"
-                  )}
-                >
+                <TaskHoverPopup task={task}>
+                  <div
+                    onClick={(e) => {
+                      if (task.children && task.children.length > 0) {
+                        e.stopPropagation();
+                        toggleExpand(task.id);
+                      }
+                    }}
+                    class={cn(
+                      "group flex items-center gap-3 rounded-lg bg-card p-3 transition-colors select-none",
+                      task.status === "completed" && "opacity-60",
+                      props.queueTaskIds.has(task.id)
+                        ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
+                        : "hover:bg-secondary/50",
+                      task.children && task.children.length > 0 && "cursor-pointer"
+                    )}
+                  >
                   <Show when={task.children && task.children.length > 0} fallback={<div class="w-4" />}>
                     <div class="text-muted-foreground">
                       <Show when={expandedTasks().has(task.id)} fallback={<ChevronRightIcon />}>
@@ -339,20 +341,22 @@ export function TaskPool(props: TaskPoolProps) {
                     </Show>
                   </div>
                 </div>
+              </TaskHoverPopup>
 
-                <Show when={task.children && task.children.length > 0 && expandedTasks().has(task.id)}>
+              <Show when={task.children && task.children.length > 0 && expandedTasks().has(task.id)}>
                   <div class="ml-6 space-y-1 border-l-2 border-border pl-4">
                     <For each={task.children}>
                       {(child) => (
-                        <div
-                          class={cn(
-                            "group flex items-center gap-3 rounded-lg bg-card p-2.5 transition-colors",
-                            child.status === "completed" && "opacity-60",
-                            props.queueTaskIds.has(child.id)
-                              ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
-                              : "hover:bg-secondary/50"
-                          )}
-                        >
+                        <TaskHoverPopup task={child}>
+                          <div
+                            class={cn(
+                              "group flex items-center gap-3 rounded-lg bg-card p-2.5 transition-colors",
+                              child.status === "completed" && "opacity-60",
+                              props.queueTaskIds.has(child.id)
+                                ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
+                                : "hover:bg-secondary/50"
+                            )}
+                          >
                           {getStatusIcon(child.status)}
                           <span
                             class={cn(
@@ -401,11 +405,12 @@ export function TaskPool(props: TaskPoolProps) {
                             </Button>
                           </div>
                         </div>
-                      )}
-                    </For>
-                  </div>
-                </Show>
-              </div>
+                      </TaskHoverPopup>
+                    )}
+                  </For>
+                </div>
+              </Show>
+            </div>
             )}
           </For>
         </div>

@@ -60,7 +60,7 @@ References:
 | TASK-NEW-004 | 統合テスト更新 | Done | P1 | Developer | TASK-NEW-001, TASK-NEW-002, TASK-NEW-003 | REQ-0008, REQ-0009, REQ-0010 |
 | TASK-NEW-005 | 検索バー・フィルターUI実装 | Done | P1 | Developer | TASK-NEW-003 | REQ-0011, REQ-0012 |
 | TASK-NEW-006 | タスクリスト表示への変更 | Done | P1 | Developer | TASK-NEW-001 | REQ-0015 |
-| TASK-NEW-007 | タスク詳細ポップアップ実装 | UnDone | P2 | Developer | - | REQ-0015 |
+| TASK-NEW-007 | タスク詳細ポップアップ実装 | Done | P2 | Developer | - | REQ-0015 |
 | TASK-NEW-008 | Completed/Archivedページ実装 | Done | P1 | Developer | TASK-NEW-006 | REQ-0013, REQ-0014 |
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | Developer | TASK-NEW-006, TASK-NEW-008 | - |
 | TASK-NEW-010 | キューUIの改善 | Done | P2 | Developer | TASK-NEW-006 | - |
@@ -87,19 +87,25 @@ References:
 | TASK-NEW-031 | ArchivedPage 3点リーダーメニュー実装 | Done | P1 | Developer | TASK-NEW-030 | REQ-0026 |
 | TASK-NEW-032 | タイトルspanサイズ調整 | Done | P2 | Developer | - | REQ-0027 |
 | TASK-NEW-033 | D&Dライブラリ統合 | Done | P2 | Developer | - | REQ-0028 |
-| TASK-NEW-034 | QueuePanel D&D実装 | UnDone | P2 | Developer | TASK-NEW-033 | REQ-0028 |
+| TASK-NEW-034 | QueuePanel D&D実装 | Done | P2 | Developer | TASK-NEW-033 | REQ-0028 |
 | TASK-NEW-035 | ドキュメント更新 | Done | P1 | Developer | TASK-NEW-024〜034 | REQ-0023〜REQ-0028 |
+| TASK-NEW-036 | TagInput コンポーネント実装 | Done | P1 | Developer | - | REQ-0029 |
+| TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | UnDone | P1 | Developer | TASK-NEW-036 | REQ-0029 |
+| TASK-NEW-038 | タグフィルター展開式UI実装 | UnDone | P1 | Developer | TASK-NEW-036 | REQ-0030 |
+| TASK-NEW-007 | タスクホバー詳細ポップアップ実装 | Done | P2 | Developer | - | REQ-0015 |
+| TASK-NEW-039 | タグカラーピッカー実装 | UnDone | P2 | Developer | TASK-NEW-036 | REQ-0031 |
+| TASK-NEW-040 | ドキュメント更新 | UnDone | P1 | Developer | TASK-NEW-036〜039 | REQ-0029〜REQ-0031, REQ-0015 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 47
-- Done: 44
+- Total Tasks: 52
+- Done: 47
 - Processing: 0
-- UnDone: 3
-- Progress: 94% (44/47)
+- UnDone: 5
+- Progress: 90% (47/52)
 
 ---
 
@@ -1574,7 +1580,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-034: QueuePanel D&D実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P2
 - **Component(s)**: QueuePanel
 - **Maps to**
@@ -1635,6 +1641,207 @@ Priority: P0 (must), P1 (should), P2 (could)
   - [ ] DoD-4: Pre-flight Checks全合格
   - [ ] DoD-5: Task Progress計算確認（Done/Total）
 - **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-036: TagInput コンポーネント実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TagInput
+- **Maps to**
+  - REQ: REQ-0029
+  - HTTP operationId: create_tag, list_tags
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: チップ入力方式のタグ選択UIコンポーネントを実装し、オートコンプリートと新規タグ作成機能を提供する
+- **Implementation Notes**:
+  - **新規ファイル作成**:
+    - `src/types/tag.ts`: Tag, CreateTagRequest, UpdateTagRequest型定義、PRESET_TAG_COLORS定数（8色）
+    - `src/components/TagInput.tsx`: TagInputコンポーネント実装
+  - **TagInputコンポーネント機能**:
+    - 選択済みタグをチップ表示（×ボタンで削除可能、タグの色に応じて背景色を設定）
+    - 入力欄に文字入力でオートコンプリート（既存タグを候補表示、usageCount表示）
+    - 既存タグ選択または新規タグ作成（「+ Create "..."」オプション）
+    - 新規タグ作成時はインライン展開でカラーピッカー表示（プリセット8色: Red, Orange, Yellow, Green, Blue, Indigo, Purple, Pink）
+    - Enter/Escapeキー対応、自動フォーカス管理
+  - **Props**:
+    - `selectedTags: string[]`: 選択済みタグ名の配列
+    - `onTagsChange: (tags: string[]) => void`: タグ変更時のコールバック
+    - `availableTags: Tag[]`: オートコンプリート用の既存タグ一覧
+    - `onCreateTag?: (name: string, color: string) => Promise<Tag>`: 新規タグ作成コールバック（オプション）
+    - `placeholder?: string`: 入力欄のプレースホルダー（オプション）
+- **Risks**: オートコンプリートのパフォーマンス → 軽量実装で回避、新規タグ作成フローの複雑さ → インライン展開で解決
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TagInputコンポーネント（src/components/TagInput.tsx）作成完了
+  - [x] DoD-2: 選択済みタグがチップ表示され、×ボタンで削除可能
+  - [x] DoD-3: 入力欄で文字入力時に既存タグがオートコンプリート候補として表示
+  - [x] DoD-4: 既存タグ選択で選択済みタグリストに追加
+  - [x] DoD-5: 新規タグ作成（「+ Create "..."」）で名前+色を指定して作成可能
+  - [x] DoD-6: 新規タグ作成後、即座に選択済みタグリストに追加
+  - [x] DoD-7: Frontendビルド成功（900ms）
+- **Verification**:
+  - Type: Build verification
+  - Evidence: Frontendビルド成功（900ms）、src/types/tag.ts, src/components/TagInput.tsx作成完了
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-037: タスク編集Dialogにタグ選択UI追加
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: Dialog, TaskEditDialog（または既存Dialog修正）
+- **Maps to**
+  - REQ: REQ-0029
+  - HTTP operationId: create_task, update_task, list_tags
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-036
+- **Summary**: タスク作成/編集Dialogに TagInputコンポーネントを統合し、タグの紐付けを可能にする
+- **Implementation Notes**:
+  - Dialog内に「Tags:」ラベル + TagInputコンポーネントを追加
+  - タスク作成時: 選択したタグ名の配列を CreateTaskRequest.tags に含めてAPI送信
+  - タスク編集時: 既存タグをTagInputの初期値として設定
+  - バックエンドはタグ名からタグIDを解決して task_tags に保存（既存実装を利用）
+- **Risks**: タグAPIとの連携、初期値設定のロジック
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: Dialog内にTagInputコンポーネントが追加され、タグ選択可能
+  - [ ] DoD-2: タスク作成時、選択したタグがAPIリクエストに含まれる
+  - [ ] DoD-3: タスク編集時、既存タグがTagInputの初期値として表示される
+  - [ ] DoD-4: タグ保存後、タスク詳細取得時にタグが正しく表示される
+  - [ ] DoD-5: Frontendビルド成功
+- **Verification**:
+  - Type: E2E
+  - Evidence: タスク作成/編集でタグが正しく保存・表示されることを確認、ビルド成功
+- **Updated**: 2025-12-29
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-038: タグフィルター展開式UI実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: TagFilter, TaskPool
+- **Maps to**
+  - REQ: REQ-0030
+  - HTTP operationId: search_tasks, list_tags
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-036
+- **Summary**: TaskPool画面に「+ Tags」ボタンとドロップダウンメニューを追加し、タグフィルター機能を実装する
+- **Implementation Notes**:
+  - 「+ Tags」ボタンをステータスフィルターチップの隣に配置
+  - ボタンクリックでKobalte Dropdown Menuを展開
+  - ドロップダウン内に全タグをチェックボックスリストで表示
+  - 複数タグ選択可能（OR条件）
+  - 選択中のタグ数をボタンに表示（例: `+ Tags (2)`）
+  - search_tasks APIを呼び出し（tags パラメータ）
+- **Risks**: タグ数が多い場合のUI、検索パフォーマンス
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: TagFilterコンポーネント（src/components/TagFilter.tsx）作成完了
+  - [ ] DoD-2: TaskPool画面に「+ Tags」ボタンが追加され、クリックでドロップダウン表示
+  - [ ] DoD-3: ドロップダウン内に全タグがチェックボックスリストで表示
+  - [ ] DoD-4: 複数タグ選択でsearch_tasks APIを呼び出し、フィルタリング動作
+  - [ ] DoD-5: 選択中のタグ数がボタンに表示される
+  - [ ] DoD-6: Frontendビルド成功
+- **Verification**:
+  - Type: E2E
+  - Evidence: タグフィルターの動作確認（タグ選択でタスクフィルタリング）、ビルド成功
+- **Updated**: 2025-12-29
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-007: タスクホバー詳細ポップアップ実装（更新）
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: TaskHoverPopup
+- **Maps to**
+  - REQ: REQ-0015
+  - HTTP operationId: N/A（既存データ使用）
+  - Event messageId: N/A
+- **Depends on**: None（タグ表示はTASK-NEW-036完了後に追加）
+- **Summary**: タスクカード上での長時間ホバー（500ms以上）で詳細ポップアップを表示し、description、tags、日時、statusを確認できるようにする
+- **Implementation Notes**:
+  - Kobalte Popoverを使用
+  - ホバー開始から500ms後にポップアップ表示（window.setTimeoutでタイマー制御）
+  - マウスカーソル離脱でポップアップ非表示（onMouseLeave + clearTimeout）
+  - ポップアップ内容: タイトル、description（全文、なければ "No description"）、status（カラー付き）、created/updated日時（YYYY-MM-DD HH:mm形式）
+  - Phase 1ではタグなしで実装、TASK-NEW-036完了後にタグ表示を追加予定（TODOコメント追加済み）
+  - TaskPool.tsxで親タスク・子タスクの両方をTaskHoverPopupでラップ
+- **Risks**: ホバータイマーの実装、ポップアップ位置の調整
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TaskHoverPopupコンポーネント（src/components/TaskHoverPopup.tsx）作成完了
+  - [x] DoD-2: タスクカードに500msホバーでポップアップ表示
+  - [x] DoD-3: ポップアップにタイトル、description、created/updated日時、statusが表示
+  - [x] DoD-4: マウスカーソル離脱でポップアップ非表示
+  - [ ] DoD-5: （オプショナル）タグ表示追加（TASK-NEW-036完了後）
+  - [x] DoD-6: Frontendビルド成功（842ms）
+- **Verification**:
+  - Type: Build
+  - Evidence: Frontendビルド成功、TaskHoverPopup.tsx作成完了、TaskPool.tsx統合完了
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-039: タグカラーピッカー実装
+- **Status**: UnDone
+- **Priority**: P2
+- **Component(s)**: ColorPicker, TagInput
+- **Maps to**
+  - REQ: REQ-0031
+  - HTTP operationId: create_tag
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-036
+- **Summary**: 新規タグ作成時にプリセット8色から選択できるカラーピッカーを実装する
+- **Implementation Notes**:
+  - プリセット8色: 赤、オレンジ、黄、緑、青、紫、茶、黒（Tailwind color palette使用）
+  - ColorPickerコンポーネント: 8色のボタンをグリッド表示
+  - 選択中の色を視覚的に表示（ボーダーまたはチェックマーク）
+  - デフォルト色: gray（色未選択時）
+  - Phase 1ではカスタム色選択は実装しない
+- **Risks**: 色の視認性、Tailwind CSSとの統合
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: ColorPickerコンポーネント（src/components/ColorPicker.tsx）作成完了
+  - [ ] DoD-2: プリセット8色がグリッド表示され、クリックで選択可能
+  - [ ] DoD-3: 選択中の色が視覚的に表示される
+  - [ ] DoD-4: TagInput内の新規タグ作成フローにColorPickerが統合
+  - [ ] DoD-5: 選択した色がcreate_tag APIに送信され、タグに適用される
+  - [ ] DoD-6: Frontendビルド成功
+- **Verification**:
+  - Type: E2E
+  - Evidence: カラーピッカーの動作確認（色選択、タグ作成時に反映）、ビルド成功
+- **Updated**: 2025-12-29
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-040: ドキュメント更新
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: Documentation
+- **Maps to**
+  - REQ: REQ-0029, REQ-0030, REQ-0031, REQ-0015
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-036, TASK-NEW-037, TASK-NEW-038, TASK-NEW-007, TASK-NEW-039
+- **Summary**: タグシステムUI統合に関するドキュメントを更新し、traceability.mdとcontext_bundle.mdを最新状態にする
+- **Implementation Notes**:
+  - requirements.md: REQ-0029〜0031, REQ-0015のStatusを更新（Draft → Done）
+  - traceability.md: 新規タスクのマッピング追加
+  - gen_all.sh Implementation実行してcontext_bundle.md更新
+  - Task Progress Summary更新
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: requirements.md の REQ-0029〜0031, REQ-0015 Status更新完了
+  - [ ] DoD-2: traceability.md にTASK-NEW-036〜039のマッピング追加完了
+  - [ ] DoD-3: context_bundle.md自動更新確認
+  - [ ] DoD-4: Task Progress計算確認（Done/Total）
+  - [ ] DoD-5: gen_all.sh実行成功
+- **Verification**:
+  - Type: Manual
+  - Evidence: ドキュメント更新確認、gen_all.sh実行ログ確認
+- **Updated**: 2025-12-29
 - **Completed**: N/A
 
 ---
@@ -1705,3 +1912,9 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-29 TASK-NEW-035 completed: ドキュメント更新 (requirements.md: REQ-0023〜0027のStatusをDraft→Doneに更新、traceability.md: REQ-0023のStatusをPlanned→Doneに更新、tasks.md: TASK-NEW-035をDone、Task Progress: 89% = 42/47)
 - 2025-12-29 TASK-NEW-023 completed: ドキュメント更新 (requirements.md: REQ-0016〜0022のStatusをDraft→Doneに更新、traceability.md: REQ-0016/0022のStatusをPlanned→Doneに更新、tasks.md: TASK-NEW-023をDone、Task Progress: 91% = 43/47)
 - 2025-12-29 TASK-NEW-033 completed: D&Dライブラリ統合 (@thisbeyond/solid-dnd v0.7.5インストール、package.json更新、ビルド検証成功: 741ms、Task Progress: 94% = 44/47)
+- 2025-12-29 TASK-NEW-034 completed: QueuePanel D&D実装 (SortableTaskコンポーネント作成、GripVerticalIcon追加、DragDropProvider統合、onDragEnd実装でreorderQueue API呼び出し、楽観的UI更新、ビルド成功: 943ms、バンドルサイズ: 212KB、Task Progress: 96% = 45/47)
+- 2025-12-29 Bug fix: D&D useSortableContextエラー修正 (SortableProvider追加、taskIds memoization実装、createMemo使用でパフォーマンス最適化、ビルド成功: 885ms)
+- 2025-12-29 Bug fix: D&Dパフォーマンス改善と縦移動制限 (X軸を0固定で横移動無効化、transition-all削除、ドラッグ中transition無効化、ドロップ後0.2s ease transition、classList削除でレンダリング負荷軽減、ビルド成功: 756ms)
+- 2025-12-29 Added 6 new tasks (TASK-NEW-036 to TASK-NEW-040, TASK-NEW-007 update) for tag system UI integration (REQ-0029 to REQ-0031, REQ-0015 update): TagInput component, tag selection in Dialog, collapsible tag filter, hover popup with tags, color picker (preset 8 colors)
+- 2025-12-29 TASK-NEW-007 completed: タスクホバー詳細ポップアップ実装 (TaskHoverPopup.tsx作成、Kobalte Popover使用、500msホバー遅延実装、description/status/日時表示、TaskPool統合完了、タグ表示は後で追加予定、Frontendビルド成功: 842ms、Task Progress: 88% = 46/52)
+- 2025-12-29 TASK-NEW-036 completed: TagInput コンポーネント実装 (types/tag.ts新規作成: Tag/CreateTagRequest/UpdateTagRequest型定義、PRESET_TAG_COLORS（8色）定義、components/TagInput.tsx新規作成: チップ入力、オートコンプリート、新規タグ作成（インラインカラーピッカー）、Enter/Escape対応、Frontendビルド成功: 900ms、Task Progress: 90% = 47/52)

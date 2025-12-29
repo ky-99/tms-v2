@@ -58,7 +58,10 @@
 | REQ-0025 | Completed/Archivedページページネーション UI | SHOULD | Done | UI | REQ-0024 |
 | REQ-0026 | Archivedページ3点リーダーメニュー | SHOULD | Done | UI | REQ-0014 |
 | REQ-0027 | タイトルspanサイズ調整 | SHOULD | Done | UI | REQ-0004 |
-| REQ-0028 | キュー順番変更D&D | SHOULD | Draft | UI | REQ-0006 |
+| REQ-0028 | キュー順番変更D&D | SHOULD | Done | UI | REQ-0006 |
+| REQ-0029 | タグシステムUI統合 | SHOULD | Draft | UI | REQ-0005 |
+| REQ-0030 | タグフィルター展開式UI | SHOULD | Draft | UI | REQ-0029 |
+| REQ-0031 | タグカラー管理 | COULD | Draft | UI | REQ-0029 |
 
 **Priority**: MUST / SHOULD / COULD
 **Status**: Draft / Approved / Implementing / Done / Deprecated
@@ -367,24 +370,24 @@
 
 ---
 
-### REQ-0015: タスクリスト表示形式変更
+### REQ-0015: タスク詳細ホバーポップアップ
 - **Priority**: SHOULD
 - **Status**: Draft
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: タスクプール画面が表示されている
-- **Trigger**: 画面表示時
+- **Trigger**: タスクカード上での長時間ホバー
 - **Acceptance (the only one)**:
-  - **Given**: タスクプール画面
-  - **When**: タスク一覧が表示される
-  - **Then**: タスクがカード形式ではなくリスト形式（1行）で表示され、階層構造（インデント+展開アイコン）が維持される
-- **Negative/Boundary**: 子タスクがない場合は展開アイコンを非表示
+  - **Given**: タスクプール画面にタスクカードが表示されている
+  - **When**: ユーザーがタスクカードにマウスカーソルを500ms以上ホバー
+  - **Then**: 詳細ポップアップが表示され、タスクのタイトル、description、tags、created/updated日時、statusが確認できる
+- **Negative/Boundary**: マウスカーソルが離れるとポップアップは非表示。ポップアップは読み取り専用（編集不可）
 - **Depends on**: REQ-0004
-- **Notes**: アイコンボタン使用、タスククリックで詳細ポップアップ（読み取り専用）
+- **Notes**: Kobalte Tooltip or Popoverを使用。タグ表示にはREQ-0029の実装が必要
 - **Trace Hooks (optional)**:
-  - API: list_tasks
-  - Component: TaskPage, TaskDetailModal
-  - Task: TASK-NEW-006, TASK-NEW-007
+  - API: N/A（既存データ使用）
+  - Component: TaskHoverPopup
+  - Task: TASK-NEW-007
 
 ---
 
@@ -642,7 +645,7 @@
 
 ### REQ-0028: キュー順番変更D&D
 - **Priority**: SHOULD
-- **Status**: Draft
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: キューに複数のタスクが登録されている
@@ -661,6 +664,69 @@
 
 ---
 
+### REQ-0029: タグシステムUI統合
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タスク作成/編集Dialogが表示されている
+- **Trigger**: タグ入力欄での操作
+- **Acceptance (the only one)**:
+  - **Given**: タスク作成/編集Dialog
+  - **When**: ユーザーがタグ入力欄で既存タグを選択、または新規タグを作成（名前+色を指定）
+  - **Then**: タグがタスクに紐付けられ、保存後にタグフィルターで検索可能になり、ホバーポップアップでタグが表示される
+- **Negative/Boundary**: 新規タグ作成時は名前が必須、色はオプショナル（デフォルト色を使用）
+- **Depends on**: REQ-0005
+- **Notes**: チップ入力方式、オートコンプリート機能、インライン新規タグ作成（プリセット8色から選択）
+- **Trace Hooks (optional)**:
+  - API: create_tag (新規タグ作成時), list_tags (既存タグ取得), update_task (タグ紐付け)
+  - Component: TagInput, TaskEditDialog
+  - Task: TASK-NEW-036, TASK-NEW-037
+
+---
+
+### REQ-0030: タグフィルター展開式UI
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: TaskPool画面が表示されている
+- **Trigger**: 「+ Tags」ボタンクリック
+- **Acceptance (the only one)**:
+  - **Given**: TaskPool画面の検索バー横に「+ Tags」ボタンが表示されている
+  - **When**: ユーザーが「+ Tags」ボタンをクリックし、ドロップダウンから1つ以上のタグを選択
+  - **Then**: 選択されたタグに一致するタスク（OR条件）のみが表示され、ボタンには選択中のタグ数が表示される（例: `+ Tags (2)`）
+- **Negative/Boundary**: タグ未選択時は全タスク表示。ドロップダウン外クリックでメニューを閉じる
+- **Depends on**: REQ-0029
+- **Notes**: Kobalte Dropdown Menu使用、チェックボックスで複数選択可能、search_tasks APIを呼び出し
+- **Trace Hooks (optional)**:
+  - API: search_tasks (tags パラメータ), list_tags
+  - Component: TagFilter, TaskPool
+  - Task: TASK-NEW-038
+
+---
+
+### REQ-0031: タグカラー管理
+- **Priority**: COULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: 新規タグ作成時
+- **Trigger**: タグ作成Dialogでのカラー選択
+- **Acceptance (the only one)**:
+  - **Given**: 新規タグ作成Dialog（インライン表示）
+  - **When**: ユーザーがプリセット8色のいずれかを選択
+  - **Then**: タグにカラーが設定され、タグチップ表示時に背景色として反映される
+- **Negative/Boundary**: 色未選択時はデフォルト色（gray）を使用
+- **Depends on**: REQ-0029
+- **Notes**: Phase 1ではプリセット8色のみ（赤、オレンジ、黄、緑、青、紫、茶、黒）。カスタム色選択は将来対応
+- **Trace Hooks (optional)**:
+  - API: create_tag (color パラメータ)
+  - Component: ColorPicker, TagInput
+  - Task: TASK-NEW-039
+
+---
+
 ## 4. Requirement Split / Merge Log
 > 粒度調整の履歴を残す（後工程での参照ズレを防ぐ）
 
@@ -674,3 +740,4 @@
 - 2025-12-27 追加要件定義 (REQ-0008〜REQ-0015) - 親子ステータス同期、検索・フィルター、UI改善
 - 2025-12-28 追加要件定義 (REQ-0016〜REQ-0022) - Draft状態制限、物理削除、restore機能、list_tasks API改良、UI改善
 - 2025-12-28 追加要件定義 (REQ-0023〜REQ-0028) - バグ修正、ページネーション、3点リーダーメニュー、タイトルspan調整、D&D機能
+- 2025-12-29 追加要件定義 (REQ-0029〜REQ-0031) - タグシステムUI統合、タグフィルター展開式、タグカラー管理（Phase 1）、REQ-0015修正（ホバーポップアップ化）

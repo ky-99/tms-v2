@@ -169,7 +169,7 @@ References:
   - ユーザー操作の処理
   - 状態管理
   - 検索バーとフィルター機能の提供（Draft/Activeのみ）
-  - タスク詳細ポップアップ表示
+  - タスク詳細ホバーポップアップ表示（description, tags, 日時表示、500ms以上ホバー）
   - Completed/Archivedタスク確認画面の提供（ページネーション付き）
   - ページネーションコントロールUI（前/次ページ、ページ番号入力）
   - Draft状態タスクのみ編集・削除ボタン表示
@@ -177,7 +177,10 @@ References:
   - TaskQueue空時UI改善（領域全体に点線枠表示）
   - Archivedページでのrestore機能と物理削除機能（3点リーダーメニュー）
   - QueuePanelでのドラッグ&ドロップによる順序変更機能
-- **Implements REQs**: REQ-0004, REQ-0007, REQ-0013, REQ-0014, REQ-0015, REQ-0020, REQ-0021, REQ-0025, REQ-0026, REQ-0027, REQ-0028
+  - タグチップ入力（オートコンプリート、インライン新規タグ作成）
+  - タグフィルター展開式UI（「+ Tags」ボタン、ドロップダウン、複数選択）
+  - タグカラーピッカー（プリセット8色）
+- **Implements REQs**: REQ-0004, REQ-0007, REQ-0013, REQ-0014, REQ-0015, REQ-0020, REQ-0021, REQ-0025, REQ-0026, REQ-0027, REQ-0028, REQ-0029, REQ-0030, REQ-0031
 - **HTTP operations**: N/A（IPC呼び出し）
 - **Events published**: N/A
 - **Events consumed**: N/A
@@ -538,3 +541,4 @@ References:
 - 2025-12-27 親子ステータス自動同期機能の追加、検索・フィルター機能の拡張、UI改善要件の反映 (REQ-0008〜REQ-0015)
 - 2025-12-28 Draft状態制限機能、物理削除・restore機能、list_tasks API改良、フィルターUI改善の追加 (REQ-0016〜REQ-0022)
 - 2025-12-28 バグ修正（updated_at更新）、ページネーション機能、3点リーダーメニュー、タイトルspan調整、D&D機能の追加 (REQ-0023〜REQ-0028)
+- 2025-12-29 タグシステムUI統合、タグフィルター展開式、タグカラー管理、タスクホバーポップアップ修正の追加 (REQ-0029〜REQ-0031, REQ-0015修正)

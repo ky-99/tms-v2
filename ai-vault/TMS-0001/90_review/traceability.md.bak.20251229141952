@@ -87,7 +87,7 @@ Sources of truth:
 | REQ-0012 | searchTasks | N/A | TBD | TASK-NEW-005 | Done | None | - |
 | REQ-0013 | N/A | N/A | TBD | TASK-NEW-008 | Done | None | - |
 | REQ-0014 | N/A | N/A | TBD | TASK-NEW-008 | Done | None | - |
-| REQ-0015 | N/A | N/A | TBD | TASK-NEW-006, TASK-NEW-007, TASK-NEW-012, TASK-NEW-007, TASK-NEW-040 | Planned | None | - |
+| REQ-0015 | N/A | N/A | TBD | TASK-NEW-006, TASK-NEW-007, TASK-NEW-012 | Planned | None | - |
 | REQ-0016 | updateTask | N/A | TBD | TASK-NEW-013, TASK-NEW-017, TASK-NEW-018, TASK-NEW-023 | Done | None | - |
 | REQ-0017 | deleteTask | N/A | TBD | TASK-NEW-013, TASK-NEW-018 | Done | None | - |
 | REQ-0018 | deleteTaskPermanently | N/A | TBD | TASK-NEW-014, TASK-NEW-021 | Done | None | - |
@@ -101,9 +101,6 @@ Sources of truth:
 | REQ-0026 | N/A | N/A | TBD | TASK-NEW-030, TASK-NEW-031 | Done | None | - |
 | REQ-0027 | N/A | N/A | TBD | TASK-NEW-032 | Done | None | - |
 | REQ-0028 | reorderTaskQueue | N/A | TBD | TASK-NEW-033, TASK-NEW-034, TASK-NEW-035 | Done | None | - |
-| REQ-0029 | N/A | N/A | TBD | TASK-NEW-036, TASK-NEW-037, TASK-NEW-040 | Planned | None | - |
-| REQ-0030 | N/A | N/A | TBD | TASK-NEW-038 | Planned | None | - |
-| REQ-0031 | N/A | N/A | TBD | TASK-NEW-039, TASK-NEW-040 | Planned | None | - |
 
 ---
 
@@ -122,12 +119,12 @@ Sources of truth:
 ---
 
 ## 5. Coverage Summary (Optional but recommended)
-- Total REQs: 32
+- Total REQs: 29
 - Mapped to HTTP: 17
 - Mapped to Events: 0
 - Done: 27
 - InProgress: 0
-- Planned: 5
+- Planned: 2
 - Deferred/N/A: 0
 
 ---

@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Implementation
-> Updated: 2025-12-29 14:19 (JST)
+> Updated: 2025-12-29 12:18 (JST)
 > Owner: <name>
 
 ---
@@ -221,21 +221,20 @@ N/A
 |---|---|---|---|---|
 | TASK-NEW-007 | タスク詳細ポップアップ実装 | UnDone | P2 | REQ-0015 |
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
-| TASK-NEW-036 | TagInput コンポーネント実装 | UnDone | P1 | REQ-0029 |
-| TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | UnDone | P1 | REQ-0029 |
-| TASK-NEW-038 | タグフィルター展開式UI実装 | UnDone | P1 | REQ-0030 |
+| TASK-NEW-033 | D&Dライブラリ統合 | UnDone | P2 | REQ-0028 |
+| TASK-NEW-034 | QueuePanel D&D実装 | UnDone | P2 | REQ-0028 |
 
 ### 8.2 Task Progress
-- Total Tasks: 53
-- Done: 45
+- Total Tasks: 47
+- Done: 43
 - Processing: 0
-- UnDone: 8
-- Progress: 85% (45/53)
+- UnDone: 4
+- Progress: 91% (43/47)
 
 ### 8.3 Next Actions
 1. Start TASK-NEW-007 (タスク詳細ポップアップ実装)
 2. Start TASK-NEW-009 (カラーパレット適用)
-3. Start TASK-NEW-036 (TagInput コンポーネント実装)
+3. Start TASK-NEW-033 (D&Dライブラリ統合)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -285,7 +284,7 @@ N/A
 - REQ Coverage: 10 REQs
 - API Coverage: 19/19
 - Event Coverage: N/A
-- Task Completion: 85% (45/53)
+- Task Completion: 91% (43/47)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**
