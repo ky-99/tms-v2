@@ -1,5 +1,4 @@
 import { createSignal, onMount } from "solid-js";
-import { ask, message } from "@tauri-apps/plugin-dialog";
 import { taskStore, taskActions } from "../stores/taskStore";
 import { queueStore, queueActions } from "../stores/queueStore";
 import { tagsApi } from "../api/tags";
@@ -66,10 +65,6 @@ export function TaskPage() {
       setFormData({ title: "", description: "", tags: [] });
     } catch (error) {
       console.error("Failed to create task:", error);
-      await message(`タスクの作成に失敗しました: ${error}`, {
-        title: "Error",
-        kind: "error",
-      });
     }
   };
 
@@ -91,29 +86,15 @@ export function TaskPage() {
       setFormData({ title: "", description: "", tags: [] });
     } catch (error) {
       console.error("Failed to update task:", error);
-      await message(`タスクの更新に失敗しました: ${error}`, {
-        title: "Error",
-        kind: "error",
-      });
     }
   };
 
   const handleDelete = async (task: TaskHierarchy) => {
-    const confirmed = await ask(`Delete "${task.title}"?`, {
-      title: "Confirm Delete",
-      kind: "warning",
-    });
-    if (!confirmed) return;
-
     try {
       await taskActions.deleteTask(task.id);
       await taskActions.loadHierarchy();
     } catch (error) {
       console.error("Failed to delete task:", error);
-      await message(`削除に失敗しました: ${error}`, {
-        title: "Error",
-        kind: "error",
-      });
     }
   };
 
@@ -123,10 +104,6 @@ export function TaskPage() {
       await taskActions.loadHierarchy();
     } catch (error) {
       console.error("Failed to add to queue:", error);
-      await message(`キューへの追加に失敗しました: ${error}`, {
-        title: "Error",
-        kind: "error",
-      });
     }
   };
 
@@ -191,7 +168,7 @@ export function TaskPage() {
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium">親タスク</label>
             <select
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
               value={formData().parentId || ""}
               onChange={(e) =>
                 setFormData({
@@ -209,7 +186,7 @@ export function TaskPage() {
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium">説明</label>
             <textarea
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
               rows={4}
               value={formData().description}
               onInput={(e) =>
@@ -261,7 +238,7 @@ export function TaskPage() {
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium">親タスク</label>
             <select
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
               value={formData().parentId || ""}
               onChange={(e) =>
                 setFormData({
@@ -283,7 +260,7 @@ export function TaskPage() {
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium">説明</label>
             <textarea
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
               rows={4}
               value={formData().description}
               onInput={(e) =>

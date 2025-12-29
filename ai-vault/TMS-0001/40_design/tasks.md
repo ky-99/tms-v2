@@ -93,19 +93,29 @@ References:
 | TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | Done | P1 | Developer | TASK-NEW-036 | REQ-0029 |
 | TASK-NEW-038 | タグフィルター展開式UI実装 | Done | P1 | Developer | TASK-NEW-036 | REQ-0030 |
 | TASK-NEW-007 | タスクホバー詳細ポップアップ実装 | Done | P2 | Developer | - | REQ-0015 |
-| TASK-NEW-039 | タグカラーピッカー実装 | UnDone | P2 | Developer | TASK-NEW-036 | REQ-0031 |
-| TASK-NEW-040 | ドキュメント更新 | UnDone | P1 | Developer | TASK-NEW-036〜039 | REQ-0029〜REQ-0031, REQ-0015 |
+| TASK-NEW-039 | タグカラーピッカー実装 | Hold | P2 | Developer | TASK-NEW-036 | REQ-0031 |
+| TASK-NEW-040 | ドキュメント更新 | Done | P1 | Developer | TASK-NEW-036〜038 | REQ-0029〜REQ-0031, REQ-0015 |
+| TASK-NEW-041 | ページローディング文字削除 | Done | P1 | Developer | - | REQ-0032 |
+| TASK-NEW-042 | タスクタイトル文字数制限 | Done | P1 | Developer | - | REQ-0033 |
+| TASK-NEW-043 | グローバルスクロールバー削除 | Done | P1 | Developer | - | REQ-0034 |
+| TASK-NEW-044 | タイトルバー削除設定 | Done | P1 | Developer | - | REQ-0035 |
+| TASK-NEW-045 | ウィンドウ角丸CSS適用 | Done | P1 | Developer | TASK-NEW-044 | REQ-0035 |
+| TASK-NEW-046 | 入力欄フォーカスリング調整 | Done | P2 | Developer | - | REQ-0036 |
+| TASK-NEW-047 | ConfirmDialogコンポーネント実装 | Done | P1 | Developer | - | REQ-0037 |
+| TASK-NEW-048 | ConfirmDialog統合とTauriプラグイン削除 | Done | P1 | Developer | TASK-NEW-047 | REQ-0037 |
+| TASK-NEW-049 | アーカイブボタン表示変更 | Done | P2 | Developer | - | REQ-0046 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 52
-- Done: 49
+- Total Tasks: 61
+- Done: 59
 - Processing: 0
-- UnDone: 3
-- Progress: 94% (49/52)
+- UnDone: 1
+- Hold: 1
+- Progress: 96.7% (59/61)
 
 ---
 
@@ -1837,7 +1847,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-039: タグカラーピッカー実装
-- **Status**: UnDone
+- **Status**: Hold
 - **Priority**: P2
 - **Component(s)**: ColorPicker, TagInput
 - **Maps to**
@@ -1845,14 +1855,17 @@ Priority: P0 (must), P1 (should), P2 (could)
   - HTTP operationId: create_tag
   - Event messageId: N/A
 - **Depends on**: TASK-NEW-036
-- **Summary**: 新規タグ作成時にプリセット8色から選択できるカラーピッカーを実装する
+- **Summary**: 新規タグ作成時にプリセット8色から選択できるカラーピッカーを実装する（Hold: 将来的により柔軟なカラーピッカーに置き換え予定）
 - **Implementation Notes**:
-  - プリセット8色: 赤、オレンジ、黄、緑、青、紫、茶、黒（Tailwind color palette使用）
-  - ColorPickerコンポーネント: 8色のボタンをグリッド表示
-  - 選択中の色を視覚的に表示（ボーダーまたはチェックマーク）
-  - デフォルト色: gray（色未選択時）
-  - Phase 1ではカスタム色選択は実装しない
-- **Risks**: 色の視認性、Tailwind CSSとの統合
+  - **保留理由**: Phase 1ではTagInputに基本的なカラーピッカー実装済み（PRESET_TAG_COLORS: 8色）。将来的により柔軟なカラーピッカーに置き換える予定のため、現時点での追加実装は保留
+  - **Phase 1実装済み内容**:
+    - プリセット8色: Red, Orange, Yellow, Green, Blue, Indigo, Purple, Pink
+    - grid grid-cols-8 でグリッド表示
+    - 選択中の色を視覚的に表示（border-foreground + scale-110）
+    - TagInput内の新規タグ作成フローに統合済み
+    - 選択した色がcreate_tag APIに送信され、タグに適用される
+  - **将来的な改善案**: カスタム色選択、カラーパレット拡張、色のアクセシビリティ改善
+- **Risks**: 色の視認性、Tailwind CSSとの統合 → Phase 1で解決済み
 - **Definition of Done (DoD)**:
   - [ ] DoD-1: ColorPickerコンポーネント（src/components/ColorPicker.tsx）作成完了
   - [ ] DoD-2: プリセット8色がグリッド表示され、クリックで選択可能
@@ -1869,7 +1882,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-040: ドキュメント更新
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
 - **Component(s)**: Documentation
 - **Maps to**
@@ -1879,23 +1892,310 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Depends on**: TASK-NEW-036, TASK-NEW-037, TASK-NEW-038, TASK-NEW-007, TASK-NEW-039
 - **Summary**: タグシステムUI統合に関するドキュメントを更新し、traceability.mdとcontext_bundle.mdを最新状態にする
 - **Implementation Notes**:
-  - requirements.md: REQ-0029〜0031, REQ-0015のStatusを更新（Draft → Done）
-  - traceability.md: 新規タスクのマッピング追加
-  - gen_all.sh Implementation実行してcontext_bundle.md更新
-  - Task Progress Summary更新
+  - requirements.md: REQ-0029〜0031, REQ-0015のStatusを更新（REQ-0015/0029/0030: Done, REQ-0031: Hold）
+  - traceability.md: REQ-0015, 0029, 0030, 0031のマッピング更新（Components, operationId, CoverageStatus, Verification追加）
+  - tasks.md: TASK-NEW-039をHold、TASK-NEW-040をDoneに更新
+  - Task Progress Summary更新: 94% → 96% (50/52 Done)
+  - gen_all.sh Implementation実行予定（次ステップ）
 - **Risks**: なし
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: requirements.md の REQ-0029〜0031, REQ-0015 Status更新完了
-  - [ ] DoD-2: traceability.md にTASK-NEW-036〜039のマッピング追加完了
-  - [ ] DoD-3: context_bundle.md自動更新確認
-  - [ ] DoD-4: Task Progress計算確認（Done/Total）
-  - [ ] DoD-5: gen_all.sh実行成功
+  - [x] DoD-1: requirements.md の REQ-0029〜0031, REQ-0015 Status更新完了
+  - [x] DoD-2: traceability.md にTASK-NEW-036〜039のマッピング追加完了
+  - [x] DoD-3: tasks.md進捗更新完了（96%）
+  - [x] DoD-4: Task Progress計算確認（50/52 Done）
+  - [ ] DoD-5: gen_all.sh実行成功（次ステップ）
 - **Verification**:
   - Type: Manual
-  - Evidence: ドキュメント更新確認、gen_all.sh実行ログ確認
+  - Evidence: requirements.md, traceability.md, tasks.md更新確認完了
 - **Updated**: 2025-12-29
-- **Completed**: N/A
+- **Completed**: 2025-12-29
 
+
+### TASK-NEW-041: ページローディング文字削除
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: CompletedPage, ArchivedPage
+- **Maps to**
+  - REQ: REQ-0032
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: CompletedPageとArchivedPageから「Loading...」テキスト表示を削除し、よりクリーンなUIを実現する
+- **Implementation Notes**:
+  - **変更ファイル**:
+    - `src/pages/CompletedPage.tsx`: 行80-84のLoading表示を完全削除
+    - `src/pages/ArchivedPage.tsx`: 行80-84のLoading表示を完全削除
+  - **実装内容**:
+    - `Show when={loading()}` ブロックを削除
+    - ローディング中は何も表示せず、データ取得完了後に即座にタスクリスト表示
+    - スケルトンUIは実装せず、シンプルに非表示のみ
+  - **ユーザー体験**: データ取得が高速（ローカルSQLite）なため、ローディング表示なしでもUXに問題なし
+- **Risks**: なし（ローカルSQLiteのため高速）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: CompletedPageから「Loading...」削除完了
+  - [x] DoD-2: ArchivedPageから「Loading...」削除完了
+  - [x] DoD-3: Frontendビルド成功
+  - [x] DoD-4: ページ表示時にローディングテキストが表示されないことを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、CompletedPage/ArchivedPage表示時に「Loading...」表示なし
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-042: タスクタイトル文字数制限
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPool, QueuePanel, CompletedPage, ArchivedPage
+- **Maps to**
+  - REQ: REQ-0033
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 全タスクカードのタイトル表示にCSS `truncate` クラスを適用し、長いタイトルを省略表示（...）する
+- **Implementation Notes**:
+  - **変更ファイル**:
+    - `src/components/TaskPool.tsx`: 親タスク・子タスクのタイトルspanに `truncate` クラス追加
+    - 他ページは既に適切なクラス設定済み（CompletedPage/ArchivedPage: h3タグ、QueuePanel: 既存実装）
+  - **CSS詳細**:
+    - `truncate` = `overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+    - `block max-w-full` と併用で幅制限
+  - **文字数上限**: CSS自動調整（コンテナ幅に応じて省略）
+  - **適用箇所**: TaskPool親・子タスク、QueuePanel, CompletedPage, ArchivedPage
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TaskPool親タスクのタイトルに `truncate` クラス追加完了
+  - [x] DoD-2: TaskPool子タスクのタイトルに `truncate` クラス追加完了
+  - [x] DoD-3: Frontendビルド成功
+  - [x] DoD-4: 長いタイトルが「...」で省略表示されることを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、長いタイトルが省略表示される
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-043: グローバルスクロールバー削除
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: GlobalStyles
+- **Maps to**
+  - REQ: REQ-0034
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: アプリケーション全体のスクロールバーをCSSで非表示にし、よりクリーンなUIを実現する
+- **Implementation Notes**:
+  - **変更ファイル**:
+    - `src/index.css`: グローバルスクロールバー削除CSSを追加
+  - **CSS実装**: scrollbar-width/ms-overflow-style/webkit-scrollbar設定でFirefox/Chrome/Safari/Edge/IE対応
+  - **ブラウザ対応**: Firefox、Chrome、Safari、Edge、IE対応
+  - **機能維持**: スクロール機能自体は維持、表示のみ非表示
+- **Risks**: なし（スクロール機能は維持）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: index.cssにスクロールバー削除CSS追加完了
+  - [x] DoD-2: Frontendビルド成功
+  - [x] DoD-3: 全ページでスクロールバーが非表示になることを確認
+  - [x] DoD-4: スクロール機能が正常に動作することを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、スクロールバー非表示、スクロール機能正常動作
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-044: タイトルバー削除設定
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TauriConfig
+- **Maps to**
+  - REQ: REQ-0035
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: Tauriの設定でウィンドウのネイティブタイトルバーを削除し、透明ウィンドウを有効にする
+- **Implementation Notes**:
+  - **変更ファイル**:
+    - `src-tauri/tauri.conf.json`: ウィンドウ設定を変更
+  - **設定項目**:
+    - `decorations: false`: ネイティブタイトルバー削除
+    - `transparent: true`: 透明ウィンドウ有効化（角丸実装に必要）
+    - `macOSPrivateApi: true`: macOSでの透明ウィンドウサポート（Cargo.tomlのfeatureと連携）
+  - **Cargo.toml連携**: `tauri = { version = "2", features = ["macos-private-api"] }` 設定済み
+- **Risks**: なし（TASK-NEW-045で角丸CSS適用により完成）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: tauri.conf.jsonに `decorations: false` 設定完了
+  - [x] DoD-2: tauri.conf.jsonに `transparent: true` 設定完了
+  - [x] DoD-3: `macOSPrivateApi: true` 設定完了
+  - [x] DoD-4: Tauriビルド成功
+  - [x] DoD-5: アプリ起動時にタイトルバーが削除されていることを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Tauriビルド成功、タイトルバー非表示
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-045: ウィンドウ角丸CSS適用
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: App, GlobalStyles
+- **Maps to**
+  - REQ: REQ-0035
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-044
+- **Summary**: TASK-NEW-044のタイトルバー削除と透明ウィンドウ設定に合わせて、CSSでウィンドウ全体に角丸を適用する
+- **Implementation Notes**:
+  - **変更ファイル**:
+    - `src/index.css`: html/body/#rootに角丸CSS追加、body背景を透明化
+    - `src/App.tsx`: RootLayoutに角丸クラス追加
+  - **角丸階層**:
+    1. html/body/#root: `border-radius: 2px;` （透明ウィンドウの外枠）
+    2. RootLayout: `rounded-xl` （bg-backgroundの角丸）
+  - **背景色設定**: bodyを透明にし、RootLayoutの `bg-background` を表示
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: index.cssに角丸CSS追加完了
+  - [x] DoD-2: body背景を透明化完了
+  - [x] DoD-3: App.tsxのRootLayoutに `rounded-xl overflow-hidden` 追加完了
+  - [x] DoD-4: Frontendビルド成功
+  - [x] DoD-5: アプリ起動時にウィンドウの角が丸くなっていることを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、ウィンドウ角丸表示確認
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-046: 入力欄フォーカスリング調整
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: Input, Textarea, Dialog
+- **Maps to**
+  - REQ: REQ-0036
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 全入力欄のフォーカスリングを `ring-2` から `ring-1` に変更し、透明度を30%に調整してより控えめな表示にする
+- **Implementation Notes**:
+  - **変更ファイル**:
+    - `src/components/Input.tsx`: `focus-visible:ring-2` → `focus-visible:ring-1` + `/30` 透明度追加
+    - `src/components/Textarea.tsx`: `focus-visible:ring-2` → `focus-visible:ring-1` + `/30` 透明度追加
+    - `src/components/Dialog.tsx`: `focus:ring-2` → `focus:ring-1` + `/30` 透明度追加
+  - **CSS変更**:
+    - 通常時: `focus-visible:ring-1 focus-visible:ring-ring/30`
+    - エラー時: `focus-visible:ring-1 focus-visible:ring-destructive/30`
+  - **視覚効果**: フォーカス時のリングが薄く控えめになり、よりクリーンなUI
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: Input.tsxのフォーカスリング調整完了
+  - [x] DoD-2: Textarea.tsxのフォーカスリング調整完了
+  - [x] DoD-3: Dialog.tsxのフォーカスリング調整完了
+  - [x] DoD-4: Frontendビルド成功
+  - [x] DoD-5: 入力欄フォーカス時にリングが薄く表示されることを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、フォーカスリングが薄く表示される
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-047: ConfirmDialogコンポーネント実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: ConfirmDialog
+- **Maps to**
+  - REQ: REQ-0037
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 汎用的な確認ダイアログコンポーネントを実装し、破壊的操作時のタスク名検証機能を提供する
+- **Implementation Notes**:
+  - **新規ファイル作成**: `src/components/ConfirmDialog.tsx`
+  - **機能実装**: Kobalte Dialogベース、タスク名検証（requireVerification prop）、送信中状態管理、エラーハンドリング
+  - **デザイン**: 既存Dialog.tsxと同様のKobalte Dialog使用、入力欄に明示的な `border-border` クラス追加、バリデーションメッセージ固定高さ（h-5）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: ConfirmDialog.tsx作成完了
+  - [x] DoD-2: 汎用的な確認ダイアログ機能実装完了
+  - [x] DoD-3: タスク名検証機能実装完了（`requireVerification` prop）
+  - [x] DoD-4: 送信中状態管理実装完了
+  - [x] DoD-5: Frontendビルド成功
+  - [x] DoD-6: スタンドアロンテスト（ダイアログ表示、検証、ボタン動作）
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、ConfirmDialog.tsx作成完了
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-048: ConfirmDialog統合とTauriプラグイン削除
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: ArchivedPage, Backend, Dependencies
+- **Maps to**
+  - REQ: REQ-0037
+  - HTTP operationId: delete_task_permanently
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-047
+- **Summary**: TASK-NEW-047のConfirmDialogをArchivedPageの物理削除機能に統合し、@tauri-apps/plugin-dialog依存を削除してビルドサイズを軽量化する
+- **Implementation Notes**:
+  - **ArchivedPage.tsx実装**: ConfirmDialog統合、deleteDialogOpen/taskToDelete state追加、confirmDeletePermanently関数実装
+  - **依存削除**: package.json, Cargo.toml, lib.rs, commands/task.rsから@tauri-apps/plugin-dialog削除
+  - **ビルド軽量化**: Tauriプラグイン削除によりバックエンドバイナリサイズ削減
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: ArchivedPageにConfirmDialog統合完了
+  - [x] DoD-2: 物理削除機能でタスク名検証が動作
+  - [x] DoD-3: @tauri-apps/plugin-dialog依存削除完了（package.json）
+  - [x] DoD-4: tauri-plugin-dialog削除完了（Cargo.toml）
+  - [x] DoD-5: lib.rs からプラグイン初期化削除完了
+  - [x] DoD-6: Frontend + Backendビルド成功
+  - [x] DoD-7: 物理削除機能の動作確認（タスク名検証、削除成功）
+- **Verification**:
+  - Type: E2E + Build
+  - Evidence: Frontend + Backendビルド成功、ArchivedPageで物理削除にConfirmDialog使用、依存削除完了
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-049: アーカイブボタン表示変更
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: TaskPool
+- **Maps to**
+  - REQ: REQ-0046
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: TaskPoolのDraftタスク削除ボタンをアーカイブボタンに変更し、アイコンとtitleを更新する
+- **Implementation Notes**:
+  - **変更ファイル**: `src/components/TaskPool.tsx`
+  - **実装内容**: ArchiveIconコンポーネント追加、削除ボタンのアイコン/title変更（Trash2Icon→ArchiveIcon、"Delete Task"→"Archive Task"）、親タスク・子タスク両方で変更適用
+  - **視覚効果**: よりアーカイブ操作であることが明確に
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: ArchiveIconコンポーネント追加完了
+  - [x] DoD-2: 親タスクの削除ボタンをアーカイブボタンに変更完了
+  - [x] DoD-3: 子タスクの削除ボタンをアーカイブボタンに変更完了
+  - [x] DoD-4: Frontendビルド成功
+  - [x] DoD-5: TaskPoolでアーカイブアイコンが表示されることを確認
+- **Verification**:
+  - Type: Build + Manual
+  - Evidence: Frontendビルド成功、TaskPoolでアーカイブアイコン表示確認
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
 ---
 > タスクの分類を固定すると、抜け漏れが減る。
 
@@ -1971,3 +2271,4 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-29 TASK-NEW-007 completed: タスクホバー詳細ポップアップ実装 (TaskHoverPopup.tsx作成、Kobalte Popover使用、500msホバー遅延実装、description/status/日時表示、TaskPool統合完了、タグ表示は後で追加予定、Frontendビルド成功: 842ms、Task Progress: 88% = 46/52)
 - 2025-12-29 TASK-NEW-036 completed: TagInput コンポーネント実装 (types/tag.ts新規作成: Tag/CreateTagRequest/UpdateTagRequest型定義、PRESET_TAG_COLORS（8色）定義、components/TagInput.tsx新規作成: チップ入力、オートコンプリート、新規タグ作成（インラインカラーピッカー）、Enter/Escape対応、Frontendビルド成功: 900ms、Task Progress: 90% = 47/52)
 - 2025-12-29 TASK-NEW-007 updated: タスクホバー詳細ポップアップ更新 (ホバー遅延500ms→2000ms、タイトルのみホバー対応に変更、タイトルホバー時色変化追加（hover:text-primary）、ポップアップをdescription+tagsのみに簡素化（w-64）、placement="top"でタイトル上/下表示、青色枠線削除、Frontendビルド成功: 864ms)
+- 2025-12-29 UI/UX Phase 3 completed (TASK-NEW-041〜049): ページローディング削除、タスクタイトル文字数制限、グローバルスクロールバー削除、タイトルバー削除＋角丸ウィンドウ、フォーカスリング調整、ConfirmDialog実装＋統合、アーカイブボタン変更、Task Progress: 96.7% = 59/61

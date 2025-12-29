@@ -74,13 +74,25 @@
     --sidebar-ring: 0.439 0 0;
   }
 
-  * {
-    @apply border-border;
+  html, body, #root {
+    border-radius: 2px;
+    overflow: hidden;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     user-select: none;
     cursor: default;
+    background-color: transparent;
+  }
+
+  /* Hide scrollbars globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 }

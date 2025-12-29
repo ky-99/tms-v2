@@ -76,7 +76,7 @@ const Pagination: Component<PaginationProps> = (props) => {
           onInput={handleInputChange}
           onKeyPress={handleInputKeyPress}
           onBlur={handleInputBlur}
-          class="w-16 h-9 px-2 text-center border border-border rounded-md bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          class="w-16 h-9 px-2 text-center border border-border rounded-md bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           aria-label="Page number"
         />
         <span class="text-sm text-muted-foreground">

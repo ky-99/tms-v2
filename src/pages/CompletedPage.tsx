@@ -128,12 +128,6 @@ export function CompletedPage() {
           </div>
         </div>
 
-        <Show when={loading()}>
-          <Card class="p-8 text-center">
-            <p class="text-muted-foreground">Loading...</p>
-          </Card>
-        </Show>
-
         <Show when={!loading() && filteredAndGroupedTasks().length === 0}>
           <Card class="p-8 text-center">
             <p class="text-muted-foreground">
@@ -173,7 +167,7 @@ export function CompletedPage() {
                                   <div class="text-primary">
                                     <CheckCircle2Icon />
                                   </div>
-                                  <h3 class="font-medium text-foreground">
+                                  <h3 class="font-medium text-foreground truncate">
                                     {task.title}
                                   </h3>
                                 </div>

@@ -45,7 +45,7 @@
 | REQ-0012 | タスクフィルター機能 | SHOULD | Draft | UI | REQ-0011 |
 | REQ-0013 | 完了タスク確認画面 | SHOULD | Draft | UI | REQ-0002 |
 | REQ-0014 | アーカイブタスク確認画面 | SHOULD | Draft | UI | REQ-0002 |
-| REQ-0015 | タスクリスト表示形式変更 | SHOULD | Draft | UI | REQ-0004 |
+| REQ-0015 | タスクリスト表示形式変更 | SHOULD | Done | UI | REQ-0004 |
 | REQ-0016 | Draft状態タスクのみ編集可能 | MUST | Done | Task Management | REQ-0002 |
 | REQ-0017 | Draft状態タスクのみ論理削除可能 | MUST | Done | Task Management | REQ-0002 |
 | REQ-0018 | Archivedタスクの物理削除 | MUST | Done | Task Management | REQ-0017 |
@@ -59,12 +59,12 @@
 | REQ-0026 | Archivedページ3点リーダーメニュー | SHOULD | Done | UI | REQ-0014 |
 | REQ-0027 | タイトルspanサイズ調整 | SHOULD | Done | UI | REQ-0004 |
 | REQ-0028 | キュー順番変更D&D | SHOULD | Done | UI | REQ-0006 |
-| REQ-0029 | タグシステムUI統合 | SHOULD | Draft | UI | REQ-0005 |
-| REQ-0030 | タグフィルター展開式UI | SHOULD | Draft | UI | REQ-0029 |
-| REQ-0031 | タグカラー管理 | COULD | Draft | UI | REQ-0029 |
+| REQ-0029 | タグシステムUI統合 | SHOULD | Done | UI | REQ-0005 |
+| REQ-0030 | タグフィルター展開式UI | SHOULD | Done | UI | REQ-0029 |
+| REQ-0031 | タグカラー管理 | COULD | Hold | UI | REQ-0029 |
 
 **Priority**: MUST / SHOULD / COULD
-**Status**: Draft / Approved / Implementing / Done / Deprecated
+**Status**: Draft / Approved / Implementing / Done / Hold / Deprecated
 
 ---
 
@@ -372,18 +372,18 @@
 
 ### REQ-0015: タスク詳細ホバーポップアップ
 - **Priority**: SHOULD
-- **Status**: Draft
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: タスクプール画面が表示されている
-- **Trigger**: タスクカード上での長時間ホバー
+- **Trigger**: タスクタイトルクリック
 - **Acceptance (the only one)**:
   - **Given**: タスクプール画面にタスクカードが表示されている
-  - **When**: ユーザーがタスクカードにマウスカーソルを500ms以上ホバー
-  - **Then**: 詳細ポップアップが表示され、タスクのタイトル、description、tags、created/updated日時、statusが確認できる
-- **Negative/Boundary**: マウスカーソルが離れるとポップアップは非表示。ポップアップは読み取り専用（編集不可）
+  - **When**: ユーザーがタスクタイトルをクリック
+  - **Then**: 詳細ポップアップがタイトル上部または下部に表示され、description、tags（色付き）が確認できる
+- **Negative/Boundary**: 外部クリックまたは再クリックでポップアップは非表示。ポップアップは読み取り専用（編集不可）。タイトルクリック時は親タスクの展開/折りたたみトグルは発生しない
 - **Depends on**: REQ-0004
-- **Notes**: Kobalte Tooltip or Popoverを使用。タグ表示にはREQ-0029の実装が必要
+- **Notes**: Kobalte Popoverを使用（placement="top"）。タグ表示はREQ-0029実装済み。クリック操作に変更（ホバー遅延削除）、stopPropagation()で親タスクトグルと分離
 - **Trace Hooks (optional)**:
   - API: N/A（既存データ使用）
   - Component: TaskHoverPopup
@@ -666,7 +666,7 @@
 
 ### REQ-0029: タグシステムUI統合
 - **Priority**: SHOULD
-- **Status**: Draft
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: タスク作成/編集Dialogが表示されている
@@ -687,7 +687,7 @@
 
 ### REQ-0030: タグフィルター展開式UI
 - **Priority**: SHOULD
-- **Status**: Draft
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: TaskPool画面が表示されている
@@ -708,7 +708,7 @@
 
 ### REQ-0031: タグカラー管理
 - **Priority**: COULD
-- **Status**: Draft
+- **Status**: Hold
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: 新規タグ作成時
@@ -719,11 +719,329 @@
   - **Then**: タグにカラーが設定され、タグチップ表示時に背景色として反映される
 - **Negative/Boundary**: 色未選択時はデフォルト色（gray）を使用
 - **Depends on**: REQ-0029
-- **Notes**: Phase 1ではプリセット8色のみ（赤、オレンジ、黄、緑、青、紫、茶、黒）。カスタム色選択は将来対応
+- **Notes**: Phase 1ではプリセット8色（Red, Orange, Yellow, Green, Blue, Indigo, Purple, Pink）を実装済み。将来的により柔軟なカラーピッカーに置き換え予定のため保留
 - **Trace Hooks (optional)**:
   - API: create_tag (color パラメータ)
   - Component: ColorPicker, TagInput
   - Task: TASK-NEW-039
+
+---
+
+### REQ-0032: ページローディング文字削除
+- **Priority**: SHOULD
+- **Status**: Done
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: CompletedPage、ArchivedPageを表示
+- **Trigger**: ページ読み込み時
+- **Acceptance (the only one)**:
+  - **Given**: CompletedPageまたはArchivedPageを開いた
+  - **When**: データ読み込み中
+  - **Then**: "Loading..."テキストが表示されず、読み込み完了後に直接タスクリストが表示される
+- **Negative/Boundary**: エラー時の表示は別途対応
+- **Depends on**: REQ-0024
+- **Notes**: ローディング状態のUI表示を削除し、よりクリーンなUXを実現
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: CompletedPage, ArchivedPage
+  - Task: TASK-NEW-041
+
+---
+
+### REQ-0033: タスクタイトル文字数制限
+- **Priority**: SHOULD
+- **Status**: Done
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タスクカードが表示されている
+- **Trigger**: タスクカード表示時
+- **Acceptance (the only one)**:
+  - **Given**: TaskPool、QueuePanel、CompletedPage、ArchivedPageいずれかでタスクカードが表示されている
+  - **When**: タスクタイトルが長い
+  - **Then**: タイトルが一定幅で切り捨てられ、`...`で省略表示される（CSS text-overflow: ellipsis）
+- **Negative/Boundary**: ホバー時にTaskHoverPopupで全文表示可能
+- **Depends on**: REQ-0015
+- **Notes**: CSS `truncate`クラスと`max-width`を使用してタイトル表示を制限
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskPool, QueuePanel, CompletedPage, ArchivedPage
+  - Task: TASK-NEW-042
+
+---
+
+### REQ-0034: グローバルスクロールバー削除
+- **Priority**: SHOULD
+- **Status**: Done
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: アプリケーション起動
+- **Trigger**: 常時適用
+- **Acceptance (the only one)**:
+  - **Given**: アプリケーションが起動している
+  - **When**: スクロール可能なエリアが存在する
+  - **Then**: スクロールバーが視覚的に表示されず、スクロール機能のみ有効
+- **Negative/Boundary**: マウスホイール、タッチパッド、キーボードでのスクロールは正常動作
+- **Depends on**: N/A
+- **Notes**: CSS `scrollbar-width: none`および`::-webkit-scrollbar { display: none }`をグローバル適用
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: N/A (グローバルCSS)
+  - Task: TASK-NEW-043
+
+---
+
+### REQ-0035: ウィンドウ装飾削除と角丸
+- **Priority**: SHOULD
+- **Status**: Done
+- **Area**: UI/Platform
+- **Actor**: User
+- **Preconditions**: アプリケーション起動
+- **Trigger**: ウィンドウ表示時
+- **Acceptance (the only one)**:
+  - **Given**: アプリケーションが起動している
+  - **When**: ウィンドウが表示される
+  - **Then**: タイトルバー（閉じる/最小化/最大化ボタン）が非表示になり、ウィンドウの角が2px丸くなる
+- **Negative/Boundary**: macOSネイティブのウィンドウ操作（トラフィックライト、ドラッグ移動等）は維持
+- **Depends on**: N/A
+- **Notes**: tauri.conf.jsonで`decorations: false`、`transparent: true`、`macOSPrivateApi: true`を設定。CSSでhtml/body/#rootに`border-radius: 2px`を適用
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: N/A (グローバルCSS、Tauri設定)
+  - Task: TASK-NEW-044, TASK-NEW-045
+
+---
+
+### REQ-0036: 入力欄フォーカスリング調整
+- **Priority**: SHOULD
+- **Status**: Done
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: 入力欄が存在する
+- **Trigger**: 入力欄フォーカス時
+- **Acceptance (the only one)**:
+  - **Given**: Input、Textarea、Selectいずれかの入力欄がある
+  - **When**: 入力欄にフォーカスする
+  - **Then**: フォーカスリングの幅が1px、透明度30%で表示され、控えめなハイライトになる
+- **Negative/Boundary**: エラー状態時は赤色のリングを維持
+- **Depends on**: N/A
+- **Notes**: `focus:ring-2` → `focus:ring-1`、`focus:ring-ring` → `focus:ring-ring/30`に変更
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: Input, Badge, Dialog, TagFilter, Pagination
+  - Task: TASK-NEW-046
+
+---
+
+### REQ-0037: カスタム確認ダイアログ（タスク名検証付き）
+- **Priority**: MUST
+- **Status**: Done
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: 破壊的操作（永久削除等）を実行
+- **Trigger**: 永久削除ボタンクリック
+- **Acceptance (the only one)**:
+  - **Given**: Archivedページでタスクの永久削除を実行
+  - **When**: 「Delete permanently」をクリック
+  - **Then**: カスタム確認ダイアログが表示され、タスク名を正確に入力しないと削除ボタンが無効化される
+- **Negative/Boundary**:
+  - タスク名が一致しない場合、エラーメッセージ表示（固定高さで表示領域を確保）
+  - キャンセルボタンでダイアログを閉じる
+  - 入力欄の枠線色は通常時グレー、エラー時のみ赤
+- **Depends on**: REQ-0018
+- **Notes**: Kobalte Dialogベースの汎用ConfirmDialogコンポーネントを実装。`requireVerification`オプションでテキスト入力確認を有効化。Tauri plugin-dialogへの依存を削除
+- **Trace Hooks (optional)**:
+  - API: N/A (既存API使用)
+  - Component: ConfirmDialog, ArchivedPage
+  - Task: TASK-NEW-047, TASK-NEW-048
+
+---
+
+### REQ-0038: キュー一括操作（未実装）
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: QueuePanelに複数タスクが存在
+- **Trigger**: 一括操作ボタンクリック
+- **Acceptance (the only one)**:
+  - **Given**: QueuePanelに2つ以上のタスクがある
+  - **When**: 「すべて完了」または「すべて削除」ボタンをクリック
+  - **Then**: キュー内の全タスクが一括で完了またはキューから削除される
+- **Negative/Boundary**: 確認ダイアログで操作をキャンセル可能
+- **Depends on**: REQ-0006
+- **Notes**: 新規API `batch_complete_queue`, `batch_remove_from_queue`を実装予定
+- **Trace Hooks (optional)**:
+  - API: batch_complete_queue (新規), batch_remove_from_queue (新規)
+  - Component: QueuePanel
+  - Task: TBD
+
+---
+
+### REQ-0039: search_tasks API軽量化（未実装）
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: Backend
+- **Actor**: System
+- **Preconditions**: タグフィルター使用時
+- **Trigger**: TagFilterでタグ選択
+- **Acceptance (the only one)**:
+  - **Given**: TagFilterでタグが選択されている
+  - **When**: search_tasksまたは新規search_task_ids APIを呼び出す
+  - **Then**: タスクIDのみを返す軽量レスポンスが返される
+- **Negative/Boundary**: 既存のsearch_tasks APIは後方互換性のため維持
+- **Depends on**: REQ-0030
+- **Notes**: 新規API `search_task_ids`を実装し、IDのみ返すことでパフォーマンス向上
+- **Trace Hooks (optional)**:
+  - API: search_task_ids (新規)
+  - Component: TagFilter
+  - Task: TBD
+
+---
+
+### REQ-0040: タグ管理画面（未実装）
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タグが存在する
+- **Trigger**: タグ管理ページ（/tags）を開く
+- **Acceptance (the only one)**:
+  - **Given**: タグ管理ページ（/tags）を開いた
+  - **When**: タグのリストが表示される
+  - **Then**: タグの作成、編集、削除が可能（使用中タグ削除時は警告表示）
+- **Negative/Boundary**: 使用中のタグ削除時は確認ダイアログを表示
+- **Depends on**: REQ-0029
+- **Notes**: 新規ルート`/tags`を追加。既存API（list_tags, create_tag, update_tag, delete_tag）を使用
+- **Trace Hooks (optional)**:
+  - API: N/A (既存API使用)
+  - Component: TagManagementPage (新規)
+  - Task: TBD
+
+---
+
+### REQ-0041: Completedページ子タスク表示改善（未実装）
+- **Priority**: COULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Completedページで子タスクが表示されている
+- **Trigger**: Completedページ表示時
+- **Acceptance (the only one)**:
+  - **Given**: Completedページで子タスクが表示されている
+  - **When**: 子タスクのタイトルが表示される
+  - **Then**: タイトルが「@親タスク名/子タスク名」形式で表示される
+- **Negative/Boundary**: 親タスク情報が取得できない場合は子タスク名のみ表示
+- **Depends on**: REQ-0024
+- **Notes**: `list_tasks_paginated` APIに`parent_title: Option<String>`を追加するオプションAを推奨
+- **Trace Hooks (optional)**:
+  - API: list_tasks_paginated (拡張)
+  - Component: CompletedPage
+  - Task: TBD
+
+---
+
+### REQ-0042: 作成/編集モーダルUI改善（未実装、デザイン要件待ち）
+- **Priority**: COULD
+- **Status**: Deferred
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タスク作成/編集ダイアログを開く
+- **Trigger**: 新規タスク作成または編集ボタンクリック
+- **Acceptance (the only one)**:
+  - **Given**: タスク作成/編集ダイアログが開いている
+  - **When**: ダイアログが表示される
+  - **Then**: 改善されたUIレイアウトで入力欄が表示される
+- **Negative/Boundary**: デザイン要件提供後に実装
+- **Depends on**: REQ-0001
+- **Notes**: デザイン要件待ち
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: Dialog, TaskPage
+  - Task: TBD
+
+---
+
+### REQ-0043: タグフィルターUI改善（未実装、デザイン要件待ち）
+- **Priority**: COULD
+- **Status**: Deferred
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タグフィルターを使用
+- **Trigger**: タグフィルターボタンクリック
+- **Acceptance (the only one)**:
+  - **Given**: TagFilterが表示されている
+  - **When**: タグフィルターボタンをクリック
+  - **Then**: 改善されたUIでタグ選択が可能
+- **Negative/Boundary**: デザイン要件提供後に実装
+- **Depends on**: REQ-0030
+- **Notes**: デザイン要件待ち
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TagFilter
+  - Task: TBD
+
+---
+
+### REQ-0044: タグ作成画面改良（未実装、デザイン要件待ち）
+- **Priority**: COULD
+- **Status**: Deferred
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タグ作成を実行
+- **Trigger**: タグ作成UI表示
+- **Acceptance (the only one)**:
+  - **Given**: タグ作成UIが表示されている
+  - **When**: タグ情報を入力
+  - **Then**: 改善されたUIでタグ作成が可能
+- **Negative/Boundary**: デザイン要件提供後に実装
+- **Depends on**: REQ-0029
+- **Notes**: デザイン要件待ち
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TagInput
+  - Task: TBD
+
+---
+
+### REQ-0045: タググルーピング機能（未実装、デザイン要件待ち）
+- **Priority**: WONT
+- **Status**: Deferred
+- **Area**: UI/Backend
+- **Actor**: User
+- **Preconditions**: タグが複数存在する
+- **Trigger**: タググループ管理画面を開く
+- **Acceptance (the only one)**:
+  - **Given**: タググループ管理画面が開いている
+  - **When**: タグをグループに分類
+  - **Then**: グループごとにタグが整理表示される
+- **Negative/Boundary**: デザイン要件提供後に実装
+- **Depends on**: REQ-0029
+- **Notes**: 新規テーブル`tag_groups`、新規API `create_tag_group`, `list_tag_groups`が必要。優先度P3で保留
+- **Trace Hooks (optional)**:
+  - API: create_tag_group (新規), list_tag_groups (新規)
+  - Component: TagGroupManagementPage (新規)
+  - Task: TBD
+
+---
+
+### REQ-0046: アーカイブボタン表示変更
+- **Priority**: SHOULD
+- **Status**: Done
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Draft状態のタスクカードが表示されている
+- **Trigger**: タスクカードホバー時
+- **Acceptance (the only one)**:
+  - **Given**: Draft状態のタスクカードが表示されている
+  - **When**: タスクカードにホバー
+  - **Then**: 削除ボタン（ゴミ箱アイコン）の代わりにアーカイブボタン（アーカイブボックスアイコン）が表示される
+- **Negative/Boundary**: ボタンの色は他のボタンと同じ白（foreground）
+- **Depends on**: REQ-0016
+- **Notes**: アイコンを`Trash2Icon`から`ArchiveIcon`に変更、色を`text-destructive`から削除（デフォルト色を使用）
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskPool
+  - Task: TASK-NEW-049
 
 ---
 
@@ -741,3 +1059,6 @@
 - 2025-12-28 追加要件定義 (REQ-0016〜REQ-0022) - Draft状態制限、物理削除、restore機能、list_tasks API改良、UI改善
 - 2025-12-28 追加要件定義 (REQ-0023〜REQ-0028) - バグ修正、ページネーション、3点リーダーメニュー、タイトルspan調整、D&D機能
 - 2025-12-29 追加要件定義 (REQ-0029〜REQ-0031) - タグシステムUI統合、タグフィルター展開式、タグカラー管理（Phase 1）、REQ-0015修正（ホバーポップアップ化）
+- 2025-12-29 ステータス更新 - REQ-0015, 0029, 0030: Done, REQ-0031: Hold（将来的に柔軟なカラーピッカーに置き換え予定）
+- 2025-12-29 追加要件定義 (REQ-0032〜REQ-0046) - UI/UX改善第3弾（ローディング削除、文字数制限、スクロールバー削除、タイトルバー削除、角丸、フォーカスリング調整、ConfirmDialog実装、アーカイブボタン変更）、API軽量化、タグ管理画面、タググルーピング（未実装含む）
+- 2025-12-29 ステータス更新 - REQ-0032, 0033, 0034, 0035, 0036, 0037, 0046: Done, REQ-0038〜0041: Planned, REQ-0042〜0045: Deferred（デザイン要件待ち）

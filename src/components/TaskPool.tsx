@@ -93,10 +93,12 @@ function PencilIcon() {
   );
 }
 
-function Trash2Icon() {
+function ArchiveIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+      <rect x="2" y="4" width="20" height="5" rx="1" />
+      <path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" />
+      <path d="M10 13h4" />
     </svg>
   );
 }
@@ -327,7 +329,7 @@ export function TaskPool(props: TaskPoolProps) {
                   <TaskHoverPopup task={task} availableTags={props.availableTags}>
                     <span
                       class={cn(
-                        "text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors",
+                        "text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate block max-w-full",
                         task.status === "completed" && "line-through"
                       )}
                     >
@@ -356,10 +358,10 @@ export function TaskPool(props: TaskPoolProps) {
                           e.stopPropagation();
                           props.onDelete(task);
                         }}
-                        class="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        title="Delete Task"
+                        class="h-8 w-8 p-0"
+                        title="Archive Task"
                       >
-                        <Trash2Icon />
+                        <ArchiveIcon />
                       </Button>
                     </Show>
                     <Show when={!(task.children && task.children.length > 0)}>
@@ -396,7 +398,7 @@ export function TaskPool(props: TaskPoolProps) {
                           <TaskHoverPopup task={child} availableTags={props.availableTags}>
                             <span
                               class={cn(
-                                "text-sm text-foreground cursor-pointer hover:text-primary transition-colors",
+                                "text-sm text-foreground cursor-pointer hover:text-primary transition-colors truncate block max-w-full",
                                 child.status === "completed" && "line-through"
                               )}
                             >
@@ -425,10 +427,10 @@ export function TaskPool(props: TaskPoolProps) {
                                   e.stopPropagation();
                                   props.onDelete(child);
                                 }}
-                                class="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                title="Delete Task"
+                                class="h-8 w-8 p-0"
+                                title="Archive Task"
                               >
-                                <Trash2Icon />
+                                <ArchiveIcon />
                               </Button>
                             </Show>
                             <Button

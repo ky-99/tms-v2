@@ -2,6 +2,7 @@ import { createSignal, createMemo, For, Show, onMount } from "solid-js";
 import { Card } from "../components/Card";
 import { Input } from "../components/Input";
 import { DropdownMenu } from "../components/DropdownMenu";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import Pagination from "../components/Pagination";
 import { tasksApi } from "../api/tasks";
 import type { Task } from "../types/task";
@@ -56,6 +57,8 @@ export function ArchivedPage() {
   const [loading, setLoading] = createSignal(true);
   const [currentPage, setCurrentPage] = createSignal(1);
   const [totalItems, setTotalItems] = createSignal(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = createSignal(false);
+  const [taskToDelete, setTaskToDelete] = createSignal<Task | null>(null);
 
   const totalPages = createMemo(() =>
     Math.ceil(totalItems() / ITEMS_PER_PAGE)
@@ -95,23 +98,24 @@ export function ArchivedPage() {
       await loadArchivedTasks(currentPage());
     } catch (error) {
       console.error("Failed to restore task:", error);
-      alert(`Failed to restore: ${error}`);
     }
   };
 
-  const handleDeletePermanently = async (taskId: string) => {
-    const confirmed = confirm(
-      "Are you sure you want to permanently delete this task? This action cannot be undone."
-    );
-    if (!confirmed) return;
+  const handleDeletePermanently = (task: Task) => {
+    setTaskToDelete(task);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePermanently = async () => {
+    const task = taskToDelete();
+    if (!task) return;
 
     try {
-      await tasksApi.deletePermanently(taskId);
+      await tasksApi.deletePermanently(task.id);
       // 現在のページをリロード
       await loadArchivedTasks(currentPage());
     } catch (error) {
       console.error("Failed to delete task permanently:", error);
-      alert(`Failed to delete: ${error}`);
     }
   };
 
@@ -174,12 +178,6 @@ export function ArchivedPage() {
           </div>
         </div>
 
-        <Show when={loading()}>
-          <Card class="p-8 text-center">
-            <p class="text-muted-foreground">Loading...</p>
-          </Card>
-        </Show>
-
         <Show when={!loading() && filteredAndGroupedTasks().length === 0}>
           <Card class="p-8 text-center">
             <p class="text-muted-foreground">
@@ -219,7 +217,7 @@ export function ArchivedPage() {
                                   <div class="text-muted-foreground">
                                     <ArchiveIcon />
                                   </div>
-                                  <h3 class="font-medium text-foreground">
+                                  <h3 class="font-medium text-foreground truncate">
                                     {task.title}
                                   </h3>
                                 </div>
@@ -247,7 +245,7 @@ export function ArchivedPage() {
                                   },
                                   {
                                     label: "Delete permanently",
-                                    onClick: () => handleDeletePermanently(task.id),
+                                    onClick: () => handleDeletePermanently(task),
                                     variant: "destructive"
                                   }
                                 ]}
@@ -270,6 +268,22 @@ export function ArchivedPage() {
             onPageChange={handlePageChange}
           />
         </Show>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteDialogOpen()}
+          onOpenChange={setDeleteDialogOpen}
+          title="Permanently Delete Task"
+          description={`This action cannot be undone. To confirm, please type the task title: "${taskToDelete()?.title || ''}"`}
+          confirmText="Delete Permanently"
+          cancelText="Cancel"
+          variant="destructive"
+          onConfirm={confirmDeletePermanently}
+          requireVerification={true}
+          verificationText={taskToDelete()?.title || ""}
+          verificationLabel="Task title:"
+          verificationPlaceholder="Type the task title to confirm"
+        />
       </div>
     </div>
   );

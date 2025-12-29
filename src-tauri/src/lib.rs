@@ -33,7 +33,6 @@ fn greet(name: &str) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // データベースパスを取得
             let db_path = db::get_db_path(app.handle())?;

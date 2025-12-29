@@ -96,7 +96,7 @@ export function TagFilter(props: TagFilterProps) {
                     type="checkbox"
                     checked={isTagSelected(tag.name)}
                     onChange={() => toggleTag(tag.name)}
-                    class="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary cursor-pointer"
+                    class="h-4 w-4 rounded border-border text-primary focus:ring-1 focus:ring-primary cursor-pointer"
                   />
                   <Show when={tag.color}>
                     <div

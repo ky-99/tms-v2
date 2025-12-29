@@ -430,7 +430,218 @@ References:
 - 影響: QueuePanelのCompleteボタン押下時、タスクのupdated_atフィールドが正しく更新される
 - 参考: service/task.rsのupdate_task関数では正しく実装済み
 
-### 3.14 Event Flow: N/A
+### 3.14 UI/UX Phase 3: クリーンUIへの改善
+- Maps to REQs: REQ-0032, REQ-0033, REQ-0034, REQ-0035, REQ-0036, REQ-0037, REQ-0046
+- 概要: ページローディング文字削除、文字数制限、スクロールバー削除、ウィンドウ装飾削除、角丸ウィンドウ、フォーカスリング調整、ConfirmDialog実装
+
+#### 3.14.1 ページローディング文字削除 (REQ-0032)
+- 対象ページ: CompletedPage, ArchivedPage
+- 変更内容:
+  - `Show when={loading()}` ブロックを完全削除
+  - ローディング中は何も表示せず、データ取得完了後に即座にタスクリスト表示
+- 理由: ローカルSQLiteのため高速でローディング表示不要、よりクリーンなUI
+- ファイル:
+  - `src/pages/CompletedPage.tsx`: 行80-84削除
+  - `src/pages/ArchivedPage.tsx`: 行80-84削除
+
+#### 3.14.2 タスクタイトル文字数制限 (REQ-0033)
+- 対象コンポーネント: TaskPool, QueuePanel, CompletedPage, ArchivedPage
+- 変更内容:
+  - 全タスクタイトルspanに `truncate` クラス追加
+  - CSS: `overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+  - `block max-w-full` と併用で幅制限
+- 効果: 長いタイトルを省略表示（...）、コンテナ幅に応じて自動調整
+- ファイル:
+  - `src/components/TaskPool.tsx`: 親・子タスクタイトルspanに追加
+
+#### 3.14.3 グローバルスクロールバー削除 (REQ-0034)
+- 対象: アプリケーション全体
+- 変更内容:
+  - CSS で全スクロールバーを非表示化
+  - スクロール機能自体は維持
+- CSS実装 (`src/index.css`):
+  ```css
+  /* Hide scrollbars globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  ```
+- ブラウザ対応: Firefox, Chrome, Safari, Edge, IE
+
+#### 3.14.4 ウィンドウ装飾削除と角丸ウィンドウ (REQ-0035)
+- 2つのタスクで実装:
+  1. **タイトルバー削除**: Tauri設定でネイティブタイトルバーを削除し、透明ウィンドウを有効化
+  2. **角丸CSS適用**: CSSでウィンドウ全体に角丸を適用
+
+##### タイトルバー削除設定
+- ファイル: `src-tauri/tauri.conf.json`
+- 設定:
+  ```json
+  {
+    "app": {
+      "windows": [{
+        "decorations": false,
+        "transparent": true
+      }],
+      "macOSPrivateApi": true
+    }
+  }
+  ```
+- 設定項目:
+  - `decorations: false`: ネイティブタイトルバー削除
+  - `transparent: true`: 透明ウィンドウ有効化（角丸実装に必要）
+  - `macOSPrivateApi: true`: macOSでの透明ウィンドウサポート
+- Cargo.toml連携: `tauri = { version = "2", features = ["macos-private-api"] }`
+
+##### 角丸CSS適用
+- ファイル: `src/index.css`, `src/App.tsx`
+- index.css実装:
+  ```css
+  html, body, #root {
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: transparent;
+  }
+  ```
+- App.tsx実装:
+  ```tsx
+  <div class="flex h-screen flex-col bg-background rounded-xl overflow-hidden">
+  ```
+- 角丸階層:
+  1. html/body/#root: `border-radius: 2px;` （透明ウィンドウの外枠）
+  2. RootLayout: `rounded-xl` （bg-backgroundの角丸）
+- 背景色設定: bodyを透明にし、RootLayoutの `bg-background` を表示
+
+#### 3.14.5 入力欄フォーカスリング調整 (REQ-0036)
+- 対象コンポーネント: Input, Textarea, Dialog
+- 変更内容:
+  - `focus-visible:ring-2` → `focus-visible:ring-1`
+  - 透明度を30%に調整: `/30` 追加
+- CSS変更:
+  - 通常時: `focus-visible:ring-1 focus-visible:ring-ring/30`
+  - エラー時: `focus-visible:ring-1 focus-visible:ring-destructive/30`
+- 効果: フォーカス時のリングが薄く控えめになり、よりクリーンなUI
+- ファイル:
+  - `src/components/Input.tsx`
+  - `src/components/Textarea.tsx`
+  - `src/components/Dialog.tsx`
+
+#### 3.14.6 ConfirmDialogコンポーネント実装 (REQ-0037)
+- Maps to REQs: REQ-0037
+- Maps to operationId: delete_task_permanently
+- 新規コンポーネント: `src/components/ConfirmDialog.tsx`
+
+##### 責務
+- 汎用的な確認ダイアログコンポーネント
+- 破壊的操作時のタスク名検証機能を提供
+- 非同期操作のローディング状態管理
+
+##### 設計
+- **ベースライブラリ**: Kobalte Dialog（既存Dialog.tsxと同様）
+- **Props**:
+  ```typescript
+  interface ConfirmDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    title: string;
+    description: string;
+    confirmText?: string;  // デフォルト: "Confirm"
+    cancelText?: string;   // デフォルト: "Cancel"
+    variant?: "default" | "destructive";  // ボタンスタイル
+    onConfirm: () => void | Promise<void>;  // 非同期対応
+    requireVerification?: boolean;  // タスク名検証の有効化
+    verificationText?: string;  // 検証用テキスト
+    verificationLabel?: string;  // 検証欄ラベル
+    verificationPlaceholder?: string;  // 検証欄プレースホルダー
+  }
+  ```
+- **タスク名検証機能**:
+  - `requireVerification=true` 時、入力欄表示
+  - 入力値が `verificationText` と完全一致するまで確認ボタン無効化
+  - 不一致時にエラーメッセージ表示
+  - バリデーションメッセージ表示エリアを固定高さ（`h-5`）に設定し、モーダルサイズ変動を防止
+- **送信中状態管理**:
+  - `isSubmitting` state でボタン無効化
+  - ボタンテキストを「Processing...」に変更
+- **エラーハンドリング**: `console.error` で失敗時ログ出力
+- **デザイン詳細**:
+  - 入力欄に明示的な `border-border` クラス追加（薄緑色回避）
+  - 既存Dialog.tsxと同様のKobalte Portal/Overlay/Content構造
+
+##### 統合: ArchivedPageの物理削除機能
+- ファイル: `src/pages/ArchivedPage.tsx`
+- 実装内容:
+  - ConfirmDialog統合:
+    ```tsx
+    const [deleteDialogOpen, setDeleteDialogOpen] = createSignal(false);
+    const [taskToDelete, setTaskToDelete] = createSignal<Task | null>(null);
+
+    const confirmDeletePermanently = async () => {
+      const task = taskToDelete();
+      if (!task) return;
+      try {
+        await tasksApi.deletePermanently(task.id);
+        await loadArchivedTasks(currentPage());
+      } catch (error) {
+        console.error("Failed to delete task permanently:", error);
+      }
+    };
+
+    <ConfirmDialog
+      open={deleteDialogOpen()}
+      onOpenChange={setDeleteDialogOpen}
+      title="Permanently Delete Task"
+      description={`This action cannot be undone. To confirm, please type the task title: "${taskToDelete()?.title || ''}"`}
+      confirmText="Delete Permanently"
+      variant="destructive"
+      onConfirm={confirmDeletePermanently}
+      requireVerification={true}
+      verificationText={taskToDelete()?.title || ""}
+    />
+    ```
+  - 既存`window.confirm`呼び出しを削除
+  - Delete Permanentlyボタンクリック時にダイアログ表示
+
+##### 依存削除: Tauriプラグイン削除
+- ビルドサイズ軽量化のため、@tauri-apps/plugin-dialog依存を削除
+- 削除ファイル:
+  - `package.json`: `"@tauri-apps/plugin-dialog"` 削除
+  - `src-tauri/Cargo.toml`: `tauri-plugin-dialog` 削除
+  - `src-tauri/src/lib.rs`: `.plugin(tauri_plugin_dialog::init())` 削除
+  - `src-tauri/src/commands/task.rs`: `use tauri_plugin_dialog::*` 削除（未使用）
+- 効果: バックエンドバイナリサイズ削減
+
+#### 3.14.7 アーカイブボタン表示変更 (REQ-0046)
+- 対象コンポーネント: TaskPool
+- 変更内容:
+  - Draftタスクの削除ボタンをアーカイブボタンに変更
+  - アイコン変更: `Trash2Icon` → `ArchiveIcon`（アーカイブボックスアイコン）
+  - title変更: "Delete Task" → "Archive Task"
+  - onClick動作: 変更なし（`props.onDelete` そのまま）
+- ArchiveIconコンポーネント:
+  ```tsx
+  function ArchiveIcon() {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="4" width="20" height="5" rx="1" />
+        <path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" />
+        <path d="M10 13h4" />
+      </svg>
+    );
+  }
+  ```
+- 適用箇所: 親タスク・子タスク両方のDraft状態削除ボタン
+- 効果: よりアーカイブ操作であることが明確に
+
+### 3.15 Event Flow: N/A
 - Event-driven architecture is not adopted for TMS-v2
 
 ---
@@ -542,3 +753,4 @@ References:
 - 2025-12-28 Draft状態制限機能、物理削除・restore機能、list_tasks API改良、フィルターUI改善の追加 (REQ-0016〜REQ-0022)
 - 2025-12-28 バグ修正（updated_at更新）、ページネーション機能、3点リーダーメニュー、タイトルspan調整、D&D機能の追加 (REQ-0023〜REQ-0028)
 - 2025-12-29 タグシステムUI統合、タグフィルター展開式、タグカラー管理、タスクホバーポップアップ修正の追加 (REQ-0029〜REQ-0031, REQ-0015修正)
+- 2025-12-29 UI/UX Phase 3完了：ページローディング削除、文字数制限、スクロールバー削除、タイトルバー削除＋角丸ウィンドウ、フォーカスリング調整、ConfirmDialog実装＋統合、アーカイブボタン変更 (REQ-0032〜REQ-0037, REQ-0046)
