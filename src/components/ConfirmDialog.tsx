@@ -76,7 +76,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
                 </KobalteDialog.Title>
                 <KobalteDialog.CloseButton class={cn(
                   "rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100",
-                  "focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2",
+                  "focus:outline-none",
                   "disabled:pointer-events-none"
                 )}>
                   <svg
