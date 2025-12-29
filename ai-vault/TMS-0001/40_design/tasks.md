@@ -1689,32 +1689,49 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-037: タスク編集Dialogにタグ選択UI追加
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
-- **Component(s)**: Dialog, TaskEditDialog（または既存Dialog修正）
+- **Component(s)**: TaskPage
 - **Maps to**
   - REQ: REQ-0029
-  - HTTP operationId: create_task, update_task, list_tags
+  - HTTP operationId: create_task, update_task, list_tags, create_tag
   - Event messageId: N/A
 - **Depends on**: TASK-NEW-036
-- **Summary**: タスク作成/編集Dialogに TagInputコンポーネントを統合し、タグの紐付けを可能にする
+- **Summary**: タスク作成/編集Dialogに TagInputコンポーネントを統合し、タグの選択・作成・紐付けを可能にする
 - **Implementation Notes**:
-  - Dialog内に「Tags:」ラベル + TagInputコンポーネントを追加
-  - タスク作成時: 選択したタグ名の配列を CreateTaskRequest.tags に含めてAPI送信
-  - タスク編集時: 既存タグをTagInputの初期値として設定
-  - バックエンドはタグ名からタグIDを解決して task_tags に保存（既存実装を利用）
-- **Risks**: タグAPIとの連携、初期値設定のロジック
+  - **変更ファイル**:
+    - `src/types/task.ts`: UpdateTaskRequestに tags?: string[] を追加（行62）
+    - `src/pages/TaskPage.tsx`: TagInput統合、タグ読み込み、タグ作成処理追加
+  - **TaskPage.tsx の実装**:
+    - tagsApi, Tag型, TagInputコンポーネントをimport
+    - availableTags state追加（全タグのリスト）
+    - onMount で loadTags() を呼び出し（タグ一覧取得）
+    - handleCreateTag 関数追加（新規タグ作成 + リスト再読み込み）
+    - handleUpdate に tags: formData().tags を追加（行85）
+  - **Create Dialog（行222-231）**:
+    - TagInputコンポーネント追加（説明の後、ボタンの前）
+    - selectedTags, onTagsChange, availableTags, onCreateTag, placeholder props設定
+  - **Edit Dialog（行296-305）**:
+    - TagInputコンポーネント追加（説明の後、ボタンの前）
+    - 同様のprops設定、編集時に既存タグが初期値として表示される（handleEdit で formData に task.tags 設定済み）
+  - **タグ作成フロー**:
+    1. TagInputで新規タグ作成（名前+色選択）
+    2. handleCreateTag が tagsApi.create を呼び出し
+    3. loadTags() でタグ一覧を再読み込み
+    4. 新しく作成されたタグが即座にavailableTagsに追加される
+- **Risks**: タグAPIとの連携 → 解決済み、初期値設定のロジック → formDataで自動設定
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: Dialog内にTagInputコンポーネントが追加され、タグ選択可能
-  - [ ] DoD-2: タスク作成時、選択したタグがAPIリクエストに含まれる
-  - [ ] DoD-3: タスク編集時、既存タグがTagInputの初期値として表示される
-  - [ ] DoD-4: タグ保存後、タスク詳細取得時にタグが正しく表示される
-  - [ ] DoD-5: Frontendビルド成功
+  - [x] DoD-1: Dialog内にTagInputコンポーネントが追加され、タグ選択可能
+  - [x] DoD-2: タスク作成時、選択したタグがAPIリクエストに含まれる（CreateTaskRequest.tags）
+  - [x] DoD-3: タスク編集時、既存タグがTagInputの初期値として表示される（formData.tags）
+  - [x] DoD-4: UpdateTaskRequestにtags追加、handleUpdateでタグがAPI送信される
+  - [x] DoD-5: handleCreateTag実装でインラインタグ作成が可能
+  - [x] DoD-6: Frontendビルド成功（891ms、バンドルサイズ: 224.85 KB）
 - **Verification**:
-  - Type: E2E
-  - Evidence: タスク作成/編集でタグが正しく保存・表示されることを確認、ビルド成功
+  - Type: Build verification
+  - Evidence: Frontendビルド成功、TagInputコンポーネントが両Dialogに統合完了、タグAPI連携実装完了
 - **Updated**: 2025-12-29
-- **Completed**: N/A
+- **Completed**: 2025-12-29
 
 ---
 

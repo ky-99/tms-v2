@@ -2,9 +2,11 @@ import { Popover as KobaltePopover } from "@kobalte/core/popover";
 import { JSX, createSignal, onCleanup, Show, For } from "solid-js";
 import { cn } from "../lib/utils";
 import type { Task } from "../types/task";
+import type { Tag } from "../types/tag";
 
 interface TaskHoverPopupProps {
   task: Task;
+  availableTags: Tag[];
   children: JSX.Element;
 }
 
@@ -41,6 +43,10 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
     }
   });
 
+  // Get tag color from available tags
+  const getTagColor = (tagName: string): string | undefined => {
+    return props.availableTags.find((t) => t.name === tagName)?.color;
+  };
 
   return (
     <KobaltePopover open={isOpen()} onOpenChange={setIsOpen} placement="top">
@@ -74,11 +80,20 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
               <p class="text-xs font-medium text-muted-foreground mb-1">Tags:</p>
               <div class="flex flex-wrap gap-1">
                 <For each={props.task.tags}>
-                  {(tag) => (
-                    <span class="px-2 py-1 text-xs rounded-md bg-primary/10 text-primary">
-                      {tag}
-                    </span>
-                  )}
+                  {(tagName) => {
+                    const color = getTagColor(tagName);
+                    return (
+                      <span
+                        class="px-2 py-1 text-xs rounded-md font-medium"
+                        style={{
+                          "background-color": color ? `${color}20` : "#e5e7eb",
+                          color: color || "#374151",
+                        }}
+                      >
+                        {tagName}
+                      </span>
+                    );
+                  }}
                 </For>
               </div>
             </div>

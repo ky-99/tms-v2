@@ -5,7 +5,7 @@ use tauri::State;
 use crate::error::ServiceError;
 use crate::models::task::{
     CreateTaskRequest, ListTasksPaginatedParams, PaginatedTaskResponse, SearchTasksParams,
-    TaskHierarchyResponse, TaskResponse, UpdateTaskRequest,
+    TaskHierarchyResponse, TaskResponse, UpdateTaskRequestInput,
 };
 use crate::service::TaskService;
 
@@ -68,7 +68,7 @@ pub fn get_task(pool: State<DbPool>, task_id: String) -> Result<TaskResponse, St
 pub fn update_task(
     pool: State<DbPool>,
     task_id: String,
-    req: UpdateTaskRequest,
+    req: UpdateTaskRequestInput,
 ) -> Result<TaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
     TaskService::update_task(&mut conn, &task_id, req).map_err(format_error)

@@ -59,5 +59,6 @@ export interface UpdateTaskRequest {
   title?: string;
   description?: string;
   status?: TaskStatus;
+  tags?: string[];
   parentId?: string;
 }

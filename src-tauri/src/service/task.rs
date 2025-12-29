@@ -6,6 +6,7 @@ use crate::error::ServiceError;
 use crate::models::task::{
     CreateTaskRequest, ListTasksPaginatedParams, NewTask, PaginatedTaskResponse,
     SearchTasksParams, Task, TaskHierarchyResponse, TaskResponse, TaskStatus, UpdateTaskRequest,
+    UpdateTaskRequestInput,
 };
 use crate::schema::{task_tags, tags, tasks};
 
@@ -456,7 +457,7 @@ impl TaskService {
     pub fn update_task(
         conn: &mut SqliteConnection,
         task_id: &str,
-        mut req: UpdateTaskRequest,
+        req_input: UpdateTaskRequestInput,
     ) -> Result<TaskResponse, ServiceError> {
         // タスクが存在するか確認
         let existing_task = tasks::table
@@ -471,7 +472,7 @@ impl TaskService {
         }
 
         // バリデーション: タイトルが空でないこと
-        if let Some(ref title) = req.title {
+        if let Some(ref title) = req_input.title {
             if title.trim().is_empty() {
                 return Err(ServiceError::InvalidInput(
                     "Title cannot be empty".to_string(),
@@ -480,7 +481,7 @@ impl TaskService {
         }
 
         // バリデーション: 親タスクが存在するか確認（指定されている場合）
-        if let Some(ref parent_id) = req.parent_id {
+        if let Some(ref parent_id) = req_input.parent_id {
             let parent_exists = tasks::table
                 .find(parent_id)
                 .select(tasks::id)
@@ -500,6 +501,15 @@ impl TaskService {
             }
         }
 
+        // UpdateTaskRequestInputからUpdateTaskRequestへ変換
+        let mut req = UpdateTaskRequest {
+            title: req_input.title,
+            description: req_input.description,
+            status: req_input.status,
+            parent_id: req_input.parent_id,
+            updated_at: None,
+        };
+
         // updated_atタイムスタンプを設定
         req = req.with_timestamp();
 
@@ -507,6 +517,37 @@ impl TaskService {
         diesel::update(tasks::table.find(task_id))
             .set(&req)
             .execute(conn)?;
+
+        // タグの更新（tags配列が指定されている場合）
+        if let Some(ref new_tags) = req_input.tags {
+            // 既存のタグ関連付けをすべて削除
+            diesel::delete(task_tags::table.filter(task_tags::task_id.eq(task_id)))
+                .execute(conn)?;
+
+            // 新しいタグを関連付け
+            if !new_tags.is_empty() {
+                for tag_name in new_tags {
+                    // タグIDを取得
+                    let tag_id_result = tags::table
+                        .filter(tags::name.eq(tag_name))
+                        .select(tags::id)
+                        .first::<String>(conn)
+                        .optional()?;
+
+                    if let Some(tag_id) = tag_id_result {
+                        // task_tags挿入
+                        diesel::insert_into(task_tags::table)
+                            .values((
+                                task_tags::task_id.eq(task_id),
+                                task_tags::tag_id.eq(&tag_id),
+                            ))
+                            .execute(conn)?;
+                    } else {
+                        return Err(ServiceError::TagNotFound(tag_name.clone()));
+                    }
+                }
+            }
+        }
 
         // 【新規追加】親ステータス更新（BR-013: 子タスク変更時の親ステータス自動同期）
         Self::update_parent_status_if_needed(conn, task_id)?;

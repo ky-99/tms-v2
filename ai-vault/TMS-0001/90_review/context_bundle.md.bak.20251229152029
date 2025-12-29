@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Implementation
-> Updated: 2025-12-29 15:20 (JST)
+> Updated: 2025-12-29 14:19 (JST)
 > Owner: <name>
 
 ---
@@ -219,23 +219,23 @@ N/A
 ### 8.1 Current Phase Tasks (from tasks.md)
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
+| TASK-NEW-007 | タスク詳細ポップアップ実装 | UnDone | P2 | REQ-0015 |
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
+| TASK-NEW-036 | TagInput コンポーネント実装 | UnDone | P1 | REQ-0029 |
 | TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | UnDone | P1 | REQ-0029 |
 | TASK-NEW-038 | タグフィルター展開式UI実装 | UnDone | P1 | REQ-0030 |
-| TASK-NEW-039 | タグカラーピッカー実装 | UnDone | P2 | REQ-0031 |
-| TASK-NEW-040 | ドキュメント更新 | UnDone | P1 | REQ-0029〜REQ-0031, REQ-0015 |
 
 ### 8.2 Task Progress
 - Total Tasks: 53
-- Done: 48
+- Done: 45
 - Processing: 0
-- UnDone: 5
-- Progress: 91% (48/53)
+- UnDone: 8
+- Progress: 85% (45/53)
 
 ### 8.3 Next Actions
-1. Start TASK-NEW-009 (カラーパレット適用)
-2. Start TASK-NEW-037 (タスク編集Dialogにタグ選択UI追加)
-3. Start TASK-NEW-038 (タグフィルター展開式UI実装)
+1. Start TASK-NEW-007 (タスク詳細ポップアップ実装)
+2. Start TASK-NEW-009 (カラーパレット適用)
+3. Start TASK-NEW-036 (TagInput コンポーネント実装)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -285,7 +285,7 @@ N/A
 - REQ Coverage: 10 REQs
 - API Coverage: 19/19
 - Event Coverage: N/A
-- Task Completion: 91% (48/53)
+- Task Completion: 85% (45/53)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**

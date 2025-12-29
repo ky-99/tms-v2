@@ -155,6 +155,7 @@ export function TagInput(props: TagInputProps) {
                 >
                   <span>{tagName}</span>
                   <button
+                    type="button"
                     onClick={() => removeTag(tagName)}
                     class="hover:opacity-70 transition-opacity"
                     aria-label={`Remove ${tagName}`}
@@ -187,6 +188,7 @@ export function TagInput(props: TagInputProps) {
               <For each={filteredSuggestions()}>
                 {(tag) => (
                   <button
+                    type="button"
                     onClick={() => addTag(tag.name)}
                     class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-secondary transition-colors text-left"
                   >
@@ -205,6 +207,7 @@ export function TagInput(props: TagInputProps) {
               {/* Create new tag option */}
               <Show when={shouldShowCreateOption()}>
                 <button
+                  type="button"
                   onClick={() => setIsCreateMode(true)}
                   class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-secondary transition-colors text-left border-t border-border"
                 >
@@ -227,6 +230,7 @@ export function TagInput(props: TagInputProps) {
               <For each={PRESET_TAG_COLORS}>
                 {(colorOption) => (
                   <button
+                    type="button"
                     onClick={() => setSelectedColor(colorOption.value)}
                     class={cn(
                       "h-8 w-8 rounded-md border-2 transition-all",
@@ -245,6 +249,7 @@ export function TagInput(props: TagInputProps) {
 
           <div class="flex gap-2">
             <Button
+              type="button"
               onClick={handleCreateTag}
               disabled={isCreating()}
               class="flex-1"
@@ -252,6 +257,7 @@ export function TagInput(props: TagInputProps) {
               {isCreating() ? "Creating..." : "Create"}
             </Button>
             <Button
+              type="button"
               variant="outline"
               onClick={() => {
                 setIsCreateMode(false);

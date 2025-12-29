@@ -153,21 +153,32 @@ pub struct CreateTaskRequest {
     pub parent_id: Option<String>,
 }
 
-/// タスク更新リクエスト（API受信 + DB UPDATE用）
-#[derive(Debug, Default, Deserialize, AsChangeset)]
-#[diesel(table_name = tasks)]
+/// タスク更新リクエスト（API受信用）
+#[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateTaskRequest {
+pub struct UpdateTaskRequestInput {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[diesel(column_name = status)]
     pub status: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
-    #[serde(skip)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    pub tags: Option<Vec<String>>,
+}
+
+/// タスク更新リクエスト（DB UPDATE用）
+#[derive(Debug, Default, AsChangeset)]
+#[diesel(table_name = tasks)]
+pub struct UpdateTaskRequest {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    #[diesel(column_name = status)]
+    pub status: Option<String>,
+    pub parent_id: Option<String>,
     pub updated_at: Option<String>,
 }
 

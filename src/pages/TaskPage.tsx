@@ -2,16 +2,19 @@ import { createSignal, onMount } from "solid-js";
 import { ask, message } from "@tauri-apps/plugin-dialog";
 import { taskStore, taskActions } from "../stores/taskStore";
 import { queueStore, queueActions } from "../stores/queueStore";
+import { tagsApi } from "../api/tags";
 import type {
   CreateTaskRequest,
   UpdateTaskRequest,
   TaskHierarchy,
 } from "../types/task";
+import type { Tag } from "../types/tag";
 import { TaskPool } from "../components/TaskPool";
 import { QueuePanel } from "../components/QueuePanel";
 import { Dialog } from "../components/Dialog";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
+import { TagInput } from "../components/TagInput";
 import { For } from "solid-js";
 
 export function TaskPage() {
@@ -22,11 +25,33 @@ export function TaskPage() {
     description: "",
     tags: [],
   });
+  const [availableTags, setAvailableTags] = createSignal<Tag[]>([]);
 
-  onMount(() => {
+  onMount(async () => {
     taskActions.loadHierarchy();
     queueActions.loadQueue();
+    await loadTags();
   });
+
+  const loadTags = async () => {
+    try {
+      const tags = await tagsApi.list();
+      setAvailableTags(tags);
+    } catch (error) {
+      console.error("Failed to load tags:", error);
+    }
+  };
+
+  const handleCreateTag = async (name: string, color: string): Promise<Tag> => {
+    try {
+      const newTag = await tagsApi.create({ name, color });
+      await loadTags(); // Reload tags to update the list
+      return newTag;
+    } catch (error) {
+      console.error("Failed to create tag:", error);
+      throw error;
+    }
+  };
 
   const queueTaskIds = () => {
     return new Set(queueStore.queue.map((entry) => entry.taskId));
@@ -57,6 +82,7 @@ export function TaskPage() {
       const updateData: UpdateTaskRequest = {
         title: formData().title,
         description: formData().description,
+        tags: formData().tags,
         parentId: formData().parentId,
       };
       await taskActions.updateTask(task.id, updateData);
@@ -141,6 +167,7 @@ export function TaskPage() {
         onDelete={handleDelete}
         onCreateTask={() => setIsCreateDialogOpen(true)}
         queueTaskIds={queueTaskIds()}
+        availableTags={availableTags()}
       />
 
       {/* Queue Panel */}
@@ -191,6 +218,16 @@ export function TaskPage() {
                   description: e.currentTarget.value,
                 })
               }
+            />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium">タグ</label>
+            <TagInput
+              selectedTags={formData().tags || []}
+              onTagsChange={(tags) => setFormData({ ...formData(), tags })}
+              availableTags={availableTags()}
+              onCreateTag={handleCreateTag}
+              placeholder="Add tags..."
             />
           </div>
           <div class="flex gap-2 justify-end">
@@ -255,6 +292,16 @@ export function TaskPage() {
                   description: e.currentTarget.value,
                 })
               }
+            />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium">タグ</label>
+            <TagInput
+              selectedTags={formData().tags || []}
+              onTagsChange={(tags) => setFormData({ ...formData(), tags })}
+              availableTags={availableTags()}
+              onCreateTag={handleCreateTag}
+              placeholder="Add tags..."
             />
           </div>
           <div class="flex gap-2 justify-end">

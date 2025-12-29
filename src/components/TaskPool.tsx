@@ -4,6 +4,7 @@ import { Input } from "./Input";
 import { TaskHoverPopup } from "./TaskHoverPopup";
 import { cn } from "../lib/utils";
 import type { TaskHierarchy } from "../types/task";
+import type { Tag } from "../types/tag";
 
 interface TaskPoolProps {
   tasks: TaskHierarchy[];
@@ -12,6 +13,7 @@ interface TaskPoolProps {
   onDelete: (task: TaskHierarchy) => void;
   onCreateTask: () => void;
   queueTaskIds: Set<string>;
+  availableTags: Tag[];
 }
 
 // Icon components
@@ -288,7 +290,7 @@ export function TaskPool(props: TaskPoolProps) {
                     <ProgressCircle progress={calculateProgress(task)} />
                   </Show>
 
-                  <TaskHoverPopup task={task}>
+                  <TaskHoverPopup task={task} availableTags={props.availableTags}>
                     <span
                       class={cn(
                         "text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors",
@@ -357,7 +359,7 @@ export function TaskPool(props: TaskPoolProps) {
                           )}
                         >
                           {getStatusIcon(child.status)}
-                          <TaskHoverPopup task={child}>
+                          <TaskHoverPopup task={child} availableTags={props.availableTags}>
                             <span
                               class={cn(
                                 "text-sm text-foreground cursor-pointer hover:text-primary transition-colors",
