@@ -242,6 +242,44 @@ paths:
                 items:
                   $ref: "#/components/schemas/Task"
 
+  /tasks/search-ids:
+    get:
+      tags: [Tasks]
+      operationId: searchTaskIds
+      summary: Search and filter tasks (returns IDs only)
+      description: |
+        Lightweight version of search_tasks that returns only task IDs.
+        Optimized for tag filtering where full task objects are not needed.
+        Defaults to searching draft, active, and completed tasks (matching get_hierarchy logic).
+        This ensures completed children of active parents are included in search results.
+      x-requirements: [REQ-0039]
+      parameters:
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            description: Filter by tag names (tasks matching any of the provided tags)
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [draft, active, completed, archived]
+          description: "Filter by task status (default: draft,active,completed)"
+      responses:
+        "200":
+          description: Task IDs matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                description: Array of task IDs
+
   /tasks/paginated:
     get:
       tags: [Tasks]

@@ -117,4 +117,21 @@ export const tasksApi = {
       tags: tags ?? null,
     });
   },
+
+  /**
+   * タスクIDのみを検索（軽量版）
+   * タグフィルター用に最適化
+   * @param tags - タグフィルタ（OR条件）
+   * @param status - ステータスフィルタ（デフォルト: draft + active + completed）
+   * @returns マッチしたタスクIDリスト
+   */
+  async searchIds(
+    tags?: string[],
+    status?: string
+  ): Promise<string[]> {
+    return await invokeWithTimeout<string[]>("search_task_ids", {
+      tags: tags ?? null,
+      status: status ?? null,
+    });
+  },
 };

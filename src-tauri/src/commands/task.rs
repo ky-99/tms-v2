@@ -164,3 +164,14 @@ pub fn search_tasks(
     let params = SearchTasksParams { q, status, tags };
     TaskService::search_tasks(&mut conn, params).map_err(format_error)
 }
+
+/// タスクIDのみを検索（軽量版）
+#[tauri::command]
+pub fn search_task_ids(
+    pool: State<DbPool>,
+    tags: Option<Vec<String>>,
+    status: Option<String>,
+) -> Result<Vec<String>, String> {
+    let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
+    TaskService::search_task_ids(&mut conn, tags, status).map_err(format_error)
+}

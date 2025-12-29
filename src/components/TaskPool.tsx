@@ -165,7 +165,7 @@ export function TaskPool(props: TaskPoolProps) {
     setActiveFilters(newFilters);
   };
 
-  // タグフィルターが選択されたら search_tasks API を呼ぶ
+  // タグフィルターが選択されたら search_task_ids API を呼ぶ（軽量版）
   createEffect(() => {
     const tags = selectedTags();
     if (tags.length === 0) {
@@ -173,10 +173,9 @@ export function TaskPool(props: TaskPoolProps) {
       return;
     }
 
-    // search_tasks APIを呼んでタグでフィルタリング
-    tasksApi.search(undefined, undefined, tags).then((results) => {
-      const taskIds = new Set(results.map((task) => task.id));
-      setTagFilteredTaskIds(taskIds);
+    // search_task_ids APIを呼んでタグでフィルタリング
+    tasksApi.searchIds(tags).then((taskIds) => {
+      setTagFilteredTaskIds(new Set(taskIds));
     }).catch((error) => {
       console.error("Tag filter search failed:", error);
       setTagFilteredTaskIds(null);

@@ -401,6 +401,82 @@ impl TaskService {
             .collect()
     }
 
+    /// タスクIDのみを検索（軽量版）
+    ///
+    /// # Arguments
+    /// * `conn` - データベース接続
+    /// * `tag_names` - タグ名リスト（OR条件）
+    /// * `status_filter` - ステータスフィルタ（オプション、デフォルト: draft + active + completed）
+    ///
+    /// # Returns
+    /// * `Ok(Vec<String>)` - タスクIDのリスト
+    /// * `Err(ServiceError)` - データベースエラー
+    ///
+    /// # Usage
+    /// - タグフィルター時のパフォーマンス最適化
+    /// - フルオブジェクトが不要な場合の軽量検索
+    /// - get_hierarchyと同様の検索条件（親: draft+active, 子: draft+active+completed）
+    pub fn search_task_ids(
+        conn: &mut SqliteConnection,
+        tag_names: Option<Vec<String>>,
+        status_filter: Option<String>,
+    ) -> Result<Vec<String>, ServiceError> {
+        let mut query = tasks::table.into_boxed();
+
+        // ステータスフィルタ
+        if let Some(status) = status_filter {
+            query = query.filter(tasks::status.eq(status));
+        } else {
+            // デフォルト: get_hierarchyと同じロジック
+            // - 親タスク（parent_id IS NULL）: draft OR active
+            // - 子タスク（parent_id IS NOT NULL）: draft OR active OR completed
+            query = query.filter(
+                // 親タスク（draft OR active）
+                (tasks::parent_id.is_null()
+                    .and(tasks::status.eq("draft").or(tasks::status.eq("active"))))
+                    .or(
+                        // 子タスク（draft OR active OR completed）
+                        tasks::parent_id.is_not_null().and(
+                            tasks::status
+                                .eq("draft")
+                                .or(tasks::status.eq("active"))
+                                .or(tasks::status.eq("completed")),
+                        ),
+                    ),
+            );
+        }
+
+        // タグフィルタ（OR条件）
+        if let Some(tags) = tag_names {
+            if !tags.is_empty() {
+                // タグ名からタグIDを取得
+                let tag_ids: Vec<String> = tags::table
+                    .filter(tags::name.eq_any(&tags))
+                    .select(tags::id)
+                    .load::<String>(conn)?;
+
+                if !tag_ids.is_empty() {
+                    // task_tagsでフィルタ
+                    query = query.filter(
+                        tasks::id.eq_any(
+                            task_tags::table
+                                .filter(task_tags::tag_id.eq_any(tag_ids))
+                                .select(task_tags::task_id),
+                        ),
+                    );
+                } else {
+                    // タグが見つからない場合は空の結果を返す
+                    return Ok(Vec::new());
+                }
+            }
+        }
+
+        // タスクIDのみを取得
+        let task_ids = query.select(tasks::id).load::<String>(conn)?;
+
+        Ok(task_ids)
+    }
+
     /// タスクをIDで取得
     ///
     /// # Arguments
@@ -1124,12 +1200,12 @@ mod tests {
         let task = TaskService::create_task(&mut conn, task_req).unwrap();
 
         // 通常のタスクの親を子タスクに変更しようとする → エラー
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: None,
             parent_id: Some(child.id.clone()),
-            updated_at: None,
+            tags: None,
         };
         let result = TaskService::update_task(&mut conn, &task.id, update_req);
         assert!(result.is_err());
@@ -1380,12 +1456,12 @@ mod tests {
         let created = TaskService::create_task(&mut conn, req).unwrap();
 
         // タスク更新
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: Some("Updated Title".to_string()),
             description: Some("New description".to_string()),
             status: None,
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         let result = TaskService::update_task(&mut conn, &created.id, update_req);
         assert!(result.is_ok());
@@ -1399,12 +1475,12 @@ mod tests {
     fn test_update_task_not_found() {
         let mut conn = setup_test_db();
 
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: Some("New Title".to_string()),
             description: None,
             status: None,
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         let result = TaskService::update_task(&mut conn, "non-existent-id", update_req);
         assert!(result.is_err());
@@ -1430,12 +1506,12 @@ mod tests {
         let created = TaskService::create_task(&mut conn, req).unwrap();
 
         // 空のタイトルで更新を試みる
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: Some("   ".to_string()),
             description: None,
             status: None,
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         let result = TaskService::update_task(&mut conn, &created.id, update_req);
         assert!(result.is_err());
@@ -1530,12 +1606,12 @@ mod tests {
         let created = TaskService::create_task(&mut conn, req).unwrap();
 
         // 自分自身を親に設定しようとする
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: None,
             parent_id: Some(created.id.clone()),
-            updated_at: None,
+            tags: None,
         };
         let result = TaskService::update_task(&mut conn, &created.id, update_req);
         assert!(result.is_err());
@@ -1571,12 +1647,12 @@ mod tests {
 
         // タスクAの親をタスクBに設定しようとする（循環参照: A -> B -> A）
         // 注: BR-016により2レベル制限があるため、2階層での循環参照テスト
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: None,
             parent_id: Some(task_b.id.clone()),
-            updated_at: None,
+            tags: None,
         };
         let result = TaskService::update_task(&mut conn, &task_a.id, update_req);
         assert!(result.is_err());
@@ -1654,12 +1730,12 @@ mod tests {
             parent_id: None,
         };
         let task2 = TaskService::create_task(&mut conn, req2).unwrap();
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("active".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &task2.id, update_req).unwrap();
 
@@ -1833,12 +1909,12 @@ mod tests {
             parent_id: None,
         };
         let task2 = TaskService::create_task(&mut conn, req2).unwrap();
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("archived".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &task2.id, update_req).unwrap();
 
@@ -1874,12 +1950,12 @@ mod tests {
             parent_id: Some(parent.id.clone()),
         };
         let child1 = TaskService::create_task(&mut conn, child1_req).unwrap();
-        let update_req1 = UpdateTaskRequest {
+        let update_req1 = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("active".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &child1.id, update_req1).unwrap();
 
@@ -1891,12 +1967,12 @@ mod tests {
             parent_id: Some(parent.id.clone()),
         };
         let child2 = TaskService::create_task(&mut conn, child2_req).unwrap();
-        let update_req2 = UpdateTaskRequest {
+        let update_req2 = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("completed".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &child2.id, update_req2).unwrap();
 
@@ -1932,12 +2008,12 @@ mod tests {
             parent_id: None,
         };
         let parent = TaskService::create_task(&mut conn, parent_req).unwrap();
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("completed".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &parent.id, update_req).unwrap();
 
@@ -1969,12 +2045,12 @@ mod tests {
             parent_id: None,
         };
         let parent = TaskService::create_task(&mut conn, parent_req).unwrap();
-        let update_parent_req = UpdateTaskRequest {
+        let update_parent_req = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("active".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &parent.id, update_parent_req).unwrap();
 
@@ -1995,12 +2071,12 @@ mod tests {
             parent_id: Some(parent.id.clone()),
         };
         let child2 = TaskService::create_task(&mut conn, child2_req).unwrap();
-        let update_req2 = UpdateTaskRequest {
+        let update_req2 = UpdateTaskRequestInput {
             title: None,
             description: None,
             status: Some("archived".to_string()),
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         TaskService::update_task(&mut conn, &child2.id, update_req2).unwrap();
 
@@ -2037,12 +2113,12 @@ mod tests {
             .unwrap();
 
         // Activeタスクの編集を試みる
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: Some("Updated Title".to_string()),
             description: None,
             status: None,
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
 
         let result = TaskService::update_task(&mut conn, &task.id, update_req);
@@ -2094,12 +2170,12 @@ mod tests {
         assert_eq!(task.status, TaskStatus::Draft);
 
         // Draftタスクの編集は成功する
-        let update_req = UpdateTaskRequest {
+        let update_req = UpdateTaskRequestInput {
             title: Some("Updated Draft Task".to_string()),
             description: None,
             status: None,
             parent_id: None,
-            updated_at: None,
+            tags: None,
         };
         let updated_task = TaskService::update_task(&mut conn, &task.id, update_req).unwrap();
         assert_eq!(updated_task.title, "Updated Draft Task");

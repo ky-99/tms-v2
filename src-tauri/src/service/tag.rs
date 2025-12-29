@@ -100,17 +100,14 @@ impl TagService {
 
     /// タグ削除
     ///
-    /// # Validation
-    /// - 使用中のタグは削除不可（usage_count > 0）
+    /// # Note
+    /// - FOREIGN KEY CASCADE により、関連する task_tags レコードも自動削除される
+    /// - 使用中のタグでも削除可能（DBレベルで関連付けが削除される）
     pub fn delete_tag(conn: &mut SqliteConnection, tag_id: &str) -> Result<(), ServiceError> {
         // タグが存在するか確認
-        let tag = Self::get_tag(conn, tag_id)?;
+        let _tag = Self::get_tag(conn, tag_id)?;
 
-        // 使用中かチェック
-        if tag.usage_count > 0 {
-            return Err(ServiceError::TagInUse(tag_id.to_string()));
-        }
-
+        // タグを削除（CASCADE により task_tags も自動削除）
         diesel::delete(tags::table.find(tag_id)).execute(conn)?;
 
         Ok(())
@@ -235,6 +232,69 @@ mod tests {
         assert!(result.is_err());
     }
 
-    // TODO: test_delete_tag_in_use のテストは task-tag 関連付けが必要なため、
-    // TaskService実装完了後に追加
+    #[test]
+    fn test_delete_tag_with_cascade() {
+        use crate::models::task::{CreateTaskRequest, NewTask};
+        use crate::schema::{tasks, task_tags};
+        use diesel::prelude::*;
+
+        let mut conn = setup_test_db();
+
+        // タグを作成
+        let tag_req = CreateTagRequest {
+            name: "テストタグ".to_string(),
+            color: Some("#FF0000".to_string()),
+        };
+        let tag = TagService::create_tag(&mut conn, tag_req).unwrap();
+
+        // タスクを作成
+        let task_req = CreateTaskRequest {
+            title: "テストタスク".to_string(),
+            description: None,
+            parent_id: None,
+            tags: vec![],
+        };
+        let new_task = NewTask::from_request(task_req);
+        diesel::insert_into(tasks::table)
+            .values(&new_task)
+            .execute(&mut conn)
+            .unwrap();
+
+        // タスクにタグを関連付け
+        diesel::insert_into(task_tags::table)
+            .values((
+                task_tags::task_id.eq(&new_task.id),
+                task_tags::tag_id.eq(&tag.id),
+            ))
+            .execute(&mut conn)
+            .unwrap();
+
+        // task_tags にレコードが存在することを確認
+        let count_before: i64 = task_tags::table
+            .filter(task_tags::tag_id.eq(&tag.id))
+            .count()
+            .get_result(&mut conn)
+            .unwrap();
+        assert_eq!(count_before, 1, "タグ削除前に task_tags レコードが存在するはず");
+
+        // タグを削除
+        let result = TagService::delete_tag(&mut conn, &tag.id);
+        assert!(result.is_ok(), "タグ削除は成功するはず");
+
+        // task_tags のレコードが CASCADE 削除されているか確認
+        let count_after: i64 = task_tags::table
+            .filter(task_tags::tag_id.eq(&tag.id))
+            .count()
+            .get_result(&mut conn)
+            .unwrap();
+
+        if count_after == 0 {
+            println!("✅ FOREIGN KEY CASCADE が有効: task_tags レコードが自動削除されました");
+        } else {
+            println!("❌ FOREIGN KEY CASCADE が無効: task_tags レコードが残っています");
+            println!("   削除前: {}, 削除後: {}", count_before, count_after);
+        }
+
+        assert_eq!(count_after, 0, "FOREIGN KEY CASCADE により task_tags レコードも削除されるはず");
+    }
 }

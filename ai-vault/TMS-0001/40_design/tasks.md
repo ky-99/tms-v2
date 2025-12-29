@@ -105,18 +105,20 @@ References:
 | TASK-NEW-048 | ConfirmDialog統合とTauriプラグイン削除 | Done | P1 | Developer | TASK-NEW-047 | REQ-0037 |
 | TASK-NEW-049 | アーカイブボタン表示変更 | Done | P2 | Developer | - | REQ-0046 |
 | TASK-NEW-050 | キュー一括操作機能実装 | Done | P1 | Developer | - | REQ-0038 |
+| TASK-NEW-051 | search_task_ids API実装 | Done | P1 | Developer | - | REQ-0039 |
+| TASK-NEW-052 | タグ管理画面実装 | Done | P1 | Developer | - | REQ-0040 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 62
-- Done: 60
+- Total Tasks: 64
+- Done: 62
 - Processing: 0
 - UnDone: 1
 - Hold: 1
-- Progress: 96.8% (60/62)
+- Progress: 96.9% (62/64)
 
 ---
 
@@ -2198,6 +2200,87 @@ Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
+### TASK-NEW-052: タグ管理画面実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TagManagementPage, Header, App, tagsApi
+- **Maps to**
+  - REQ: REQ-0040
+  - HTTP operationId: N/A (既存API使用)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タグの作成、編集、削除を行うタグ管理画面（/tags）を実装し、使用中タグ削除時には警告を表示する
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `pages/TagManagementPage.tsx`: 新規作成
+      - タグ一覧表示（テーブル形式、タグ名・色・使用数表示）
+      - タグ作成ダイアログ（名前・色選択、8色プリセット）
+      - タグ編集ダイアログ（名前・色変更）
+      - タグ削除確認ダイアログ（使用中タグの場合は警告表示）
+      - 既存API使用（list_tags, create_tag, update_tag, delete_tag）
+    - `components/Header.tsx`: Tags タブ追加
+      - TagIcon コンポーネント追加
+      - /tags へのナビゲーションリンク追加
+    - `App.tsx`: /tags ルート追加
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TagManagementPage コンポーネント実装完了
+  - [x] DoD-2: タグ一覧表示（テーブルUI）実装完了
+  - [x] DoD-3: タグ作成機能実装完了
+  - [x] DoD-4: タグ編集機能実装完了
+  - [x] DoD-5: タグ削除機能（使用中警告）実装完了
+  - [x] DoD-6: Header に Tags タブ追加完了
+  - [x] DoD-7: /tags ルート登録完了
+  - [x] DoD-8: Frontend buildエラーなし
+- **Verification**:
+  - Type: Build
+  - Evidence: Backend build成功（0.33s）、Frontend build成功（1.10s）
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-051: search_task_ids API実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskService, commands/task, lib.rs, tasksApi, TaskPool
+- **Maps to**
+  - REQ: REQ-0039
+  - HTTP operationId: search_task_ids (新規)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タグフィルター用の軽量API `search_task_ids` を実装し、フルオブジェクトではなくタスクIDのみを返すことでパフォーマンスを向上させる
+- **Implementation Notes**:
+  - **Backend実装**:
+    - `openapi.yaml`: `/tasks/search-ids` エンドポイント追加
+    - `service/task.rs`: `search_task_ids` メソッド実装
+      - 親タスク（parent_id IS NULL）: draft OR active
+      - 子タスク（parent_id IS NOT NULL）: draft OR active OR completed
+      - `get_hierarchy`と同じ検索ロジック（親のcompletedは除外、子のcompletedは含む）
+    - `commands/task.rs`: `search_task_ids` Tauri command追加
+    - `lib.rs`: 新規コマンド登録（Task Management: 10→11コマンド）
+  - **Frontend実装**:
+    - `api/tasks.ts`: `searchIds()` メソッド追加
+    - `components/TaskPool.tsx`: タグフィルター処理更新
+      - `tasksApi.search()` → `tasksApi.searchIds()` に変更
+      - フルオブジェクト取得→ID抽出 の無駄を削減
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: openapi.yamlに`/tasks/search-ids` エンドポイント定義完了
+  - [x] DoD-2: Backend service/commands実装完了
+  - [x] DoD-3: Backend lib.rsにコマンド登録完了
+  - [x] DoD-4: Frontend api/tasks.ts実装完了
+  - [x] DoD-5: TaskPool.tsxでsearchIds使用に更新完了
+  - [x] DoD-6: Backend buildエラーなし
+  - [x] DoD-7: Frontend buildエラーなし
+- **Verification**:
+  - Type: Build
+  - Evidence: Backend build成功（0.24s）、Frontend build成功（1.13s）
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
 ### TASK-NEW-050: キュー一括操作機能実装
 - **Status**: Done
 - **Priority**: P1
@@ -2321,3 +2404,5 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-29 UI/UX Phase 3 completed (TASK-NEW-041〜049): ページローディング削除、タスクタイトル文字数制限、グローバルスクロールバー削除、タイトルバー削除＋角丸ウィンドウ、フォーカスリング調整、ConfirmDialog実装＋統合、アーカイブボタン変更、Task Progress: 96.7% = 59/61
 - 2025-12-29 TASK-NEW-050 completed: キュー一括操作機能実装 (Backend: complete_all_queue API追加、service/models/commands実装、Frontend: QueuePanel「Complete All」「Clear All」ボタン追加、ConfirmDialog統合、queueStore completeAll action追加、Backend build: 0.33s、Frontend build: 1.01s、Task Progress: 96.8% = 60/62)
 - 2025-12-29 TASK-NEW-050 bug fix & UI adjustments: clearQueue()リアルタイム更新対応（loadQueue + loadHierarchy追加）、QueuePanelヘッダー表記変更（「Task Queue (X)」形式）、タイトル縦位置調整、Frontend build: 974ms
+- 2025-12-29 TASK-NEW-051 completed: search_task_ids API軽量化実装 (Backend: TaskService.search_task_ids追加、親/子ステータス条件分岐（親: draft+active、子: draft+active+completed）、get_hierarchy同等ロジック、Frontend: tasksApi.searchIds()追加、TaskPool.tsxタグフィルター更新、Backend build: 0.24s、Frontend build: 1.13s、Task Progress: 96.8% = 61/63)
+- 2025-12-29 TASK-NEW-052 completed: タグ管理画面実装 (Frontend: TagManagementPage新規作成（テーブルUI、CRUD機能、使用中タグ削除警告）、Header.tsx TagIcon+Tagsタブ追加、App.tsx /tagsルート追加、既存API使用（list_tags/create_tag/update_tag/delete_tag）、Backend build: 0.33s、Frontend build: 1.10s、Task Progress: 96.9% = 62/64)

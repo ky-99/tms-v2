@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Contract
-> Updated: 2025-12-29 23:40 (JST)
+> Updated: 2025-12-29 22:30 (JST)
 > Owner: <name>
 
 ---
@@ -200,7 +200,6 @@
 | removeTaskFromQueue | DELETE /queue | REQ-0006 | - |
 | reorderTaskQueue | POST /queue/reorder | REQ-0006, REQ-0028 | - |
 | restoreTask | POST /tasks/{id}/restore | REQ-0022 | - |
-| searchTaskIds | GET /tasks/search-ids | REQ-0039 | - |
 | searchTasks | GET /tasks/search | REQ-0005, REQ-0011, REQ-0012 | - |
 | updateQueuePosition | PUT /queue/position | REQ-0006 | - |
 | updateTag | PUT /tags/{id} | REQ-0005 | - |
@@ -224,11 +223,11 @@ N/A
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
 
 ### 8.2 Task Progress
-- Total Tasks: 65
-- Done: 63
+- Total Tasks: 63
+- Done: 61
 - Processing: 0
 - UnDone: 1
-- Progress: 97% (63/65)
+- Progress: 97% (61/63)
 
 ### 8.3 Next Actions
 1. Start TASK-NEW-009 (カラーパレット適用)
@@ -268,7 +267,7 @@ N/A
 ## 9) Pre-flight Checks (Gate)
 <!-- AUTO:BEGIN preflight_checks -->
 ### 9.1 Coverage Checks
-- [x] All operationIds have x-requirements (21/21)
+- [x] All operationIds have x-requirements (20/20)
 - [x] All messageIds have x-requirements (0/0)
 - [x] Focus REQs defined (10 REQs)
 
@@ -279,9 +278,9 @@ N/A
 
 ### 9.3 Quality Metrics
 - REQ Coverage: 10 REQs
-- API Coverage: 21/21
+- API Coverage: 20/20
 - Event Coverage: N/A
-- Task Completion: 97% (63/65)
+- Task Completion: 97% (61/63)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**

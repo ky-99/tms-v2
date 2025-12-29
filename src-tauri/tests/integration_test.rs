@@ -111,12 +111,12 @@ fn test_update_task_success() {
     let created = TaskService::create_task(&mut conn, req).unwrap();
 
     // タスクを更新
-    let update_req = UpdateTaskRequest {
+    let update_req = UpdateTaskRequestInput {
         title: Some("更新後".to_string()),
         description: Some("新しい説明".to_string()),
         parent_id: None,
         status: None,
-        updated_at: None,
+        tags: None,
     };
     let result = TaskService::update_task(&mut conn, &created.id, update_req);
     assert!(result.is_ok());
@@ -706,12 +706,12 @@ fn test_parent_status_sync_on_child_update() {
     assert_eq!(parent_task.status, TaskStatus::Draft);
 
     // 子タスク1をActiveに変更
-    let update_req = UpdateTaskRequest {
+    let update_req = UpdateTaskRequestInput {
         title: None,
         description: None,
         status: Some("active".to_string()),
         parent_id: None,
-        updated_at: None,
+        tags: None,
     };
     TaskService::update_task(&mut conn, &child1.id, update_req).unwrap();
 
@@ -744,12 +744,12 @@ fn test_parent_status_sync_on_child_delete() {
     let child1 = TaskService::create_task(&mut conn, child1_req).unwrap();
 
     // 子タスク1をActiveに変更
-    let update_req = UpdateTaskRequest {
+    let update_req = UpdateTaskRequestInput {
         title: None,
         description: None,
         status: Some("active".to_string()),
         parent_id: None,
-        updated_at: None,
+        tags: None,
     };
     TaskService::update_task(&mut conn, &child1.id, update_req).unwrap();
 
@@ -1072,12 +1072,12 @@ fn test_update_task_rejects_non_draft() {
     let task = TaskService::create_task(&mut conn, req).unwrap();
 
     // Draft状態のタスクは更新可能
-    let update_req = UpdateTaskRequest {
+    let update_req = UpdateTaskRequestInput {
         title: Some("更新成功".to_string()),
         description: None,
         parent_id: None,
         status: None,
-        updated_at: None,
+        tags: None,
     };
     let result = TaskService::update_task(&mut conn, &task.id, update_req);
     assert!(result.is_ok());
@@ -1089,12 +1089,12 @@ fn test_update_task_rejects_non_draft() {
         .unwrap();
 
     // Active状態のタスクは更新不可（REQ-0016）
-    let update_req2 = UpdateTaskRequest {
+    let update_req2 = UpdateTaskRequestInput {
         title: Some("更新失敗".to_string()),
         description: None,
         parent_id: None,
         status: None,
-        updated_at: None,
+        tags: None,
     };
     let result2 = TaskService::update_task(&mut conn, &task.id, update_req2);
     assert!(result2.is_err());
@@ -1106,12 +1106,12 @@ fn test_update_task_rejects_non_draft() {
         .unwrap();
 
     // Completed状態のタスクも更新不可
-    let update_req3 = UpdateTaskRequest {
+    let update_req3 = UpdateTaskRequestInput {
         title: Some("更新失敗2".to_string()),
         description: None,
         parent_id: None,
         status: None,
-        updated_at: None,
+        tags: None,
     };
     let result3 = TaskService::update_task(&mut conn, &task.id, update_req3);
     assert!(result3.is_err());

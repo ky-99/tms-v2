@@ -63,6 +63,25 @@ function ArchiveIcon() {
   );
 }
 
+function TagIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+      <path d="M7 7h.01" />
+    </svg>
+  );
+}
+
 export function Header() {
   const location = useLocation();
   const pathname = () => location.pathname;
@@ -111,6 +130,21 @@ export function Header() {
             <ArchiveIcon />
             <span class="text-sm font-medium">Archive</span>
             <Show when={pathname() === "/archive"}>
+              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
+            </Show>
+          </div>
+        </A>
+        <A href="/tags" class="group -ml-2">
+          <div
+            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
+              pathname() === "/tags"
+                ? "bg-card text-primary border-t-2 border-t-primary"
+                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
+            }`}
+          >
+            <TagIcon />
+            <span class="text-sm font-medium">Tags</span>
+            <Show when={pathname() === "/tags"}>
               <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
             </Show>
           </div>

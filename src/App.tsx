@@ -3,6 +3,7 @@ import { Header } from "./components/Header";
 import { TaskPage } from "./pages/TaskPage";
 import { CompletedPage } from "./pages/CompletedPage";
 import { ArchivedPage } from "./pages/ArchivedPage";
+import { TagManagementPage } from "./pages/TagManagementPage";
 import type { RouteSectionProps } from "@solidjs/router";
 
 // Root Layout Component - Router context内で動作
@@ -23,6 +24,7 @@ function App() {
       <Route path="/" component={TaskPage} />
       <Route path="/completed" component={CompletedPage} />
       <Route path="/archive" component={ArchivedPage} />
+      <Route path="/tags" component={TagManagementPage} />
     </Router>
   );
 }

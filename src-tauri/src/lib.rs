@@ -6,7 +6,7 @@ pub mod models;
 pub mod schema;
 pub mod service;
 
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::r2d2::{ConnectionManager, Pool, CustomizeConnection};
 use diesel::SqliteConnection;
 use std::path::PathBuf;
 use tauri::Manager;
@@ -14,11 +14,34 @@ use tauri::Manager;
 /// データベース接続プール型
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
 
+/// FOREIGN KEY制約を有効化するカスタマイザ
+///
+/// SQLiteはデフォルトでFOREIGN KEY制約が無効になっているため、
+/// 各接続で明示的に有効化する必要がある。
+/// これにより、CASCADE削除などの参照整合性制約が正しく動作する。
+#[derive(Debug, Clone, Copy)]
+struct ForeignKeyEnabler;
+
+impl CustomizeConnection<SqliteConnection, diesel::r2d2::Error> for ForeignKeyEnabler {
+    fn on_acquire(&self, conn: &mut SqliteConnection) -> Result<(), diesel::r2d2::Error> {
+        use diesel::RunQueryDsl;
+
+        // FOREIGN KEY制約を有効化
+        diesel::sql_query("PRAGMA foreign_keys = ON;")
+            .execute(conn)
+            .map_err(diesel::r2d2::Error::QueryError)?;
+
+        Ok(())
+    }
+}
+
 /// データベース接続プールを初期化
 fn init_db_pool(db_path: PathBuf) -> Result<DbPool, String> {
     let database_url = db_path.to_str().ok_or("Invalid database path")?;
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);
+
     Pool::builder()
+        .connection_customizer(Box::new(ForeignKeyEnabler))
         .build(manager)
         .map_err(|e| format!("Failed to create pool: {}", e))
 }
@@ -51,9 +74,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Utility
             greet,
-            // Task Management (10 commands)
+            // Task Management (11 commands)
             // - CRUD operations for tasks
-            // - Search and filter functionality
+            // - Search and filter functionality (including lightweight ID-only search)
             // - Hierarchical task retrieval
             // - Physical deletion and restore for archived tasks
             // - Pagination support for list operations
@@ -67,6 +90,7 @@ pub fn run() {
             commands::task::list_tasks_paginated,
             commands::task::get_task_hierarchy,
             commands::task::search_tasks,
+            commands::task::search_task_ids,
             // Task Queue Management (7 commands)
             // - Daily task queue operations
             // - Position management and reordering
