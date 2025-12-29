@@ -11,7 +11,7 @@ interface TaskHoverPopupProps {
 /**
  * タスクホバー詳細ポップアップコンポーネント
  *
- * informationアイコン上で1000ms以上ホバーすると詳細ポップアップを表示します。
+ * タイトル上で2000ms以上ホバーすると詳細ポップアップを表示します。
  * - description、tagsを表示（コンパクト版）
  */
 export function TaskHoverPopup(props: TaskHoverPopupProps) {
@@ -19,10 +19,10 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
   let hoverTimer: number | undefined;
 
   const handleMouseEnter = () => {
-    // 1000ms後にポップアップを表示
+    // 2000ms後にポップアップを表示
     hoverTimer = window.setTimeout(() => {
       setIsOpen(true);
-    }, 1000);
+    }, 2000);
   };
 
   const handleMouseLeave = () => {
@@ -43,9 +43,9 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
 
 
   return (
-    <KobaltePopover open={isOpen()} onOpenChange={setIsOpen}>
+    <KobaltePopover open={isOpen()} onOpenChange={setIsOpen} placement="top">
       <KobaltePopover.Trigger
-        class="w-full outline-none focus:outline-none"
+        class="outline-none focus:outline-none"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >

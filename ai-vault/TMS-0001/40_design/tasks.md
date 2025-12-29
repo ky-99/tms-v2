@@ -1760,25 +1760,35 @@ Priority: P0 (must), P1 (should), P2 (could)
   - HTTP operationId: N/A（既存データ使用）
   - Event messageId: N/A
 - **Depends on**: None（タグ表示はTASK-NEW-036完了後に追加）
-- **Summary**: タスクカード上での長時間ホバー（500ms以上）で詳細ポップアップを表示し、description、tags、日時、statusを確認できるようにする
+- **Summary**: タスクタイトルホバー時（2秒間）で詳細ポップアップをタイトルの上または下に表示し、descriptionとtagsを確認できるようにする
 - **Implementation Notes**:
-  - Kobalte Popoverを使用
-  - ホバー開始から500ms後にポップアップ表示（window.setTimeoutでタイマー制御）
-  - マウスカーソル離脱でポップアップ非表示（onMouseLeave + clearTimeout）
-  - ポップアップ内容: タイトル、description（全文、なければ "No description"）、status（カラー付き）、created/updated日時（YYYY-MM-DD HH:mm形式）
-  - Phase 1ではタグなしで実装、TASK-NEW-036完了後にタグ表示を追加予定（TODOコメント追加済み）
-  - TaskPool.tsxで親タスク・子タスクの両方をTaskHoverPopupでラップ
-- **Risks**: ホバータイマーの実装、ポップアップ位置の調整
+  - **最終版実装（2025-12-29更新）**:
+    - Kobalte Popoverを使用（placement="top"で上部表示、自動フリップで下部表示可能）
+    - ホバー開始から2000ms後にポップアップ表示（window.setTimeoutでタイマー制御）
+    - マウスカーソル離脱でポップアップ非表示（onMouseLeave + clearTimeout）
+    - **タイトルのみホバー対応**: TaskPool.tsx でタイトルspan（親タスク: 行291-300、子タスク: 行360-369）のみをTaskHoverPopupでラップ
+    - **ホバー時の色変化**: タイトルに `hover:text-primary transition-colors cursor-pointer` 追加
+    - **ポップアップサイズ**: w-64（コンパクト版）
+    - **ポップアップ内容**: description（全文、なければ "No description"）、tags（Show when条件付き、For each表示）
+    - **青色枠線削除**: outline-none focus:outline-none を Trigger と Content に追加
+    - タイトル、status、created/updated日時は削除（descriptionとtagsのみ表示）
+  - **初回実装（2025-12-29）**:
+    - タスクカード全体をTaskHoverPopupでラップ（後に変更）
+    - 500msホバー遅延（後に2000msに変更）
+    - タイトル、description、status、created/updated日時を表示（後にdescription+tagsのみに変更）
+- **Risks**: ホバータイマーの実装、ポップアップ位置の調整 → 解決済み
 - **Definition of Done (DoD)**:
   - [x] DoD-1: TaskHoverPopupコンポーネント（src/components/TaskHoverPopup.tsx）作成完了
-  - [x] DoD-2: タスクカードに500msホバーでポップアップ表示
-  - [x] DoD-3: ポップアップにタイトル、description、created/updated日時、statusが表示
+  - [x] DoD-2: タイトルに2000msホバーでポップアップ表示（タイトルの上または下）
+  - [x] DoD-3: ポップアップにdescription、tagsが表示（コンパクト版、w-64）
   - [x] DoD-4: マウスカーソル離脱でポップアップ非表示
-  - [ ] DoD-5: （オプショナル）タグ表示追加（TASK-NEW-036完了後）
-  - [x] DoD-6: Frontendビルド成功（842ms）
+  - [x] DoD-5: タグ表示実装完了（Show/For使用）
+  - [x] DoD-6: ホバー時タイトル色変化実装（hover:text-primary）
+  - [x] DoD-7: 青色枠線削除完了
+  - [x] DoD-8: Frontendビルド成功（864ms）
 - **Verification**:
   - Type: Build
-  - Evidence: Frontendビルド成功、TaskHoverPopup.tsx作成完了、TaskPool.tsx統合完了
+  - Evidence: Frontendビルド成功（864ms）、TaskHoverPopup.tsx更新完了、TaskPool.tsx統合完了（タイトルのみラップ、ホバー色変化追加）
 - **Updated**: 2025-12-29
 - **Completed**: 2025-12-29
 
@@ -1918,3 +1928,4 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-29 Added 6 new tasks (TASK-NEW-036 to TASK-NEW-040, TASK-NEW-007 update) for tag system UI integration (REQ-0029 to REQ-0031, REQ-0015 update): TagInput component, tag selection in Dialog, collapsible tag filter, hover popup with tags, color picker (preset 8 colors)
 - 2025-12-29 TASK-NEW-007 completed: タスクホバー詳細ポップアップ実装 (TaskHoverPopup.tsx作成、Kobalte Popover使用、500msホバー遅延実装、description/status/日時表示、TaskPool統合完了、タグ表示は後で追加予定、Frontendビルド成功: 842ms、Task Progress: 88% = 46/52)
 - 2025-12-29 TASK-NEW-036 completed: TagInput コンポーネント実装 (types/tag.ts新規作成: Tag/CreateTagRequest/UpdateTagRequest型定義、PRESET_TAG_COLORS（8色）定義、components/TagInput.tsx新規作成: チップ入力、オートコンプリート、新規タグ作成（インラインカラーピッカー）、Enter/Escape対応、Frontendビルド成功: 900ms、Task Progress: 90% = 47/52)
+- 2025-12-29 TASK-NEW-007 updated: タスクホバー詳細ポップアップ更新 (ホバー遅延500ms→2000ms、タイトルのみホバー対応に変更、タイトルホバー時色変化追加（hover:text-primary）、ポップアップをdescription+tagsのみに簡素化（w-64）、placement="top"でタイトル上/下表示、青色枠線削除、Frontendビルド成功: 864ms)
