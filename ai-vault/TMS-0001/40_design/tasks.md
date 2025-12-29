@@ -2226,6 +2226,10 @@ Priority: P0 (must), P1 (should), P2 (could)
         - プリセット色選択→HTML5 color input に変更
         - タグ表示スタイルをTaskPoolに統一（半透明背景＋色付きテキスト）
         - Input コンポーネント使用（フォーカスリング統一）
+      - **バグ修正（2025-12-30）**:
+        - **Edit DialogのColorPicker不具合修正**: Edit Dialogで残存していたArk UI ColorPicker実装（channel="hue"使用）を削除し、Create Dialogと同じHTML5カラーピッカーに統一
+        - **エラー解消**: "Unknown color channel: hue"エラーを完全に解決
+        - **インポート削除**: 未使用の`ColorPicker, parseColor`インポートを削除
     - `components/Header.tsx`: Tags タブ追加
       - TagIcon コンポーネント追加
       - /tags へのナビゲーションリンク追加
@@ -2438,3 +2442,4 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-29 TASK-NEW-052 completed: タグ管理画面実装 (Frontend: TagManagementPage新規作成（テーブルUI、CRUD機能、使用中タグ削除警告）、Header.tsx TagIcon+Tagsタブ追加、App.tsx /tagsルート追加、既存API使用（list_tags/create_tag/update_tag/delete_tag）、Backend build: 0.33s、Frontend build: 1.10s、Task Progress: 96.9% = 62/64)
 - 2025-12-30 TASK-NEW-052 追加修正: UI/UX改善＋CASCADE削除有効化 (Frontend: usageCount表示バグ修正（snake_case→camelCase）、プリセット色→HTML5カラーピッカー変更、タグ表示スタイルTaskPool統一、Input component統一、Backend: service/tag.rs usage_countチェック削除（CASCADE削除依存）、lib.rs ForeignKeyEnabler実装（PRAGMA foreign_keys=ON自動実行）、テスト修正: UpdateTaskRequest→UpdateTaskRequestInput統一（21箇所）、全79テスト合格、実機検証: タグ「さdf」CASCADE削除成功（task_tags 2件自動削除、タスク保持、孤立レコード0件）、Backend release build: 41.29s)
 - 2025-12-30 TASK-NEW-039 completed: タグカラーピッカー改良 (Frontend: TagInput.tsx プリセット8色→HTML5カラーピッカー置き換え、PRESET_TAG_COLORS依存削除、selectedColor初期値#3b82f6、type="color" input + Hex値表示、タグ管理画面と統一実装、任意色選択可能に、Frontend build: 828ms、Task Progress: 98.4% = 63/64)
+- 2025-12-30 TASK-NEW-052 bug fix: Edit DialogのArk UI ColorPicker不具合修正 (TagManagementPage Edit Dialog: Ark UI ColorPicker（channel="hue"）削除→HTML5カラーピッカー統一、"Unknown color channel: hue"エラー解消、未使用ColorPicker/parseColorインポート削除、Create/Edit両Dialogで同一UI実装、Frontend build: 完了)

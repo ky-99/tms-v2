@@ -1,5 +1,4 @@
 import { createSignal, For, Show, onMount } from "solid-js";
-import { ColorPicker, parseColor } from "@ark-ui/solid";
 import { Button } from "../components/Button";
 import { Dialog } from "../components/Dialog";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -306,92 +305,15 @@ export function TagManagementPage() {
 
           <div>
             <label class="block text-sm font-medium text-foreground mb-2">Color</label>
-            <ColorPicker.Root
-              value={parseColor(editTagColor())}
-              onValueChange={(details) => {
-                const hexColor = details.value.toString("hex");
-                setEditTagColor(hexColor);
-              }}
-            >
-              <ColorPicker.Label class="text-xs font-medium text-muted-foreground mb-2 block">
-                Select Color
-              </ColorPicker.Label>
-
-              <ColorPicker.Control class="space-y-3">
-                {/* Current Color Display */}
-                <div class="flex items-center gap-3">
-                  <div class="relative">
-                    <ColorPicker.TransparencyGrid class="absolute inset-0 rounded-lg" />
-                    <ColorPicker.ValueSwatch class="relative h-14 w-14 rounded-lg border border-input shadow-sm" />
-                  </div>
-                  <div class="flex-1 space-y-1">
-                    <ColorPicker.ValueText class="text-sm font-medium text-foreground block" />
-                    <ColorPicker.ChannelInput
-                      channel="hex"
-                      class="w-full rounded-md border border-input bg-background px-2 py-1 text-xs font-mono"
-                      placeholder="#000000"
-                    />
-                  </div>
-                </div>
-              </ColorPicker.Control>
-
-              <ColorPicker.Positioner>
-                <ColorPicker.Content class="space-y-3">
-                  {/* Color Area - Main Picker */}
-                  <ColorPicker.Area class="w-full" style={{ height: "200px" }}>
-                    <ColorPicker.AreaBackground class="w-full h-full rounded-lg border border-input" />
-                    <ColorPicker.AreaThumb class="w-5 h-5" />
-                  </ColorPicker.Area>
-
-                  {/* Hue Slider */}
-                  <ColorPicker.ChannelSlider channel="hue">
-                    <div class="flex items-center gap-3">
-                      <ColorPicker.ChannelSliderLabel class="text-xs font-medium text-muted-foreground w-12">
-                        Hue
-                      </ColorPicker.ChannelSliderLabel>
-                      <ColorPicker.ChannelSliderTrack class="flex-1 h-8 rounded-md border border-input relative">
-                        <ColorPicker.ChannelSliderThumb class="w-4 h-full" />
-                      </ColorPicker.ChannelSliderTrack>
-                      <ColorPicker.ChannelSliderValueText class="text-xs font-mono text-muted-foreground w-12 text-right" />
-                    </div>
-                  </ColorPicker.ChannelSlider>
-
-                  {/* Alpha Slider */}
-                  <ColorPicker.ChannelSlider channel="alpha">
-                    <div class="flex items-center gap-3">
-                      <ColorPicker.ChannelSliderLabel class="text-xs font-medium text-muted-foreground w-12">
-                        Alpha
-                      </ColorPicker.ChannelSliderLabel>
-                      <div class="flex-1 relative">
-                        <ColorPicker.TransparencyGrid class="absolute inset-0 rounded-md" />
-                        <ColorPicker.ChannelSliderTrack class="relative h-8 rounded-md border border-input">
-                          <ColorPicker.ChannelSliderThumb class="w-4 h-full" />
-                        </ColorPicker.ChannelSliderTrack>
-                      </div>
-                      <ColorPicker.ChannelSliderValueText class="text-xs font-mono text-muted-foreground w-12 text-right" />
-                    </div>
-                  </ColorPicker.ChannelSlider>
-
-                  {/* Preset Colors */}
-                  <div class="space-y-2">
-                    <label class="text-xs font-medium text-muted-foreground">Presets</label>
-                    <ColorPicker.SwatchGroup class="flex flex-wrap gap-2">
-                      <For each={["#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899"]}>
-                        {(color) => (
-                          <ColorPicker.SwatchTrigger value={parseColor(color)}>
-                            <ColorPicker.Swatch value={parseColor(color)} class="h-8 w-8 rounded-md border border-input cursor-pointer hover:scale-110 transition-transform">
-                              <ColorPicker.SwatchIndicator class="w-full h-full" />
-                            </ColorPicker.Swatch>
-                          </ColorPicker.SwatchTrigger>
-                        )}
-                      </For>
-                    </ColorPicker.SwatchGroup>
-                  </div>
-                </ColorPicker.Content>
-              </ColorPicker.Positioner>
-
-              <ColorPicker.HiddenInput />
-            </ColorPicker.Root>
+            <div class="flex items-center gap-3">
+              <input
+                type="color"
+                value={editTagColor()}
+                onInput={(e) => setEditTagColor(e.currentTarget.value)}
+                class="h-10 w-20 cursor-pointer rounded border border-input bg-background"
+              />
+              <span class="text-sm text-muted-foreground">{editTagColor()}</span>
+            </div>
           </div>
 
           <div class="flex gap-2 justify-end">
