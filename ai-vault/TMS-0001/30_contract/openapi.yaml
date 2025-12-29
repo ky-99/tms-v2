@@ -1,0 +1,734 @@
+openapi: 3.0.3
+info:
+  title: Task Management System v2 API
+  version: 0.1.0
+  description: |
+    Contract for synchronous APIs used in TMS-v2 Desktop Application.
+    - All operations MUST have operationId.
+    - Use x-requirements to map to REQ-IDs (from requirements.md).
+    - Keep payload schemas in components/schemas where possible.
+
+servers:
+  - url: http://localhost:0
+    description: Local IPC for Desktop Application
+
+tags:
+  - name: Tasks
+    description: Task CRUD operations and management
+  - name: TaskQueue
+    description: Daily task queue operations
+  - name: Tags
+    description: Tag management for task categorization
+
+x-contract:
+  confidentiality: Internal
+  repo: tms-v2
+  ticket: TMS-0001
+  branch: feature/tms-v2-poc
+  owner: Developer
+  lastUpdated: 2025-12-28
+  references:
+    requirements: "10_prd/requirements.md"
+    domain: "20_domain/domain.md"
+    glossary: "20_domain/glossary.md"
+    traceability: "90_review/traceability.md"
+
+paths:
+  /tasks:
+    get:
+      tags: [Tasks]
+      operationId: listTasks
+      summary: Retrieve all tasks with optional filtering
+      description: |
+        Returns a list of all tasks in the task pool. Supports filtering by status and tags.
+        If status parameter is not provided, defaults to returning Draft + Active tasks.
+      x-requirements: [REQ-0004, REQ-0005, REQ-0010, REQ-0019]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [draft, active, completed, archived]
+            description: Filter by task status (array). If omitted, defaults to [draft, active].
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      tags: [Tasks]
+      operationId: createTask
+      summary: Create a new task
+      description: |
+        Creates a new task in the task pool.
+      x-requirements: [REQ-0002]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Tasks]
+      operationId: getTask
+      summary: Retrieve a specific task
+      description: |
+        Returns details of a specific task by ID.
+      x-requirements: [REQ-0002]
+      responses:
+        "200":
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          description: Task not found
+    put:
+      tags: [Tasks]
+      operationId: updateTask
+      summary: Update a task
+      description: |
+        Updates an existing task's properties.
+        Only Draft status tasks can be edited.
+      x-requirements: [REQ-0002, REQ-0016]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          description: Task not found
+    delete:
+      tags: [Tasks]
+      operationId: deleteTask
+      summary: Delete a task (logical delete)
+      description: |
+        Deletes a task from the task pool (logical delete to archived status).
+        Only Draft status tasks can be logically deleted.
+      x-requirements: [REQ-0002, REQ-0017]
+      responses:
+        "204":
+          description: Task deleted
+        "404":
+          description: Task not found
+
+  /tasks/{id}/permanently:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      tags: [Tasks]
+      operationId: deleteTaskPermanently
+      summary: Delete a task permanently (physical delete)
+      description: |
+        Permanently deletes a task from the database.
+        Only Archived status tasks can be permanently deleted.
+        This operation is irreversible.
+      x-requirements: [REQ-0018]
+      responses:
+        "204":
+          description: Task permanently deleted
+        "400":
+          description: Task is not archived or has children
+        "404":
+          description: Task not found
+
+  /tasks/{id}/restore:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Tasks]
+      operationId: restoreTask
+      summary: Restore an archived task
+      description: |
+        Restores an archived task back to Draft status.
+        Only Archived status tasks can be restored.
+      x-requirements: [REQ-0022]
+      responses:
+        "200":
+          description: Task restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Task is not archived
+        "404":
+          description: Task not found
+
+  /tasks/search:
+    get:
+      tags: [Tasks]
+      operationId: searchTasks
+      summary: Search and filter tasks
+      description: |
+        Searches tasks by keywords and/or filters by status and tags.
+        At least one parameter must be provided.
+      x-requirements: [REQ-0005, REQ-0011, REQ-0012]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Search query (searches title and description)
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [draft, active, completed, archived]
+            description: Filter by task status
+        - name: tags
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            description: Filter by tag IDs (tasks matching any of the provided tags)
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
+  /tasks/paginated:
+    get:
+      tags: [Tasks]
+      operationId: listTasksPaginated
+      summary: Retrieve tasks with pagination
+      description: |
+        Returns a paginated list of tasks with optional filtering by status.
+        Includes total count for pagination controls.
+        If status parameter is not provided, defaults to returning Draft + Active tasks.
+      x-requirements: [REQ-0024, REQ-0025]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [draft, active, completed, archived]
+            description: Filter by task status (array). If omitted, defaults to [draft, active].
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Number of tasks per page (default 20, max 100)
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+            description: Number of tasks to skip (default 0)
+      responses:
+        "200":
+          description: Paginated task list with total count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTaskResponse"
+
+  /queue:
+    get:
+      tags: [TaskQueue]
+      operationId: getTaskQueue
+      summary: Retrieve current task queue
+      description: |
+        Returns the current daily task queue.
+      x-requirements: [REQ-0006, REQ-0007]
+      responses:
+        "200":
+          description: Current task queue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      tags: [TaskQueue]
+      operationId: addTaskToQueue
+      summary: Add task to queue
+      description: |
+        Adds a task to the daily task queue.
+      x-requirements: [REQ-0006, REQ-0009]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                taskId:
+                  type: string
+              required: [taskId]
+      responses:
+        "200":
+          description: Task added to queue
+        "400":
+          description: Task already in queue or invalid task
+    delete:
+      tags: [TaskQueue]
+      operationId: removeTaskFromQueue
+      summary: Remove task from queue
+      description: |
+        Removes a task from the daily task queue.
+      x-requirements: [REQ-0006]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                taskId:
+                  type: string
+              required: [taskId]
+      responses:
+        "200":
+          description: Task removed from queue
+        "404":
+          description: Task not in queue
+
+  /queue/clear:
+    post:
+      tags: [TaskQueue]
+      operationId: clearTaskQueue
+      summary: Clear entire task queue
+      description: |
+        Removes all tasks from the current daily task queue.
+      x-requirements: [REQ-0006]
+      responses:
+        "200":
+          description: Queue cleared
+
+  /queue/position:
+    put:
+      tags: [TaskQueue]
+      operationId: updateQueuePosition
+      summary: Update task position in queue
+      description: |
+        Updates the position of a specific task within the queue.
+      x-requirements: [REQ-0006]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                taskId:
+                  type: string
+                  description: Task ID to reposition
+                newPosition:
+                  type: integer
+                  description: New position in queue (0-based index)
+              required: [taskId, newPosition]
+      responses:
+        "200":
+          description: Position updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueEntry"
+        "404":
+          description: Task not found in queue
+
+  /queue/reorder:
+    post:
+      tags: [TaskQueue]
+      operationId: reorderTaskQueue
+      summary: Reorder entire task queue
+      description: |
+        Reorders the entire queue by providing a new ordered list of task IDs.
+        Used by drag-and-drop functionality in QueuePanel.
+      x-requirements: [REQ-0006, REQ-0028]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                taskIds:
+                  type: array
+                  items:
+                    type: string
+                  description: Ordered list of task IDs (must include all tasks in queue)
+              required: [taskIds]
+      responses:
+        "200":
+          description: Queue reordered
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QueueEntry"
+        "400":
+          description: Invalid task ID list (size mismatch or invalid IDs)
+
+  /tags:
+    get:
+      tags: [Tags]
+      operationId: listTags
+      summary: Retrieve all tags
+      description: |
+        Returns a list of all available tags with usage counts.
+      x-requirements: [REQ-0005]
+      responses:
+        "200":
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tag"
+    post:
+      tags: [Tags]
+      operationId: createTag
+      summary: Create a new tag
+      description: |
+        Creates a new tag for task categorization.
+      x-requirements: [REQ-0005]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTagRequest"
+      responses:
+        "201":
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+
+  /tags/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags: [Tags]
+      operationId: updateTag
+      summary: Update a tag
+      description: |
+        Updates an existing tag's properties.
+      x-requirements: [REQ-0005]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTagRequest"
+      responses:
+        "200":
+          description: Tag updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        "404":
+          description: Tag not found
+    delete:
+      tags: [Tags]
+      operationId: deleteTag
+      summary: Delete a tag
+      description: |
+        Deletes a tag if it's not being used by any tasks.
+      x-requirements: [REQ-0005]
+      responses:
+        "204":
+          description: Tag deleted
+        "409":
+          description: Tag is in use and cannot be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Tag not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    UnprocessableEntity:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Too Many Requests
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
+        details:
+          type: object
+          additionalProperties: true
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the task
+        title:
+          type: string
+          description: Task title
+        description:
+          type: string
+          description: Task description
+          nullable: true
+        status:
+          type: string
+          enum: [draft, active, completed, archived]
+          description: Task status
+        tags:
+          type: array
+          items:
+            type: string
+          description: List of tag IDs associated with the task
+        parentId:
+          type: string
+          description: Parent task ID (null if root task)
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required: [id, title, status, tags, createdAt, updatedAt]
+      additionalProperties: false
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Task title
+        description:
+          type: string
+          description: Task description
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          description: List of tag IDs to associate
+        parentId:
+          type: string
+          description: Parent task ID
+          nullable: true
+      required: [title]
+      additionalProperties: false
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Task title
+        description:
+          type: string
+          description: Task description
+          nullable: true
+        status:
+          type: string
+          enum: [draft, active, completed, archived]
+          description: Task status
+        tags:
+          type: array
+          items:
+            type: string
+          description: List of tag IDs to associate
+        parentId:
+          type: string
+          description: Parent task ID
+          nullable: true
+      additionalProperties: false
+
+    PaginatedTaskResponse:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+          description: List of tasks for current page
+        total:
+          type: integer
+          description: Total number of tasks matching the filter criteria
+      required: [tasks, total]
+      additionalProperties: false
+
+    QueueEntry:
+      type: object
+      properties:
+        taskId:
+          type: string
+          description: Task ID in the queue
+        position:
+          type: integer
+          description: Position in queue (0-based index)
+        addedAt:
+          type: string
+          format: date-time
+          description: Timestamp when task was added to queue
+      required: [taskId, position, addedAt]
+      additionalProperties: false
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the tag
+        name:
+          type: string
+          description: Tag name
+        color:
+          type: string
+          description: Display color (hex code)
+          nullable: true
+        usageCount:
+          type: integer
+          description: Number of tasks using this tag
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+      required: [id, name, usageCount, createdAt]
+      additionalProperties: false
+
+    CreateTagRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Tag name
+        color:
+          type: string
+          description: Display color (hex code)
+          nullable: true
+      required: [name]
+      additionalProperties: false
+
+    UpdateTagRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Tag name
+        color:
+          type: string
+          description: Display color (hex code)
+          nullable: true
+      additionalProperties: false

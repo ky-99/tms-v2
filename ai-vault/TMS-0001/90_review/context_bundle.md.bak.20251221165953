@@ -1,0 +1,227 @@
+# Context Bundle: <Feature Title>
+
+> Confidentiality: <Public / Internal / Confidential>  
+> Repo: <repo-name>  
+> Ticket: <TICKET-ID>  
+> Branch: <branch-name>  
+> Phase: Requirements
+> Updated: 2025-12-21 16:58 (JST)
+> Owner: <name>
+
+---
+
+## 0) Operating Rules (Must Follow)
+1. **Single Source of Truth**
+   - Requirements truth: `10_prd/requirements.md`
+   - Domain language truth: `20_domain/glossary.md`
+   - Contract truth: `30_contract/openapi.yaml` and `30_contract/asyncapi.yaml`
+   - Design truth: `40_design/design.md` and `40_design/architecture.md`
+   - Review truth (mapping): `90_review/traceability.md`
+2. **REQ discipline**
+   - 1 REQ = 1 Acceptance Criterion (strict).
+   - No implementation details in requirements.
+3. **Traceability discipline**
+   - Every contract item MUST map to REQ via `x-requirements`.
+   - Every design component MUST declare which REQs it implements.
+4. **No guesswork**
+   - If information is missing/ambiguous, ask targeted questions before producing final artifacts.
+   - Do not invent domain terms; add to glossary first.
+5. **Bundle size discipline**
+   - This bundle is a **control plane**, not a full dump.
+   - Use **excerpts** only. If a section grows too large, replace details with pointers.
+   - Focus REQs: default max **10** (extend only with explicit reason).
+6. **Output discipline**
+   - Produce outputs exactly in the format specified in section 8.
+   - If proposing changes, include a **diff-style summary** (Added/Changed/Removed).
+
+---
+
+## 1) Objective (What we are doing now)
+- **Current objective**: PRD と requirements.md を作成し、全ての要件を Given/When/Then 形式で定義する
+- **Definition of Done**:
+  - DoD-1: PRD.md に背景、目標、スコープ、制約が記載されている
+  - DoD-2: requirements.md に全 REQ が Given/When/Then 形式で定義されている
+  - DoD-3: 全 REQ の依存関係が明確になっている
+---
+
+## 2) Executive Summary (Read-first)
+- **One-liner**: <何をするか>
+- **Why**: <なぜ>
+- **Scope**: <含む/含まない（特に非ゴール）>
+- **Top risks**: <最大リスク1〜3個>
+
+---
+
+## 3) Canonical Pointers (Authoritative file paths)
+> "最新版"はこのパスに存在する前提（v2など別名ファイルを作らない）。
+
+- PRD: `10_prd/PRD.md`
+- Requirements: `10_prd/requirements.md`
+- Domain: `20_domain/domain.md`
+- Glossary: `20_domain/glossary.md`
+- OpenAPI (HTTP): `30_contract/openapi.yaml`
+- AsyncAPI (Events): `30_contract/asyncapi.yaml`
+- Architecture: `40_design/architecture.md`
+- Design: `40_design/design.md`
+- Decisions (ADR): `40_design/decisions.md`
+- Tasks: `40_design/tasks.md`
+- Traceability: `90_review/traceability.md`
+
+---
+
+## 4) Non-negotiables (Constraints)
+### 4.1 Product / Business
+- <制約>（なければ N/A）
+
+### 4.2 Technical
+- <制約>（なければ N/A）
+
+### 4.3 Security / Compliance
+- <PII, audit, retention, access control>（なければ N/A）
+
+---
+
+## 5) Domain Snapshot (Ubiquitous Language)
+> 重要語のみ抜粋。用語追加が必要なら先にglossaryへ。
+
+### 5.1 Canonical Terms (Top 10)
+- <Term>: <1行定義>
+- ...（なければ N/A）
+
+### 5.2 Bounded Context / Ownership (Top-level)
+- Context: <name> / Owner: <service/team> / Responsibility: <1行>
+- ...（なければ N/A）
+
+### 5.3 Invariants (If defined)
+- INV-001: <rule>
+- ...（なければ N/A）
+
+---
+
+## 6) Requirements Snapshot (Strict, excerpt)
+> **抜粋でOK**。全文はrequirements.mdが正。
+<!-- AUTO:BEGIN requirements_snapshot -->
+### 6.1 Focus REQs (This phase)
+| REQ | Title | Priority | Status |
+|---|---|---|---|
+| REQ-0001 | <short title> | MUST | Draft |
+| REQ-0002 | ... | SHOULD | Draft |
+
+### 6.2 Acceptance Details (Only for focus REQs)
+- **REQ-0001**
+  - Given: <前提状態>
+  - When: <入力/操作/イベント>
+  - Then: <期待結果（観測可能な出力 or 状態変化）>
+- **REQ-0002**
+  - Given: TBD
+  - When: TBD
+  - Then: TBD
+<!-- AUTO:END requirements_snapshot -->
+---
+
+## 7) Contract Snapshot (HTTP + Events) — may be empty
+> **空でもOK**。Contractフェーズで埋める。
+
+<!-- AUTO:BEGIN contract_snapshot -->
+### 7.1 HTTP Operations (OpenAPI)
+| operationId | Path/Method | x-requirements | Notes |
+|---|---|---|---|
+| <verbNoun e.g. createItem> | POST /<resource> | REQ-0003 | - |
+| <verbNoun e.g. getItem> | GET /<resource>/{id} | REQ-0004 | - |
+| <verbNoun e.g. listItems> | GET /<resource> | REQ-0001, REQ-0002 | - |
+
+### 7.2 Event Notifications (AsyncAPI)
+| messageId | Channel | x-requirements | Notes |
+|---|---|---|---|
+| <stableId e.g. auth.password_reset_completed.v1> | <topic-name> | REQ-0011 | - |
+| <stableId e.g. auth.password_reset_requested.v1> | <topic-name> | REQ-0007, REQ-0008 | - |
+<!-- AUTO:END contract_snapshot -->
+---
+
+## 8) Tasking: What you must produce now
+> ここがAIへの指示書。曖昧な依頼は禁止。
+
+<!-- AUTO:BEGIN tasking_snapshot -->
+### 8.1 Current Phase Tasks (from tasks.md)
+| TASK-ID | Title | Status | Priority | Maps to |
+|---|---|---|---|---|
+| <TASK-ID> | <title> | UnDone | P0 | REQ-xxxx, operationId |
+
+### 8.2 Task Progress
+- Total Tasks: <n>
+- Done: <n>
+- Processing: <n>
+- UnDone: <n>
+- Progress: <n>% (<done>/<total>)
+
+### 8.3 Next Actions
+1. <Next action based on UnDone tasks>
+<!-- AUTO:END tasking_snapshot -->
+
+---
+
+### 8.4 Manual Instructions (Edit as needed)
+> **このセクションは Phase に応じて自動生成**：必要に応じて編集可能
+
+#### 8.4.1 Primary deliverable
+- Deliverable type: PRD, requirements
+- Target file path: `10_prd/PRD.md`, `10_prd/requirements.md`
+- Required sections to modify:
+  - (See work steps below)
+
+#### 8.4.2 Work steps (Follow in order)
+1. PRD.md を作成：背景、ユーザーペルソナ、目標、スコープ、制約を定義
+2. requirements.md を作成：機能を細分化して REQ に分解
+3. 各 REQ に Given/When/Then を記述
+4. REQ 間の依存関係を明示
+
+#### 8.4.3 Output format (Strict)
+- Provide:
+  1. **Proposed edits** (copy-pastable content)
+  2. **Diff summary** (Added/Changed/Removed bullets)
+  3. **Open questions** (if any; max 10, targeted)
+
+#### 8.4.4 Constraints for this task
+- Must keep operationId stable: N/A
+- Must keep messageId stable: N/A
+- Must not introduce new terms unless added to glossary first: Yes
+- Must update traceability: No (later phase)
+---
+
+## 9) Pre-flight Checks (Gate)
+<!-- AUTO:BEGIN preflight_checks -->
+### 9.1 Coverage Checks
+- [ ] All operationIds have x-requirements (0/0)
+- [ ] All messageIds have x-requirements (0/0)
+- [ ] Focus REQs defined (0 REQs)
+
+### 9.2 Drift Checks
+- [ ] No unmapped operations
+- [ ] No unmapped messages
+- [ ] No undefined terms in requirements
+
+### 9.3 Quality Metrics
+- REQ Coverage: N/A
+- API Coverage: N/A
+- Event Coverage: N/A
+- Task Completion: N/A
+
+### 9.4 Overall Status
+**⚠️ Not ready - checks incomplete**
+<!-- AUTO:END preflight_checks -->
+
+---
+
+### 9.5 Manual Checks (Review before PR)
+> **このセクションは手動確認**：レビュー時にチェック
+
+- [ ] No new terms introduced without glossary update
+- [ ] No implementation details leaked into requirements
+- [ ] Canonical file paths preserved (no "v2 filename")
+- [ ] All tests passing
+- [ ] Code review completed
+
+---
+
+## 10) Notes / Context (Optional)
+- <補足>（なければ N/A）

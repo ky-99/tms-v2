@@ -1,0 +1,120 @@
+asyncapi: 2.6.0
+info:
+  title: Task Management System v2 Events
+  version: 0.1.0
+  description: |
+    Contract for asynchronous domain events (facts/notifications).
+    - This application does not use asynchronous events.
+    - All communication is synchronous via local IPC.
+    - This spec is maintained for future extensibility but currently empty.
+
+x-contract:
+  confidentiality: Internal
+  repo: tms-v2
+  ticket: TMS-0001
+  branch: feature/tms-v2-poc
+  owner: Developer
+  lastUpdated: 2024-12-21
+  references:
+    requirements: "10_prd/requirements.md"
+    domain: "20_domain/domain.md"
+    glossary: "20_domain/glossary.md"
+    traceability: "90_review/traceability.md"
+
+servers:
+  local:
+    url: local://ipc
+    protocol: ipc
+    description: Local IPC for Desktop Application (no external broker)
+
+defaultContentType: application/json
+
+channels:
+  # No channels defined - this application does not use asynchronous events
+  # All communication is synchronous via local IPC
+
+components:
+  # No messages defined - this application does not use asynchronous events
+  messages: {}
+
+  messageTraits:
+    StandardEvent:
+      headers:
+        $ref: "#/components/schemas/EventHeaders"
+
+  schemas:
+    EventHeaders:
+      type: object
+      additionalProperties: false
+      required:
+        - eventId
+        - eventType
+        - occurredAt
+        - producer
+        - messageId
+        - schemaVersion
+        - correlationId
+      properties:
+        eventId:
+          type: string
+          description: Unique event instance id (UUID recommended). Used for deduplication.
+        eventType:
+          type: string
+          description: Logical event type name (should match components.messages.<name>).
+        occurredAt:
+          type: string
+          format: date-time
+          description: When the event occurred in producer's domain time.
+        producer:
+          type: string
+          description: Producing service/system name.
+        messageId:
+          type: string
+          description: Stable message identifier (same as AsyncAPI messageId).
+        schemaVersion:
+          type: integer
+          description: Increment only for breaking changes.
+        correlationId:
+          type: string
+          description: Trace/correlate end-to-end across systems.
+        causationId:
+          type: string
+          description: Optional. Identifier of triggering request/event.
+        idempotencyKey:
+          type: string
+          description: Optional. Producer-provided dedup key (if needed).
+
+    <EventPayloadSchema1>:
+      type: object
+      additionalProperties: false
+      required: [<field>]
+      properties:
+        <field>:
+          type: string
+          description: <meaning>
+        # Add optional fields without breaking compatibility.
+
+    <EventPayloadSchema2>:
+      type: object
+      additionalProperties: false
+      required: [<field>]
+      properties:
+        <field>:
+          type: string
+          description: <meaning>
+
+x-guidelines:
+  naming:
+    eventName: "<Past tense / fact style e.g. PasswordResetRequested>"
+    messageId: "<dot separated stable id with version suffix e.g. auth.password_reset_requested.v1>"
+    channel: "<topic naming rule e.g. <domain>.<area>.events>"
+  compatibility:
+    default: "additive-only"
+    rules:
+      - "Adding optional fields is allowed without schemaVersion bump."
+      - "Renaming/removing required fields is breaking: create new messageId *.v2 and increment schemaVersion."
+  delivery:
+    - "Consumers MUST be idempotent: handle duplicates by eventId/idempotencyKey."
+    - "Ordering is NOT guaranteed unless explicitly stated per channel."
+  observability:
+    - "correlationId is required in headers for tracing."

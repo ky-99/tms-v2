@@ -1,0 +1,1707 @@
+# Tasks: Task Management System v2 (TMS-v2)
+
+> Confidentiality: Internal
+> Repo: tms-v2
+> Ticket: TMS-0001
+> Branch: feature/tms-v2-poc
+> Owner: Developer
+> Created: 2025-12-21
+> Last Updated: 2025-12-28
+
+References:
+- Requirements: `10_prd/requirements.md`
+- OpenAPI: `30_contract/openapi.yaml`
+- AsyncAPI: `30_contract/asyncapi.yaml`
+- Architecture: `40_design/architecture.md`
+- Design: `40_design/design.md`
+- Decisions: `40_design/decisions.md`
+- Traceability: `90_review/traceability.md`
+- Context bundle: `90_review/context_bundle.md`
+
+---
+
+## 0. Rules (Do not violate)
+1. Every TASK must map to at least one of:
+   - REQ-ID(s), AND/OR operationId(s), AND/OR messageId(s)
+2. Every TASK must have **Definition of Done (DoD)** that is objectively checkable.
+3. Status values are only: **UnDone / Processing / Done**
+4. If a task becomes obsolete, do not delete it; mark as Done with note `Cancelled` OR add `StatusReason: Cancelled` (choose one policy and stick to it).
+5. Avoid “mega tasks”. If DoD spans multiple components or takes >1 day, split it.
+
+---
+
+## 1. Status Legend
+- **UnDone**: not started
+- **Processing**: actively in progress
+- **Done**: DoD satisfied and verified (by tests or explicit verification note)
+
+---
+
+## 2. Task Index (High-level)
+> ここは見通し用の一覧。詳細は後続セクションに記載。
+
+| TASK-ID | Title | Status | Priority | Owner | Depends on | Maps to (REQ/opId/msgId) |
+|---|---|---|---|---|---|---|
+| TASK-0001 | Tauri開発環境構築 | Done | P0 | Developer | - | REQ-0001 |
+| TASK-0002 | SQLiteデータベーススキーマ実装 | Done | P0 | Developer | TASK-0001 | REQ-0002, REQ-0003, REQ-0006 |
+| TASK-0003 | TaskService CRUD実装 | Done | P0 | Developer | TASK-0002 | REQ-0002, operationId: createTask/updateTask/deleteTask/getTask |
+| TASK-0004 | タスク階層管理実装 | Done | P0 | Developer | TASK-0003 | REQ-0003, operationId: getTaskHierarchy |
+| TASK-0005 | TagService実装 | Done | P1 | Developer | TASK-0002 | REQ-0005, operationId: createTag/updateTag/deleteTag/listTags |
+| TASK-0006 | タスク検索・フィルタ実装 | Done | P1 | Developer | TASK-0003 | REQ-0005, operationId: listTasks/searchTasks |
+| TASK-0007 | QueueService実装 | Done | P0 | Developer | TASK-0002 | REQ-0006, operationId: addTaskToQueue/removeTaskFromQueue/getTaskQueue/clearTaskQueue |
+| TASK-0008 | IPC Router実装 | Done | P0 | Developer | TASK-0003, TASK-0005, TASK-0007 | All operationIds |
+| TASK-0009 | React UI 基本構造実装 | Done | P0 | Developer | TASK-0001 | REQ-0004, REQ-0007 |
+| TASK-0010 | タスクプール画面実装 | Done | P1 | Developer | TASK-0009 | REQ-0004, operationId: listTasks/getTaskHierarchy |
+| TASK-0011 | タスクキュー画面実装 | Done | P1 | Developer | TASK-0009 | REQ-0007, operationId: getTaskQueue |
+| TASK-0012 | IPC統合テスト | Done | P1 | Developer | TASK-0008, TASK-0009 | All REQs |
+| TASK-NEW-001 | 親子ステータス自動更新ロジック実装 | Done | P0 | Developer | - | REQ-0008 |
+| TASK-NEW-002 | キュー登録制限の強化 | Done | P0 | Developer | TASK-NEW-001 | REQ-0009 |
+| TASK-NEW-003 | list_tasks API変更（Draft + Active表示） | Done | P0 | Developer | - | REQ-0010 |
+| TASK-NEW-004 | 統合テスト更新 | Done | P1 | Developer | TASK-NEW-001, TASK-NEW-002, TASK-NEW-003 | REQ-0008, REQ-0009, REQ-0010 |
+| TASK-NEW-005 | 検索バー・フィルターUI実装 | Done | P1 | Developer | TASK-NEW-003 | REQ-0011, REQ-0012 |
+| TASK-NEW-006 | タスクリスト表示への変更 | Done | P1 | Developer | TASK-NEW-001 | REQ-0015 |
+| TASK-NEW-007 | タスク詳細ポップアップ実装 | UnDone | P2 | Developer | - | REQ-0015 |
+| TASK-NEW-008 | Completed/Archivedページ実装 | Done | P1 | Developer | TASK-NEW-006 | REQ-0013, REQ-0014 |
+| TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | Developer | TASK-NEW-006, TASK-NEW-008 | - |
+| TASK-NEW-010 | キューUIの改善 | Done | P2 | Developer | TASK-NEW-006 | - |
+| TASK-NEW-011 | レイアウト調整・タイトル削除 | Done | P2 | Developer | TASK-NEW-006 | - |
+| TASK-NEW-012 | ドキュメント更新 | Done | P1 | Developer | All TASK-NEW tasks | REQ-0008〜REQ-0015 |
+| TASK-NEW-013 | TaskService編集・削除制限実装 | Done | P0 | Developer | - | REQ-0016, REQ-0017 |
+| TASK-NEW-014 | 物理削除API実装 | Done | P0 | Developer | - | REQ-0018 |
+| TASK-NEW-015 | restore_task API実装 | Done | P0 | Developer | - | REQ-0022 |
+| TASK-NEW-016 | list_tasks statusパラメータ対応 | Done | P0 | Developer | - | REQ-0019 |
+| TASK-NEW-017 | 統合テスト更新 | Done | P1 | Developer | TASK-NEW-013〜016 | REQ-0016〜REQ-0022 |
+| TASK-NEW-018 | TaskPool編集・削除ボタン条件表示 | Done | P0 | Developer | TASK-NEW-013 | REQ-0016, REQ-0017 |
+| TASK-NEW-019 | フィルターチップからCompleted削除 | Done | P1 | Developer | - | REQ-0020 |
+| TASK-NEW-020 | CompletedPage/ArchivedPageのAPI修正 | Done | P0 | Developer | TASK-NEW-016 | REQ-0019 |
+| TASK-NEW-021 | ArchivedPageのrestore/delete機能実装 | Done | P0 | Developer | TASK-NEW-014, TASK-NEW-015 | REQ-0018, REQ-0022 |
+| TASK-NEW-022 | QueuePanel空時UI改善 | Done | P1 | Developer | - | REQ-0021 |
+| TASK-NEW-023 | ドキュメント更新 | Done | P1 | Developer | TASK-NEW-013〜022 | REQ-0016〜REQ-0022 |
+| TASK-NEW-024 | バグ修正 - completed時のupdated_at更新 | Done | P0 | Developer | - | REQ-0023 |
+| TASK-NEW-025 | ページネーション API実装 | Done | P0 | Developer | - | REQ-0024 |
+| TASK-NEW-026 | PaginatedTaskResponse型フロントエンド追加 | Done | P0 | Developer | TASK-NEW-025 | REQ-0024 |
+| TASK-NEW-027 | Pagination UIコンポーネント実装 | Done | P1 | Developer | TASK-NEW-026 | REQ-0025 |
+| TASK-NEW-028 | CompletedPage ページネーション実装 | Done | P1 | Developer | TASK-NEW-027 | REQ-0025 |
+| TASK-NEW-029 | ArchivedPage ページネーション実装 | Done | P1 | Developer | TASK-NEW-027 | REQ-0025 |
+| TASK-NEW-030 | DropdownMenu コンポーネント実装 | Done | P1 | Developer | - | REQ-0026 |
+| TASK-NEW-031 | ArchivedPage 3点リーダーメニュー実装 | Done | P1 | Developer | TASK-NEW-030 | REQ-0026 |
+| TASK-NEW-032 | タイトルspanサイズ調整 | Done | P2 | Developer | - | REQ-0027 |
+| TASK-NEW-033 | D&Dライブラリ統合 | Done | P2 | Developer | - | REQ-0028 |
+| TASK-NEW-034 | QueuePanel D&D実装 | UnDone | P2 | Developer | TASK-NEW-033 | REQ-0028 |
+| TASK-NEW-035 | ドキュメント更新 | Done | P1 | Developer | TASK-NEW-024〜034 | REQ-0023〜REQ-0028 |
+
+Priority: P0 (must), P1 (should), P2 (could)
+
+---
+
+## 2.5 Task Progress Summary
+- Total Tasks: 47
+- Done: 44
+- Processing: 0
+- UnDone: 3
+- Progress: 94% (44/47)
+
+---
+
+## 3. Tasks (Detailed)
+
+### TASK-0001: Tauri開発環境構築
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: DatabaseManager, IPCRouter, ReactUI
+- **Maps to**
+  - REQ: REQ-0001
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: Tauri + Rust + React + SQLiteの開発環境を構築し、基本的なプロジェクト構造を作成する
+- **Implementation Notes**: Node.js 18+, Rust 1.70+を使用。Tauri CLIと基本的なプロジェクトテンプレートを使用
+- **Risks**: RustとTauriの学習コスト、クロスプラットフォーム互換性の問題
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: Tauri CLIで新規プロジェクト作成完了
+  - [x] DoD-2: RustバックエンドとReactフロントエンドの基本構造が作成されている
+  - [x] DoD-3: プロジェクトのビルド・実行が可能
+  - [x] DoD-4: SQLite依存関係が追加されている
+- **Verification**:
+  - Type: E2E
+  - Evidence: `npm run tauri build` と `npm run tauri dev` が成功
+- **Updated**: 2025-12-21
+- **Completed**: 2025-12-21
+
+### TASK-0002: SQLiteデータベーススキーマ実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: DatabaseManager
+- **Maps to**
+  - REQ: REQ-0002, REQ-0003, REQ-0006
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-0001
+- **Summary**: SQLiteデータベースのスキーマを定義し、マイグレーション機能を実装する
+- **Implementation Notes**: rusqliteを使用。tasks, tags, task_tags, task_queueのテーブルを作成
+- **Risks**: SQLite制約の適切な設定、マイグレーションの複雑さ
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: tasksテーブル（id, title, description, status, parentId, timestamps）が作成可能
+  - [x] DoD-2: tagsテーブル（id, name, color, usageCount, timestamps）が作成可能
+  - [x] DoD-3: task_tags関連テーブルが作成可能
+  - [x] DoD-4: task_queueテーブルが作成可能
+  - [x] DoD-5: マイグレーションファイルが実行可能
+- **Verification**:
+  - Type: Unit
+  - Evidence: データベース初期化ユニットテストが通る（test_initialize_database_and_create_tables）
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0003: TaskService CRUD実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0002
+  - HTTP operationId: createTask, getTask, updateTask, deleteTask
+  - Event messageId: N/A
+- **Depends on**: TASK-0002
+- **Summary**: TaskServiceのCRUD操作を実装し、データベースとの連携を行う
+- **Implementation Notes**: Diesel ORMを使用。論理削除（archivedステータス）を使用。バリデーション処理を追加。循環参照チェック機能を実装。Tauriコマンド統合完了
+- **Risks**: 同時アクセス時のデータ競合、削除時の依存関係チェック
+- **Definition of Done (DoD)**:
+  - [x] DoD-0: Diesel ORM導入とセットアップ完了
+  - [x] DoD-0.1: schema.rs生成完了
+  - [x] DoD-0.2: modelsモジュール作成（Task構造体、NewTask、UpdateTaskRequest等）
+  - [x] DoD-1: createTaskが新規タスクを作成し、適切なレスポンスを返す
+  - [x] DoD-2: getTaskが指定IDのタスクを返却する（404エラー対応）
+  - [x] DoD-3: updateTaskがタスク情報を更新する（404エラー対応）
+  - [x] DoD-4: deleteTaskがタスクをarchived状態に変更する（404エラー対応）
+  - [x] DoD-5: 全操作のユニットテストが通る（18テスト全てパス）
+  - [x] DoD-6: 循環参照チェック機能が実装され、テストが通る
+  - [x] DoD-7: Tauriコマンド統合完了（create_task, get_task, update_task, delete_task）
+- **Verification**:
+  - Type: Unit
+  - Evidence: TaskServiceの全メソッドに対するユニットテスト（14テスト）、エラーハンドリングテスト（3テスト）、DBテスト（1テスト）= 合計18テストが全てパス
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0004: タスク階層管理実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService, ReactUI
+- **Maps to**
+  - REQ: REQ-0003
+  - HTTP operationId: getTaskHierarchy
+  - Event messageId: N/A
+- **Depends on**: TASK-0003
+- **Summary**: 親子関係を持つタスクの階層構造取得機能を実装する（Backend + Frontend統合）
+- **Implementation Notes**:
+  - **Backend実装**:
+    - Option B (childrenIds-only approach)を採用：各TaskResponseに`children_ids: Vec<String>`フィールドを追加
+    - list_tasks/get_taskで`SELECT id FROM tasks WHERE parent_id = ?`クエリを実行して子タスクIDリストを取得
+    - 親子関係の保存はTaskServiceのcreate_task/update_taskで実装済み（parent_idフィールド）
+    - 循環参照チェックはwould_create_cycle()関数で実装済み
+  - **Frontend実装**:
+    - TaskPage.tsxに階層表示機能を実装（再帰的レンダリング、24pxインデント）
+    - 展開/折りたたみ機能（expandedTasks signal、▶/▼アイコン）
+    - 親タスク選択UI（作成・編集ダイアログ）
+    - バグ修正: タスク作成・編集・削除後にloadTasks()を呼び出してchildrenIdsを更新
+- **Risks**: 階層クエリのパフォーマンス、循環参照の検出ロジック
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TaskResponseにchildren_idsフィールドが追加され、list_tasks/get_taskで正しく返却される
+  - [x] DoD-2: 親子関係がparent_idで正しく保存され、childrenIdsで取得できる
+  - [x] DoD-3: 循環参照が作成されないようバリデーションされている（would_create_cycle実装済み）
+  - [x] DoD-4: UI上で階層構造が視覚的に表示される（インデント、展開/折りたたみ）
+  - [x] DoD-5: 親タスク選択UIが実装され、親子関係を作成・編集できる
+  - [x] DoD-6: 全27テストがパス、フロントエンドビルド成功
+- **Verification**:
+  - Type: Integration
+  - Evidence: Backend 27テスト全パス、Frontendビルド成功
+- **Known Issues (別チケットで対応予定)**:
+  - **Issue-1**: 子タスクをキューに登録し完了した場合でも親タスクが削除できない
+    - 原因: delete_task()は子タスクの存在チェックでステータスを考慮していない（has_childrenがtrueなら削除拒否）
+    - 本来: completed/archived状態の子タスクは削除可能とすべき
+    - 対応: 別チケットで「子タスクのステータスに応じた親タスクの削除ロジック改善」として対応予定
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0005: TagService実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TagService
+- **Maps to**
+  - REQ: REQ-0005
+  - HTTP operationId: createTag, updateTag, deleteTag, listTags
+  - Event messageId: N/A
+- **Depends on**: TASK-0002
+- **Summary**: タグ管理機能のCRUD操作を実装し、タスクのカテゴリ分類を可能にする
+- **Implementation Notes**:
+  - **データモデル**: Tag, NewTag, CreateTagRequest, UpdateTagRequest
+  - **ビジネスロジック**:
+    - usage_count は動的計算（task_tags テーブルの COUNT）
+    - 削除時バリデーション: usage_count > 0 の場合は TagInUse エラー
+    - 名前の空文字チェック（作成・更新時）
+  - **Tauriコマンド**: list_tags, create_tag, update_tag, delete_tag
+  - **既存パターン踏襲**: TaskService/QueueServiceと同じ構造（models/service/commands）
+- **Risks**: タグ使用数の計算パフォーマンス、同時更新時の整合性
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: models/tag.rs 作成完了（4構造体定義）
+  - [x] DoD-2: service/tag.rs 作成完了（create/list/update/delete実装）
+  - [x] DoD-3: commands/tag.rs 作成完了（4つのTauriコマンド）
+  - [x] DoD-4: error.rs に TagNotFound, TagInUse 追加（既存で対応済み）
+  - [x] DoD-5: 全ユニットテスト通過（7テスト）
+  - [x] DoD-6: cargo build エラーなし
+  - [x] DoD-7: Tauriコマンド登録完了（lib.rs更新）
+- **Verification**:
+  - Type: Unit
+  - Evidence: TagServiceの全メソッドに対するユニットテスト（7テスト全てパス）、全体34テスト通過
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0006: タスク検索・フィルタ実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0005
+  - HTTP operationId: listTasks, searchTasks
+  - Event messageId: N/A
+- **Depends on**: TASK-0003
+- **Summary**: タスク検索機能を実装し、キーワード・ステータス・タグによるフィルタリングを可能にする
+- **Implementation Notes**:
+  - **list_tasks**: draft固定フィルタのまま変更なし（タスクプール用）
+  - **search_tasks**: 新規実装、ユニバーサル検索API
+    - **SearchTasksParams**: q (キーワード), status (ステータス), tags (タグ配列)
+    - **キーワード検索**: LIKE検索でタイトル・説明文の部分一致（OR条件）
+    - **ステータスフィルタ**: 指定なし時はarchived以外を返却
+    - **タグフィルタ**: タグ名からIDを取得し、task_tagsでフィルタ（OR条件）
+    - **クエリ構築**: Dieselの.into_boxed()で動的クエリ生成
+  - **Tauriコマンド**: search_tasks(q, status, tags)
+- **Risks**: 複雑な検索条件でのパフォーマンス、LIKE検索のインデックス効率
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: models/task.rs に SearchTasksParams 追加
+  - [x] DoD-2: service/task.rs に search_tasks メソッド実装
+  - [x] DoD-3: 6つの検索テスト追加（keyword/status/tags/combined/no-match/empty）
+  - [x] DoD-4: commands/task.rs に search_tasks Tauri コマンド追加
+  - [x] DoD-5: lib.rs に search_tasks 登録
+  - [x] DoD-6: 全40テスト通過（34既存 + 6新規）
+  - [x] DoD-7: cargo build エラーなし
+- **Verification**:
+  - Type: Unit
+  - Evidence: 全40テスト通過（test_search_tasks_by_keyword, test_search_tasks_by_status, test_search_tasks_by_tags, test_search_tasks_combined_filters, test_search_tasks_no_match, test_search_tasks_empty_params）
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0007: QueueService実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: QueueService
+- **Maps to**
+  - REQ: REQ-0006
+  - HTTP operationId: getTaskQueue, addTaskToQueue, removeTaskFromQueue, clearTaskQueue, updateQueuePosition, reorderTaskQueue
+  - Event messageId: N/A
+- **Depends on**: TASK-0002
+- **Summary**: 日次タスクキューの管理機能を実装する
+- **Implementation Notes**:
+  - キュー追加時、タスクのステータスを自動的にActiveに変更
+  - キュー削除時、タスクのステータスを自動更新（draft→archived, completed→completed, その他→draft）
+  - 順序変更機能を実装（update_queue_position, reorder_queue）
+  - 全操作をトランザクション内で実行
+- **Risks**: キュー操作時の競合状態、ステータス自動更新のロジック
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: getTaskQueueが現在のキュー内容を返却する（タスク情報含む）
+  - [x] DoD-2: addTaskToQueueがタスクをキューに追加し、ステータスをActiveに変更（重複時はエラー）
+  - [x] DoD-3: removeTaskFromQueueが指定タスクをキューから削除し、ステータスを自動更新
+  - [x] DoD-4: clearTaskQueueが全タスクをキューから削除し、ステータスを自動更新
+  - [x] DoD-5: updateQueuePositionがタスクのキュー内位置を更新
+  - [x] DoD-6: reorderTaskQueueがキュー全体を一括で並び替え
+  - [x] DoD-7: 全操作のユニットテストが通る（9テスト全てパス）
+  - [x] DoD-8: Tauriコマンド統合完了（6コマンド登録）
+- **Verification**:
+  - Type: Unit
+  - Evidence: QueueServiceの全メソッドに対するユニットテスト（9テスト全てパス）
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0008: IPC Router実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: IPCRouter
+- **Maps to**
+  - REQ: All REQs
+  - HTTP operationId: All operationIds (16個)
+  - Event messageId: N/A
+- **Depends on**: TASK-0003, TASK-0005, TASK-0007
+- **Summary**: フロントエンドからのIPCリクエストを適切なサービスにルーティングし、統一的なエラーハンドリングとタイムアウトを実装
+- **Implementation Notes**:
+  - **OpenAPI仕様整備**:
+    - updateQueuePosition/reorderTaskQueue を追加（2エンドポイント）
+    - getTaskHierarchy を削除（不要なため）
+    - 最終的に16 operationId を定義
+  - **Backendエラーハンドリング改善**:
+    - commands層に format_error 関数を追加（日本語エラーメッセージ）
+    - ServiceError を分かりやすいメッセージに変換
+    - 全16コマンドに適用（task: 6, queue: 6, tag: 4）
+  - **Frontendタイムアウト実装**:
+    - src/lib/invoke.ts 作成（invokeWithTimeout: 5秒タイムアウト）
+    - 全APIファイル更新（tasks.ts, queue.ts, tags.ts）
+  - **lib.rs整理**:
+    - コマンドをグループ分け（Task/Queue/Tag）
+    - コメント追加で可読性向上
+- **Risks**: エラーハンドリングの一貫性、レスポンス形式の統一 → 解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 全16 operationIdのIPCハンドラーが実装されている（getTaskHierarchy削除、2つ追加）
+  - [x] DoD-2: OpenAPI仕様に全16 operationIdが定義されている
+  - [x] DoD-3: commands層で適切な日本語エラーメッセージに変換されている
+  - [x] DoD-4: フロントエンドにタイムアウト（5秒）が設定されている
+  - [x] DoD-5: lib.rsがコメント付きで整理されている
+  - [x] DoD-6: cargo build エラーなし（0.35s）
+  - [x] DoD-7: npm run build エラーなし（572ms）
+- **Verification**:
+  - Type: Build & Integration
+  - Evidence: Backend/Frontendビルド成功、16コマンド登録完了、エラーハンドリング統一
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0009: React UI 基本構造実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: ReactUI
+- **Maps to**
+  - REQ: REQ-0004, REQ-0007
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-0001
+- **Summary**: Reactアプリケーションの基本構造と状態管理を実装する
+- **Implementation Notes**: SolidJS + TypeScript + Tailwind CSS v3 + Kobalteを使用。SolidJS Storeで状態管理を実装。タスクCRUD画面まで完全実装
+- **Risks**: IPC通信の非同期処理、UI状態とバックエンド状態の同期
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: SolidJS + TypeScriptの基本プロジェクト構造が作成されている（api/, types/, stores/, components/, pages/）
+  - [x] DoD-2: IPC通信用のユーティリティ関数が実装されている（tasksApi: create/get/update/delete）
+  - [x] DoD-3: 基本的なUIコンポーネント（Button, Input, Card, Dialog）が作成されている
+  - [x] DoD-4: 状態管理ライブラリが統合されている（SolidJS Store + taskStore + taskActions）
+  - [x] DoD-5: タスクCRUD画面が完全実装され、バックエンドと連携している
+  - [x] DoD-6: Tailwind CSS + Kobalteでデザインシステムが構築されている
+  - [x] DoD-7: タスク作成・編集・削除の動作確認完了
+- **Verification**:
+  - Type: E2E
+  - Evidence: アプリケーション起動成功（npm run tauri dev）、タスクCRUD操作の動作確認完了
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0010: タスクプール画面実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: ReactUI
+- **Maps to**
+  - REQ: REQ-0004
+  - HTTP operationId: listTasks, getTaskHierarchy
+  - Event messageId: N/A
+- **Depends on**: TASK-0009
+- **Summary**: タスクプール画面に階層表示機能を実装し、親子関係の作成・編集・表示を可能にする
+- **Implementation Notes**:
+  - **階層表示機能**:
+    - 再帰的レンダリング関数（renderTaskCard）でタスクツリーを生成
+    - ルートタスク（parentId=null）のみをトップレベルに表示
+    - 子タスクは親の下に24px単位でインデント表示
+  - **展開/折りたたみ機能**:
+    - expandedTasks signal (Set<string>)で展開状態を管理
+    - 親タスクに▶/▼アイコンを表示（クリックでトグル）
+    - 折りたたみ時は子タスクを非表示
+  - **親タスク選択UI**:
+    - 作成ダイアログ: ドロップダウンで親タスクを選択（全タスクが選択肢）
+    - 編集ダイアログ: ドロップダウンで親タスクを変更（自身を除外して循環参照防止）
+    - 親タスクなし = ルートタスク
+  - **リアルタイム更新**:
+    - handleCreate/handleUpdate/handleDelete後にloadTasks()を呼び出し
+    - childrenIdsを含む最新データを取得してUI更新
+- **Risks**: 階層の深さによるパフォーマンス、状態同期のタイミング
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: タスク一覧がルートタスクのみトップレベルに表示される
+  - [x] DoD-2: 子タスクが親の下にインデント表示される
+  - [x] DoD-3: 親タスクに展開/折りたたみアイコンが表示される
+  - [x] DoD-4: アイコンクリックで子タスクの表示/非表示を切り替えられる
+  - [x] DoD-5: タスク作成時に親タスクを選択できる
+  - [x] DoD-6: タスク編集時に親タスクを変更できる（自身は選択肢から除外）
+  - [x] DoD-7: タスク作成・編集・削除後にUIがリアルタイムで更新される
+  - [x] DoD-8: 全27テストがパス、フロントエンドビルド成功
+- **Verification**:
+  - Type: E2E
+  - Evidence: 階層表示・展開/折りたたみ・親子関係作成/編集の動作確認完了、ビルド成功
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+### TASK-0011: タスクキュー画面実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: ReactUI
+- **Maps to**
+  - REQ: REQ-0007
+  - HTTP operationId: getTaskQueue, addTaskToQueue, removeTaskFromQueue
+  - Event messageId: N/A
+- **Depends on**: TASK-0009
+- **Summary**: タスクキュー管理画面を実装し、タスクプールと連携する
+- **Implementation Notes**:
+  - 画面レイアウト: 左側にタスクプール（draftタスク）、右側にタスクキュー（activeタスク）の分割表示
+  - タスクプール: `list_tasks`でdraftタスクのみ取得・表示
+  - タスクキュー: position順に表示、順序変更（上へ/下へ）機能
+  - キューから削除時の2パターン実装: ①draftに戻す（タスクプールに再表示）、②completedにマーク
+  - ストアレベルでの同期: queueActionsがtaskActions.loadTasks()を呼び出してリアルタイム反映
+  - serde rename_all="camelCase"でRust-TypeScript型マッピング
+- **Risks**: キューとプール間の状態同期、リアルタイム更新の実装
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 画面が縦分割され、左にタスクプール、右にタスクキューが表示される
+  - [x] DoD-2: タスクプールにdraftステータスのタスクのみ表示される
+  - [x] DoD-3: タスクキューにposition順（0が最上位）でタスクが表示される
+  - [x] DoD-4: タスクプールから「キューへ追加」でタスクがactiveになりキューに移動する
+  - [x] DoD-5: キュー内でタスクの順序を変更できる（上へ/下へボタン）
+  - [x] DoD-6: 「戻す」ボタンでタスクがdraftに戻りタスクプールに再表示される
+  - [x] DoD-7: 「完了」ボタンでタスクがcompletedになりキューから消える
+  - [x] DoD-8: キュー操作時にタスクプールがリアルタイムで更新される
+  - [x] DoD-9: ソリッドでシンプルなデザイン（shadowなし、青色アクセント）
+  - [x] DoD-10: フロントエンド・バックエンド統合完了（型マッピング含む）
+- **Verification**:
+  - Type: E2E
+  - Evidence: タスク追加・キュー移動・順序変更・削除の全機能動作確認完了
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+---
+
+### TASK-0012: IPC統合テスト
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskService, QueueService, TagService, IPCRouter
+- **Maps to**
+  - REQ: All REQs (REQ-0001 to REQ-0007)
+  - HTTP operationId: All 16 operationIds
+  - Event messageId: N/A
+- **Depends on**: TASK-0008, TASK-0009
+- **Summary**: 全16個のIPC operationIdをカバーする統合テストを実装し、サービス層のロジックとエラーハンドリングを検証する
+- **Implementation Notes**:
+  - テストファイル: `tests/integration_test.rs` (Rustのintegration testパターン)
+  - テストアプローチ: サービス層を直接テスト（Tauri State wrapperを回避）
+  - テストデータベース: In-memory SQLite (`:memory:`) + Diesel migrations
+  - テストカバレッジ: 25個のテストケース
+    - Task API: 8 tests (create success/invalid, get success/not found, update, delete, list, search)
+    - Queue API: 8 tests (add success/duplicate, get, remove, clear, update position, reorder success/invalid)
+    - Tag API: 6 tests (create success/empty name, list, update, delete success/in use)
+    - Integration scenarios: 3 tests (complete workflow, parent-child workflow, tag filter workflow)
+  - 修正内容:
+    - 正しいcrate名を使用: `tms_v2_lib` (Cargo.tomlの[lib]設定に基づく)
+    - サービス層APIに合わせた引数:
+      - `QueueService::add_to_queue(conn, task_id: String)` (AddToQueueRequestではない)
+      - `QueueService::remove_from_queue(conn, task_id, target_status)` (RemoveFromQueueRequestではない)
+      - `QueueService::update_queue_position(conn, task_id, new_position)` (UpdateQueueRequestではない)
+      - `QueueService::reorder_queue(conn, task_ids: Vec<String>)` (ReorderQueueRequestではない)
+    - モデル構造の正確な反映:
+      - `TaskStatus` enum使用 (`TaskStatus::Draft`, `TaskStatus::Active`, etc.)
+      - `SearchTasksParams` fields: `q`, `status`, `tags` (keywordやparent_idではない)
+      - `UpdateTaskRequest` no `tags` field, `description` is `Option<String>`
+      - `CreateTagRequest` / `UpdateTagRequest` require `color: Option<String>`
+      - `QueueEntryWithTask` has flat fields (`task_id`, `task_title`, etc.), not nested `task`
+    - タグ参照: タスク作成時はtag nameを使用（tag IDではない）
+- **Risks**: サービス層とコマンド層の境界、モデル構造の理解、Tauri Stateのテスト方法
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: Task API の6コマンド全てに対するテストが実装され成功する
+  - [x] DoD-2: Queue API の6コマンド全てに対するテストが実装され成功する
+  - [x] DoD-3: Tag API の4コマンド全てに対するテストが実装され成功する
+  - [x] DoD-4: エラーケース（重複キュー追加、存在しないタスク取得、使用中タグ削除など）のテストが成功する
+  - [x] DoD-5: 統合シナリオテスト（タグ→タスク→キュー→完了のフロー）が成功する
+  - [x] DoD-6: 親子タスク階層のテストが成功する（子タスク存在時の親削除失敗を含む）
+  - [x] DoD-7: タグフィルタ検索のテストが成功する
+  - [x] DoD-8: 全25テストが `cargo test --test integration_test` で成功する
+- **Verification**:
+  - Type: Integration Test
+  - Command: `cargo test --test integration_test`
+  - Evidence: `test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s`
+- **Updated**: 2025-12-27
+- **Completed**: 2025-12-27
+
+---
+
+### TASK-NEW-001: 親子ステータス自動更新ロジック実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0008
+  - HTTP operationId: updateTask, deleteTask
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 子タスクのステータス変更時に親タスクのステータスを自動的に更新する機能を実装する
+- **Implementation Notes**:
+  - **Step 0: 孫タスク作成禁止（BR-016）**:
+    - ドキュメント更新（requirements.md, domain.md, design.md）
+    - `validate_hierarchy_depth()` メソッド実装（階層2レベル制限）
+    - `ServiceError::GrandchildNotAllowed` エラー追加
+    - create_task/update_task に階層チェック追加
+    - テスト3個追加（孫タスク作成拒否、更新拒否、通常作成成功）
+  - **Step 1-6: 親子ステータス自動同期（BR-013）**:
+    - **新規メソッド追加**:
+      - `has_children(conn, task_id) -> bool`: 子タスク存在確認（task.rs:403-419）
+      - `calculate_parent_status(child_statuses: Vec<TaskStatus>) -> TaskStatus`: ステータス計算ロジック（task.rs:421-547）
+      - `update_parent_status_if_needed(conn, task_id)`: 親タスクのステータスを更新（再帰的）（task.rs:549-605）
+    - **既存メソッド修正**:
+      - `update_task()`: 更新後に親ステータス更新処理を追加（task.rs:341）
+      - `delete_task()`: Archived設定後に親ステータス更新処理を追加（task.rs:398）
+    - **ステータス計算ルール（BR-013）**:
+      - 全子がDraft → 親もDraft
+      - 1つでもActive → 親もActive
+      - 全子がCompleted → 親もCompleted
+      - 全子がArchived OR Completed → 親もCompleted
+      - 混在状態（Draft + Completed等） → 親はActive
+    - **再帰的更新**: 親→祖父と再帰的に更新（BR-016により実質1階層のみ）
+  - **テスト**:
+    - 単体テスト: 8個追加（has_children×2, calculate_parent_status×6）
+    - 統合テスト: 2個追加（test_parent_status_sync_on_child_update, test_parent_status_sync_on_child_delete）
+    - 既存テスト修正: 1個（test_parent_child_task_workflow: 孫タスク作成エラー確認に変更）
+- **Risks**: 深い階層でのパフォーマンス → BR-016により2レベル制限で解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-0: BR-016実装完了（孫タスク作成禁止）
+  - [x] DoD-1: `update_parent_status_if_needed()` 実装完了
+  - [x] DoD-2: `calculate_parent_status()` 実装完了（BR-013ルール適用）
+  - [x] DoD-3: `has_children()` 実装完了
+  - [x] DoD-4: `update_task()` に親更新処理追加
+  - [x] DoD-5: `delete_task()` に親更新処理追加
+  - [x] DoD-6: 単体テスト追加（8ケース：has_children×2, calculate_parent_status×6）
+  - [x] DoD-7: 統合テスト追加（2ケース：update時親更新、delete時親更新）
+  - [x] DoD-8: 全テスト合格（単体53個 + 統合27個 = 80個全合格）
+  - [x] DoD-9: 警告0個（クリーンビルド）
+- **Verification**:
+  - Type: Unit + Integration
+  - Evidence: 単体テスト53個全合格、統合テスト27個全合格、警告0個
+  - Test commands: `cargo test --lib` (53 passed), `cargo test --test integration_test` (27 passed)
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-002: キュー登録制限の強化
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: QueueService
+- **Maps to**
+  - REQ: REQ-0009
+  - HTTP operationId: addTaskToQueue
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-001
+- **Summary**: 親タスク（子タスクを持つタスク）のキュー登録を制限する機能を実装する
+- **Implementation Notes**:
+  - **QueueService修正**:
+    - `add_to_queue()` に子タスクチェック追加（queue.rs:93-96）
+    - `TaskService::has_children()` を呼び出して判定
+    - 子タスクが存在する場合は `ServiceError::TaskHasChildren` を返却
+    - TaskService のインポート追加（queue.rs:8）
+  - **エラーハンドリング**:
+    - `commands/queue.rs` で日本語エラーメッセージに変換（queue.rs:23-25）
+    - 「このタスクは子タスクを持つためキューに追加できません（タスクID: {}）」
+  - **テスト追加**:
+    - 単体テスト2個: test_add_to_queue_parent_task_rejected, test_add_to_queue_child_task_success（queue.rs:615-691）
+    - 統合テスト1個: test_queue_registration_restriction（integration_test.rs:772-806）
+- **Risks**: 既存のキュー追加ロジックとの整合性 → テストで確認済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: `add_to_queue()` に子タスクチェック追加
+  - [x] DoD-2: `ServiceError::TaskHasChildren` エラー使用（既存エラー）
+  - [x] DoD-3: エラーメッセージの日本語化完了
+  - [x] DoD-4: 単体テスト追加（2ケース：親タスク拒否、子タスク成功）
+  - [x] DoD-5: 統合テスト追加（1ケース）
+  - [x] DoD-6: 全テスト合格（単体55個 + 統合28個 = 83個全合格）
+- **Verification**:
+  - Type: Unit + Integration
+  - Evidence: 単体テスト55個全合格、統合テスト28個全合格
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-003: list_tasks API変更（Draft + Active表示）
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0010
+  - HTTP operationId: listTasks
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: list_tasks APIのフィルター条件をDraft単独からDraft + Activeに変更する
+- **Implementation Notes**:
+  - **service/task.rs修正**:
+    - 変更前: `.filter(tasks::status.eq("draft"))`
+    - 変更後: `.filter(tasks::status.eq("draft").or(tasks::status.eq("active")))`（task.rs:109）
+    - コメント更新: 「Draft + Active取得（タスクプール用）」
+  - **影響範囲**: タスクプール画面（TaskPage.tsx）のデフォルト表示
+  - **テスト**: 既存のテストがそのまま合格（変更不要）
+- **Risks**: 既存のUIロジックへの影響 → 既存テスト全合格で確認済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: フィルター条件を `draft OR active` に変更
+  - [x] DoD-2: コメント更新
+  - [x] DoD-3: 全テスト合格（単体55個 + 統合28個 = 83個全合格）
+- **Verification**:
+  - Type: Unit + Integration
+  - Evidence: 全83テスト合格（既存テストがそのまま合格）
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-004: 統合テスト更新
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskService, QueueService, TagService
+- **Maps to**
+  - REQ: REQ-0008, REQ-0009, REQ-0010
+  - HTTP operationId: All updated operationIds
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-001, TASK-NEW-002, TASK-NEW-003
+- **Summary**: 新規機能（親子ステータス同期、キュー登録制限、list_tasks変更）の統合テストを検証・確認する
+- **Implementation Notes**:
+  - **実際の実装**:
+    - TASK-NEW-001で統合テスト2個追加（test_parent_status_sync_on_child_update, test_parent_status_sync_on_child_delete）
+    - TASK-NEW-002で統合テスト1個追加（test_queue_registration_restriction）
+    - TASK-NEW-003は既存テストがそのまま合格（test_list_tasks）
+  - **実際のテスト数**: 25 → 28テスト（3テスト追加）
+  - **単体テストカバレッジ**:
+    - 親子ステータス同期: 10個（has_children×2, calculate_parent_status×6, update_parent_status×2）
+    - キュー登録制限: 2個（test_add_to_queue_parent_task_rejected, test_add_to_queue_child_task_success）
+    - 合計: 単体テスト12個追加（43 → 55個）
+  - **テストカバレッジ分析**:
+    - REQ-0008: 単体10個 + 統合2個 = 12個（十分なカバレッジ）
+    - REQ-0009: 単体2個 + 統合1個 = 3個（十分なカバレッジ）
+    - REQ-0010: 統合1個（既存テストがカバー）
+- **Risks**: テストの複雑化 → 単体テストで十分なカバレッジを確保することで解決
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 親子ステータス同期のテスト確認（統合2個 + 単体10個）
+  - [x] DoD-2: キュー登録制限のテスト確認（統合1個 + 単体2個）
+  - [x] DoD-3: list_tasks変更のテスト確認（既存テスト合格）
+  - [x] DoD-4: 全テスト合格（単体55個 + 統合28個 = 83個全合格）
+  - [x] DoD-5: テストカバレッジ確認完了
+- **Verification**:
+  - Type: Unit + Integration
+  - Evidence: 単体テスト55個全合格、統合テスト28個全合格
+  - Test commands: `cargo test --lib` (55 passed), `cargo test --test integration_test` (28 passed)
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-005: 検索バー・フィルターUI実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPool (FrontendUI)
+- **Maps to**
+  - REQ: REQ-0011, REQ-0012
+  - HTTP operationId: searchTasks
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-003
+- **Summary**: 検索バーとフィルターチップUIを実装し、タスクプール画面に統合する
+- **Implementation Notes**:
+  - **実装内容** (Step 0で完了):
+    - TaskPool.tsx に検索バーを統合（lines 202-226）
+    - フィルターチップを実装（Draft/Active/Completed）（lines 228-262）
+    - 検索クエリとフィルターの状態管理（searchQuery, activeFilters signals）
+    - リアルタイムフィルタリング機能（filteredTasks computed）
+  - **配置**: TaskPool コンポーネントのヘッダー部分
+  - **UI特徴**:
+    - 検索バー: SearchIcon + Input + クリアボタン（X）
+    - フィルターチップ: トグル式、アクティブ時は primary カラー
+- **Risks**: 状態管理の複雑化、検索パフォーマンス → 解決済み（Solid.js Signal使用）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 検索バー UI 実装完了（TaskPool.tsx lines 206-221）
+  - [x] DoD-2: フィルターチップ UI 実装完了（TaskPool.tsx lines 228-262）
+  - [x] DoD-3: TaskPool に統合完了
+  - [x] DoD-4: フィルター状態管理実装（searchQuery, activeFilters signals）
+  - [x] DoD-5: リアルタイムフィルタリング実装（filteredTasks）
+  - [x] DoD-6: ビルド成功
+- **Verification**:
+  - Type: E2E
+  - Evidence: TaskPool.tsx:159-167 でフィルタリングロジック実装確認、UI表示確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28 (Step 0)
+
+### TASK-NEW-006: タスクリスト表示への変更
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPool (FrontendUI)
+- **Maps to**
+  - REQ: REQ-0015
+  - HTTP operationId: listTasks
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-001
+- **Summary**: タスクプール画面のカード表示をリスト表示に変更し、UI改善を実施する
+- **Implementation Notes**:
+  - **実装内容** (Step 0で完了):
+    - TaskPool.tsx でリスト形式表示を実装
+    - 階層インデント維持（24px単位、ml-6使用）（lines 285, 348）
+    - 展開アイコン（ChevronRight/ChevronDown）実装（lines 286-290）
+    - ステータスアイコン表示（getStatusIcon関数、lines 169-190）
+    - 進捗サークル表示（ProgressCircle、親タスク用、lines 99-132）
+  - **1行レイアウト**:
+    - 左: 展開アイコン + ステータス/進捗アイコン
+    - 中央: タスクタイトル（line-through for completed）
+    - 右: アクションボタン（Edit, Delete, Add to Queue）
+  - **アクションボタン**:
+    - PencilIcon: 編集ダイアログ（lines 310-320）
+    - Trash2Icon: 削除（lines 321-331）
+    - ArrowRightIcon: キューに追加（lines 332-343、disabled判定あり）
+  - **親タスクのキュー登録制限**: queueTaskIds.has(task.id) で disabled 設定
+  - **ホバーエフェクト**: group-hover:opacity-100 で実装（line 309）
+- **Risks**: レイアウト変更による既存機能の破損 → 解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: リスト表示実装完了（TaskPool.tsx lines 268-410）
+  - [x] DoD-2: 階層表示維持（インデント ml-6 + 展開アイコン）
+  - [x] DoD-3: アクションボタン実装（Edit, Delete, Add to Queue）
+  - [x] DoD-4: ホバーエフェクト実装（group-hover）
+  - [x] DoD-5: キュー登録ボタンのdisabled制御実装
+  - [x] DoD-6: ビルド成功
+  - [x] DoD-7: UI動作確認完了
+- **Verification**:
+  - Type: E2E
+  - Evidence: TaskPool.tsx 実装確認、階層表示・アクションボタン動作確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28 (Step 0)
+
+### TASK-NEW-007: タスク詳細ポップアップ実装
+- **Status**: UnDone
+- **Priority**: P2
+- **Component(s)**: FrontendUI
+- **Maps to**
+  - REQ: REQ-0015
+  - HTTP operationId: getTask
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タスクの詳細情報を表示する読み取り専用モーダルダイアログを実装する
+- **Implementation Notes**:
+  - **新規コンポーネント**: `src/components/TaskDetailModal.tsx`
+  - **表示内容**:
+    - タイトル、説明、ステータス、作成日時、更新日時
+    - タグ一覧
+    - 親タスクリンク（存在する場合）
+    - 子タスク一覧（存在する場合）
+  - **トリガー**: タスクリスト行クリックまたは📋ボタンクリック
+  - **Kobalte UI**: Dialog コンポーネント使用
+- **Risks**: モーダル表示の複雑化
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: TaskDetailModal コンポーネント実装完了
+  - [ ] DoD-2: タスククリックでポップアップ表示
+  - [ ] DoD-3: 読み取り専用の詳細表示
+  - [ ] DoD-4: 親子関係リンク表示
+  - [ ] DoD-5: ビルド成功
+  - [ ] DoD-6: UI動作確認完了
+- **Verification**:
+  - Type: E2E
+  - Evidence: 詳細ポップアップの表示確認完了
+- **Updated**: 2025-12-27
+
+### TASK-NEW-008: Completed/Archivedページ実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: CompletedPage, ArchivedPage, Header (FrontendUI)
+- **Maps to**
+  - REQ: REQ-0013, REQ-0014
+  - HTTP operationId: searchTasks (implicitly via tasksApi.list)
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-006
+- **Summary**: 完了済みタスクとアーカイブ済みタスクを表示する専用ページを実装する
+- **Implementation Notes**:
+  - **実装内容** (Step 0で完了):
+    - `src/pages/CompletedPage.tsx`: 完了タスクのタイムライン表示（210 lines）
+    - `src/pages/ArchivedPage.tsx`: アーカイブタスクのタイムライン表示（210 lines）
+    - `src/App.tsx`: Solid Router設定（/completed, /archive routes）
+    - `src/components/Header.tsx`: タブナビゲーション（Tasks/Completed/Archive）
+  - **UI特徴**:
+    - 日付グルーピング機能（groupTasksByDate関数）
+    - タイムライン形式の表示（border-l-2, dot markers）
+    - 検索機能（SearchIcon + Input）
+    - CompletedPage: 完了日時表示
+    - ArchivedPage: アーカイブ日時表示 + Restore button（UI のみ）
+  - **ルーティング**: @solidjs/router 使用、RootLayout パターン
+  - **API呼び出し**: tasksApi.list() でステータスフィルタリング
+- **Risks**: ナビゲーション設計、状態管理の複雑化 → 解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: CompletedPage 実装完了（CompletedPage.tsx）
+  - [x] DoD-2: ArchivedPage 実装完了（ArchivedPage.tsx）
+  - [x] DoD-3: ルーティング設定完了（App.tsx lines 22-26）
+  - [x] DoD-4: ナビゲーション追加完了（Header.tsx タブ実装）
+  - [x] DoD-5: 日付グルーピング実装完了
+  - [x] DoD-6: 検索機能実装完了
+  - [x] DoD-7: ビルド成功
+  - [x] DoD-8: ページ遷移動作確認完了
+- **Verification**:
+  - Type: E2E
+  - Evidence: CompletedPage/ArchivedPage実装確認、ルーティング動作確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28 (Step 0)
+
+### TASK-NEW-009: カラーパレット適用
+- **Status**: UnDone (HOLD - カラーパレットは後で決定する)
+- **Priority**: P2
+- **Component(s)**: FrontendUI
+- **Maps to**
+  - REQ: N/A
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-006, TASK-NEW-008
+- **Summary**: カラーパレットを決定し、全UIコンポーネントに適用する
+- **Implementation Notes**:
+  - **保留理由**: カラーパレットの決定を後回しにする
+  - **実装予定内容**:
+    - `tailwind.config.js` でカラーパレット定義
+    - ステータスバッジに色適用（Draft: Gray, Active: Blue, Completed: Green, Archived: Gray）
+    - 一貫性のある色使い
+  - **ステータス**: カラーパレット決定後に実装開始
+- **Risks**: デザイン変更の影響範囲
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: カラーパレット決定
+  - [ ] DoD-2: Tailwind設定更新
+  - [ ] DoD-3: ステータスバッジに色適用
+  - [ ] DoD-4: 一貫性のある色使い確認
+  - [ ] DoD-5: ビルド成功
+- **Verification**:
+  - Type: Visual
+  - Evidence: カラーパレット適用後の視覚確認完了
+- **Updated**: 2025-12-27
+- **Note**: このタスクは保留中。カラーパレット決定後に実装を開始する。
+
+### TASK-NEW-010: キューUIの改善
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: QueuePanel (FrontendUI)
+- **Maps to**
+  - REQ: N/A
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-006
+- **Summary**: タスクキュー画面のUIを改善し、タスクプール画面と統一感を持たせる
+- **Implementation Notes**:
+  - **実装内容** (Step 0で完了):
+    - QueuePanel.tsx の完全書き換え（ui-exampleテンプレートベース）
+    - 「In Progress」ハイライト表示（bg-primary/10 border border-primary/20）
+    - タスクプールと同じカラーシステム使用（OKLch）
+    - シンプルなボタンスタイル（variant="ghost"、variant="outline"）
+  - **UI特徴**:
+    - タイトルバーに「Task Queue」表示
+    - In Progress状態の視覚的強調
+    - アクションボタン: Back, Complete（2ボタン）
+    - タスクプールと統一されたデザイン言語
+- **Risks**: 既存のキュー機能への影響 → 解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: QueuePanel.tsx 書き換え完了
+  - [x] DoD-2: In Progress ハイライト実装完了
+  - [x] DoD-3: タスクプールUIとの統一感確認（OKLchカラー、ボタンスタイル）
+  - [x] DoD-4: ビルド成功
+  - [x] DoD-5: UI動作確認完了
+- **Verification**:
+  - Type: E2E
+  - Evidence: QueuePanel.tsx 実装確認、デザイン統一性確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28 (Step 0)
+
+### TASK-NEW-011: レイアウト調整・タイトル削除
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: TaskPool, Header (FrontendUI)
+- **Maps to**
+  - REQ: N/A
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-006
+- **Summary**: タスクプール画面のタイトルを削除し、レイアウトを調整してスペースを最適化する
+- **Implementation Notes**:
+  - **実装内容** (Step 0で完了):
+    - TaskPool.tsx にはタイトル表示なし（ヘッダーは検索バーとフィルターのみ）
+    - Header.tsx でタブナビゲーション実装（Tasks/Completed/Archive）
+    - スペース最適化: 上部マージンなし、検索バーが最上部に配置
+  - **レイアウト特徴**:
+    - TaskPool: border-r でキューパネルと区切り
+    - ヘッダー部分（lines 200-263）: 検索バー + フィルターチップのみ
+    - タスクリスト部分（lines 265-411）: スクロール可能領域（flex-1 overflow-y-auto）
+- **Risks**: レイアウト変更による見た目の影響 → 解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: タスクプールタイトル削除（TaskPool.tsx にタイトルなし）
+  - [x] DoD-2: レイアウト調整完了（flex layout, border-r）
+  - [x] DoD-3: スペース最適化確認（検索バーが最上部）
+  - [x] DoD-4: ビルド成功
+  - [x] DoD-5: UI動作確認完了
+- **Verification**:
+  - Type: Visual
+  - Evidence: TaskPool.tsx 実装確認、レイアウト視覚確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28 (Step 0)
+
+### TASK-NEW-012: ドキュメント更新
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: Documentation
+- **Maps to**
+  - REQ: REQ-0008〜REQ-0015
+  - HTTP operationId: All updated operationIds
+  - Event messageId: N/A
+- **Depends on**: All TASK-NEW tasks
+- **Summary**: 新規要件追加およびStep 0（UIテンプレート適用）の完了に伴い、全ドキュメントを更新する
+- **Implementation Notes**:
+  - **更新対象ファイル**:
+    - `10_prd/requirements.md`: REQ-0008〜REQ-0015追加（完了済み）
+    - `20_domain/domain.md`: ドメイン更新（完了済み）
+    - `20_domain/glossary.md`: 用語追加（完了済み）
+    - `30_contract/openapi.yaml`: API仕様更新（完了済み）
+    - `40_design/architecture.md`: アーキテクチャ更新（完了済み）
+    - `40_design/design.md`: 設計ドキュメント更新（完了済み）
+    - `40_design/tasks.md`: タスク分解反映（完了 - Step 0完了を反映）
+    - `90_review/traceability.md`: トレーサビリティ更新（完了 - REQ-0008〜015追加、全ステータスDone）
+    - `90_review/context_bundle.md`: Context Bundle更新（完了 - gen_all.sh実行）
+  - **Step 0完了に伴う追加更新**:
+    - TASK-NEW-005〜012の完了状態を反映
+    - 新規コンポーネント（TaskPool, Header, CompletedPage, ArchivedPage等）のマッピング追加
+    - Task Progress更新（92% = 22/24）
+    - Coverage Summary: 100% (15/15 REQs Done)
+  - **最終チェック**: 全ドキュメントの一貫性確認完了
+- **Risks**: ドキュメントの不整合 → 解決済み
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: requirements.md更新完了（REQ-0008〜REQ-0015追加）
+  - [x] DoD-2: domain.md更新完了
+  - [x] DoD-3: glossary.md更新完了
+  - [x] DoD-4: openapi.yaml更新完了
+  - [x] DoD-5: architecture.md更新完了
+  - [x] DoD-6: design.md更新完了
+  - [x] DoD-7: tasks.md更新完了（Step 0反映、TASK-NEW-005〜012のステータス更新）
+  - [x] DoD-8: traceability.md更新完了（REQ-0001〜015全て Done、Component名追加）
+  - [x] DoD-9: context_bundle.md更新完了（gen_all.sh実行、自動更新）
+  - [x] DoD-10: 全ドキュメントの一貫性確認完了
+- **Verification**:
+  - Type: Manual Review
+  - Evidence: 全ドキュメント更新完了、gen_all.sh正常実行
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-013: TaskService編集・削除制限実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0016, REQ-0017
+  - HTTP operationId: updateTask, deleteTask
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: update_task/delete_taskにDraft状態チェックを追加し、Draft以外のタスクは編集・削除を拒否する
+- **Implementation Notes**:
+  - TaskNotDraftエラー型追加（error.rs）
+  - update_taskにDraft checkロジック追加（task.rs）
+  - delete_taskにDraft checkロジック追加（task.rs）
+  - 単体テスト3個追加（update非Draft拒否、delete非Draft拒否、Draft成功）
+  - **追加実装**: Tauriダイアログプラグイン導入（confirm → ask、alert → message）
+    - フロントエンドの削除確認ダイアログが動作しない問題を解決
+    - `@tauri-apps/plugin-dialog` をバックエンド・フロントエンド両方に追加
+    - `capabilities/default.json` にdialogパーミッション追加
+- **Risks**: 既存のActive/Completedタスクの編集・削除がブロックされる（仕様通り）
+- **Future Improvements**:
+  - Tauriダイアログを廃止し、カスタムダイアログコンポーネントをアプリケーションデザインに即して実装予定
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TaskNotDraftエラー定義追加完了
+  - [x] DoD-2: update_taskでDraft以外のタスクがエラー返却
+  - [x] DoD-3: delete_taskでDraft以外のタスクがエラー返却
+  - [x] DoD-4: 単体テスト3個追加・全合格
+  - [x] DoD-5: ビルド成功
+  - [x] DoD-6: フロントエンド削除機能動作確認完了
+
+### TASK-NEW-014: 物理削除API実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0018
+  - HTTP operationId: deleteTaskPermanently
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: delete_task_permanently API実装（Archivedタスクの完全削除）
+- **Implementation Notes**:
+  - TaskNotArchivedエラー型追加（error.rs）
+  - delete_task_permanentlyメソッド実装（task.rs）: Archived check、DB DELETE
+  - CASCADE削除マイグレーション実装（ON DELETE SET NULL → ON DELETE CASCADE）
+    - 親タスク削除時に子タスクも自動削除される仕様に変更
+    - マイグレーションファイル作成・実行完了
+  - Tauriコマンド追加（commands/task.rs）
+  - lib.rs登録
+  - 単体テスト4個追加（success, rejects non-archived, cascade deletes children, not found）
+- **Risks**: 物理削除は復元不可（仕様通り）、親タスク削除時に子タスクも削除される（CASCADE）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TaskNotArchivedエラー定義追加完了
+  - [x] DoD-2: delete_task_permanently実装完了
+  - [x] DoD-3: Tauriコマンド追加完了
+  - [x] DoD-4: lib.rs登録完了
+  - [x] DoD-5: 単体テスト4個追加・全合格
+  - [x] DoD-6: ビルド成功
+  - [x] DoD-7: CASCADEマイグレーション実行完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-015: restore_task API実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0022
+  - HTTP operationId: restoreTask
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: restore_task API実装（Archived → Draft）
+- **Implementation Notes**:
+  - restore_taskメソッド実装（task.rs）: Archived check、Draft状態変更、updated_at更新、親ステータス同期
+  - Tauriコマンド追加（commands/task.rs）
+  - lib.rs登録
+  - 単体テスト3個追加
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: restore_task実装完了
+  - [x] DoD-2: Tauriコマンド追加完了
+  - [x] DoD-3: lib.rs登録完了
+  - [x] DoD-4: 単体テスト3個追加・全合格
+  - [x] DoD-5: ビルド成功
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-016: list_tasks statusパラメータ対応
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0019
+  - HTTP operationId: listTasks
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: list_tasksにstatusパラメータ追加（Optional配列）
+- **Implementation Notes**:
+  - list_tasksシグネチャ変更: status: Option<Vec<TaskStatus>>追加
+  - フィルタロジック実装: None = Draft + Active、Some = 指定statusesでフィルタ
+  - Tauriコマンド更新（commands/task.rs）
+  - 単体テスト5個追加
+- **Risks**: 後方互換性維持必須（Optional parameter使用で解決）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: list_tasksシグネチャ変更完了
+  - [x] DoD-2: statusフィルタロジック実装完了
+  - [x] DoD-3: Tauriコマンド更新完了
+  - [x] DoD-4: 単体テスト5個追加・全合格
+  - [x] DoD-5: ビルド成功
+  - [x] DoD-6: enrich_task_responseヘルパー関数作成（コード重複削減）
+  - [x] DoD-7: search_tasksリファクタリング完了
+  - [x] DoD-8: 統合テスト修正完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-017: 統合テスト更新
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: Integration Tests
+- **Maps to**
+  - REQ: REQ-0016, REQ-0017, REQ-0018, REQ-0019, REQ-0022
+  - HTTP operationId: All new operationIds
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-013, TASK-NEW-014, TASK-NEW-015, TASK-NEW-016
+- **Summary**: 新規機能の統合テスト追加
+- **Implementation Notes**:
+  - Draft以外編集拒否テスト
+  - Draft以外削除拒否テスト
+  - 物理削除テスト
+  - restoreテスト
+  - list_tasks statusパラメータテスト
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 統合テスト5個追加
+  - [x] DoD-2: 全テスト合格（73 unit + 37 integration = 110 tests）
+  - [x] DoD-3: ビルド成功
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-018: TaskPool編集・削除ボタン条件表示
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskPool
+- **Maps to**
+  - REQ: REQ-0016, REQ-0017
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-013
+- **Summary**: Draft以外のタスクから編集・削除ボタンを非表示
+- **Implementation Notes**:
+  - TaskPool.tsxの編集・削除ボタンに条件追加: <Show when={task.status === "draft"}>
+  - 親タスク・子タスク両方に適用
+  - 親タスクのキューボタンに子タスク有無チェック追加: <Show when={!(task.children && task.children.length > 0)}>
+  - 子タスクを持つ親タスクではキューボタンを非表示（REQ-0009対応）
+  - ボタンエリアに固定高さ追加（h-8）でレイアウト安定化
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: Draft以外で編集・削除ボタン非表示
+  - [x] DoD-2: 親タスク・子タスク両方で動作
+  - [x] DoD-3: ビルド成功（Frontend + Tauri）
+  - [x] DoD-4: UI動作確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-019: フィルターチップからCompleted削除
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPool
+- **Maps to**
+  - REQ: REQ-0020
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: フィルターチップをDraft, Activeの2つに削減
+- **Implementation Notes**:
+  - TaskPool.tsxのフィルターチップ部分修正: Completedボタン削除、Draft/Activeのみ残す
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: Completedフィルター削除
+  - [x] DoD-2: Draft, Activeのみ表示
+  - [x] DoD-3: ビルド成功
+  - [x] DoD-4: UI動作確認完了
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-020: CompletedPage/ArchivedPageのAPI修正
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: CompletedPage, ArchivedPage
+- **Maps to**
+  - REQ: REQ-0019
+  - HTTP operationId: listTasks
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-016
+- **Summary**: list_tasksのstatusパラメータを使用
+- **Implementation Notes**:
+  - tasksApi拡張（api/tasks.ts）: listByStatus(status: string[])追加
+  - CompletedPage修正: tasksApi.listByStatus(["completed"])使用
+  - ArchivedPage修正: tasksApi.listByStatus(["archived"])使用
+  - クライアント側フィルタリング削除でパフォーマンス改善
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: tasksApi.listByStatus実装完了
+  - [x] DoD-2: CompletedPage修正完了
+  - [x] DoD-3: ArchivedPage修正完了
+  - [x] DoD-4: ビルド成功
+  - [x] DoD-5: 各ページで正しいタスク表示確認
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-021: ArchivedPageのrestore/delete機能実装
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: ArchivedPage
+- **Maps to**
+  - REQ: REQ-0018, REQ-0022
+  - HTTP operationId: restoreTask, deleteTaskPermanently
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-014, TASK-NEW-015
+- **Summary**: Restoreボタンと物理削除ボタンを機能させる
+- **Implementation Notes**:
+  - tasksApi拡張（api/tasks.ts）: restore(id)、deletePermanently(id)追加
+  - ArchivedPage修正: handleRestore実装、handleDeletePermanently追加、物理削除ボタン追加
+- **Risks**: 物理削除は復元不可（確認ダイアログ検討）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: tasksApi.restore実装完了
+  - [x] DoD-2: tasksApi.deletePermanently実装完了
+  - [x] DoD-3: handleRestore実装完了
+  - [x] DoD-4: handleDeletePermanently実装完了
+  - [x] DoD-5: 物理削除ボタン追加完了
+  - [x] DoD-6: ビルド成功
+  - [x] DoD-7: restore機能動作確認
+  - [x] DoD-8: 物理削除機能動作確認
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-022: QueuePanel空時UI改善
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: QueuePanel
+- **Maps to**
+  - REQ: REQ-0021
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 空時の点線枠の高さ調整
+- **Implementation Notes**:
+  - QueuePanel.tsx修正: h-64 → min-h-24（96px、タスクカード約1.5枚分の高さ）、メッセージ変更: "Queue is empty"
+  - 高さ調整: flex-1（小さすぎる）→ min-h-64（高すぎる）→ min-h-32（まだ高い）→ min-h-24（最適）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 適切な高さに変更（min-h-24）
+  - [x] DoD-2: メッセージ変更完了
+  - [x] DoD-3: ビルド成功
+  - [x] DoD-4: UI動作確認（適切な存在感）
+- **Updated**: 2025-12-28
+- **Completed**: 2025-12-28
+
+### TASK-NEW-023: ドキュメント更新
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: Documentation
+- **Maps to**
+  - REQ: REQ-0016, REQ-0017, REQ-0018, REQ-0019, REQ-0020, REQ-0021, REQ-0022
+  - HTTP operationId: All updated operationIds
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-013, TASK-NEW-014, TASK-NEW-015, TASK-NEW-016, TASK-NEW-017, TASK-NEW-018, TASK-NEW-019, TASK-NEW-020, TASK-NEW-021, TASK-NEW-022
+- **Summary**: 新規要件追加に伴い、全ドキュメントを更新する
+- **Implementation Notes**:
+  - requirements.md更新（REQ-0016〜REQ-0022追加）
+  - openapi.yaml更新（新エンドポイント、パラメータ追加）
+  - design.md更新（設計変更反映）
+  - tasks.md更新（タスク分解反映）
+  - traceability.md更新（REQ→Component→Task マッピング）
+  - gen_all.sh実行（context_bundle.md自動更新）
+- **Risks**: ドキュメントの不整合
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: requirements.md更新完了
+  - [ ] DoD-2: openapi.yaml更新完了
+  - [ ] DoD-3: design.md更新完了
+  - [ ] DoD-4: tasks.md更新完了
+  - [ ] DoD-5: traceability.md更新完了
+  - [ ] DoD-6: context_bundle.md自動更新完了
+  - [ ] DoD-7: 全ドキュメントの一貫性確認完了
+
+---
+### TASK-NEW-024: バグ修正 - completed時のupdated_at更新
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: QueueService
+- **Maps to**
+  - REQ: REQ-0023
+  - HTTP operationId: removeTaskFromQueue (internal)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: QueueServiceのremove_from_queue関数でタスク完了時にupdated_atを更新
+- **Implementation Notes**:
+  - File: `src-tauri/src/service/queue.rs` Line 178-185
+  - 修正内容: statusの更新に加えてupdated_atも同時更新
+  - chrono::Utc import追加
+  - タプル形式で2フィールド同時更新
+  - 単体テスト追加: test_remove_from_queue_updates_updated_at
+  - コード例:
+    ```rust
+    let now = Utc::now().to_rfc3339();
+    diesel::update(tasks::table.find(&task_id))
+        .set((
+            tasks::status.eq(&target_status),
+            tasks::updated_at.eq(&now),
+        ))
+        .execute(conn)?;
+    ```
+  - 参考: service/task.rsのupdate_task関数では正しく実装済み
+- **Risks**: なし（単純なバグ修正）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: queue.rsのremove_from_queue関数修正完了
+  - [x] DoD-2: Rustコンパイル成功
+  - [x] DoD-3: 単体テスト作成・合格（updated_at更新確認）
+  - [x] DoD-4: 全テスト合格確認（74 unit + 37 integration tests）
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
+
+### TASK-NEW-025: ページネーション API実装
+- **Status**: UnDone
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0024
+  - HTTP operationId: listTasksPaginated
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: list_tasks_paginatedエンドポイント実装（総件数付き）
+- **Implementation Notes**:
+  - models/task.rs:
+    - PaginatedTaskResponse { tasks: Vec<TaskResponse>, total: i64 } 構造体追加
+    - ListTasksPaginatedParams { status, limit, offset } 構造体追加
+  - service/task.rs:
+    - list_tasks_paginated関数実装
+    - デフォルトlimit=20, offset=0
+    - .count().get_result::<i64>(conn)で総件数取得
+    - 既存enrich_task_response再利用
+  - commands/task.rs:
+    - list_tasks_paginatedコマンド追加
+  - 既存list_tasksは後方互換のため維持
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: PaginatedTaskResponse型追加完了
+  - [ ] DoD-2: list_tasks_paginated関数実装完了
+  - [ ] DoD-3: Tauriコマンド追加・登録完了
+  - [ ] DoD-4: Rustコンパイル成功
+  - [ ] DoD-5: 単体テスト4個作成・合格（デフォルト値、offset動作、総件数、statusフィルタ）
+  - [ ] DoD-6: 統合テスト2個作成・合格（ページング動作、totalカウント正確性）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-026: PaginatedTaskResponse型フロントエンド追加
+- **Status**: UnDone
+- **Priority**: P0
+- **Component(s)**: FrontendUI
+- **Maps to**
+  - REQ: REQ-0024
+  - HTTP operationId: listTasksPaginated
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-025
+- **Summary**: フロントエンドのtasksApi.tsにlistPaginatedメソッド追加
+- **Implementation Notes**:
+  - src/api/tasks.ts:
+    - PaginatedTaskResponse型定義追加
+    - listPaginated関数実装（invoke("list_tasks_paginated")呼び出し）
+    - パラメータ: status, limit, offset
+  - src/types/task.ts:
+    - PaginatedTaskResponse型定義追加（必要に応じて）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: PaginatedTaskResponse型定義追加完了
+  - [ ] DoD-2: tasksApi.listPaginated実装完了
+  - [ ] DoD-3: Frontendコンパイル成功
+  - [ ] DoD-4: API呼び出し動作確認（コンソールログで確認）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-027: Pagination UIコンポーネント実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: FrontendUI
+- **Maps to**
+  - REQ: REQ-0025
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-026
+- **Summary**: 再利用可能なPaginationコンポーネント作成
+- **Implementation Notes**:
+  - src/components/Pagination.tsx:
+    - Props: currentPage, totalPages, totalItems, onPageChange
+    - UI形式: `< [number input box] >`
+    - 前ページボタン（`<`）: currentPage > 1で有効化
+    - ページ番号入力フィールド: 直接ジャンプ可能（Enterキー対応）
+    - 次ページボタン（`>`）: currentPage < totalPagesで有効化
+    - 総ページ数/総件数表示: "Page 1 of 5 (100 items)"形式
+    - 表示条件: totalPages <= 1で非表示（Show when={totalPages > 1}）
+    - ページ番号入力バリデーション: 1〜totalPages範囲チェック、範囲外は自動補正
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: Pagination.tsx作成完了
+  - [ ] DoD-2: 全UI要素実装完了（前/次ボタン、入力フィールド、表示テキスト）
+  - [ ] DoD-3: Frontendコンパイル成功
+  - [ ] DoD-4: スタンドアロンテスト（totalPages=1で非表示、範囲外入力で補正）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-028: CompletedPage ページネーション実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: CompletedPage
+- **Maps to**
+  - REQ: REQ-0025
+  - HTTP operationId: listTasksPaginated
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-027
+- **Summary**: CompletedPageにページネーション機能統合
+- **Implementation Notes**:
+  - src/pages/CompletedPage.tsx:
+    - currentPage, totalItems シグナル追加
+    - ITEMS_PER_PAGE = 20定数追加
+    - loadCompletedTasks関数修正: tasksApi.listPaginated使用
+    - totalPagesはMath.ceil(totalItems / ITEMS_PER_PAGE)で計算
+    - Paginationコンポーネント追加（タスクリスト下部）
+    - 日付グループ化は現在のページのタスクのみに適用
+- **Risks**: 日付グループ化との統合（ページ単位でグループ化）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: ページネーション状態管理追加完了
+  - [ ] DoD-2: loadCompletedTasks修正完了
+  - [ ] DoD-3: Paginationコンポーネント統合完了
+  - [ ] DoD-4: Frontendコンパイル成功
+  - [ ] DoD-5: UI動作確認（ページ遷移、日付グループ化、総件数表示）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-029: ArchivedPage ページネーション実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: ArchivedPage
+- **Maps to**
+  - REQ: REQ-0025
+  - HTTP operationId: listTasksPaginated
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-027
+- **Summary**: ArchivedPageにページネーション機能統合
+- **Implementation Notes**:
+  - src/pages/ArchivedPage.tsx:
+    - currentPage, totalItems シグナル追加
+    - ITEMS_PER_PAGE = 20定数追加
+    - onMount内のAPI呼び出しをloadArchivedTasks関数に切り出し
+    - tasksApi.listPaginated使用
+    - totalPagesはMath.ceil(totalItems / ITEMS_PER_PAGE)で計算
+    - Paginationコンポーネント追加（タスクリスト下部）
+    - 日付グループ化は現在のページのタスクのみに適用
+- **Risks**: 日付グループ化との統合（ページ単位でグループ化）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: ページネーション状態管理追加完了
+  - [ ] DoD-2: loadArchivedTasks関数実装完了
+  - [ ] DoD-3: Paginationコンポーネント統合完了
+  - [ ] DoD-4: Frontendコンパイル成功
+  - [ ] DoD-5: UI動作確認（ページ遷移、日付グループ化、総件数表示）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-030: DropdownMenu コンポーネント実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: FrontendUI
+- **Maps to**
+  - REQ: REQ-0026
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: Kobalte Dropdown Menu ベースの再利用可能コンポーネント作成
+- **Implementation Notes**:
+  - src/components/DropdownMenu.tsx:
+    - Kobalte Dropdown Menu使用（@kobalte/core 0.13.11）
+    - 参考実装: Dialog.tsx（Portal, Content パターン）
+    - コンポーネント構成:
+      - DropdownMenu（メインコンポーネント）
+      - DropdownMenuItem（メニュー項目コンポーネント）
+    - Props:
+      - trigger: JSX.Element（トリガーボタン）
+      - children: JSX.Element（メニュー項目）
+    - DropdownMenuItem Props:
+      - onSelect: () => void
+      - children: JSX.Element
+      - destructive?: boolean（赤色スタイル）
+- **Risks**: Kobalte学習コスト（Dialog.tsx参考で軽減）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: DropdownMenu.tsx作成完了
+  - [ ] DoD-2: DropdownMenuItem実装完了
+  - [ ] DoD-3: destructive variant実装完了
+  - [ ] DoD-4: Frontendコンパイル成功
+  - [ ] DoD-5: スタンドアロンテスト（メニュー開閉、項目クリック）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-031: ArchivedPage 3点リーダーメニュー実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: ArchivedPage
+- **Maps to**
+  - REQ: REQ-0026
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-030
+- **Summary**: ArchivedPageの復元・削除ボタンを3点リーダーメニューに置き換え
+- **Implementation Notes**:
+  - src/pages/ArchivedPage.tsx:
+    - 既存2ボタン（Restore, Delete Permanently）をDropdownMenuに置き換え（Line 216-233）
+    - MoreVerticalIcon（3点リーダー）追加
+    - DropdownMenuコンポーネント使用
+    - メニュー項目:
+      1. Restore: RotateCcwIcon + "Restore" テキスト
+      2. Delete Permanently: Trash2Icon + "Delete Permanently" テキスト（destructive variant）
+    - 既存アイコンコンポーネント再利用
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: MoreVerticalIconコンポーネント追加完了
+  - [ ] DoD-2: DropdownMenu統合完了（2メニュー項目）
+  - [ ] DoD-3: 既存ボタン削除完了
+  - [ ] DoD-4: Frontendコンパイル成功
+  - [ ] DoD-5: UI動作確認（メニュー開閉、restore動作、delete動作）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-032: タイトルspanサイズ調整
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: TaskPool, QueuePanel, CompletedPage, ArchivedPage
+- **Maps to**
+  - REQ: REQ-0027
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 全タスクカードのタイトルspanから`flex-1`削除
+- **Implementation Notes**:
+  - 対象ファイルと箇所:
+    - TaskPool.tsx:
+      - 親タスク: Line 289-296（spanタグから`flex-1`削除）
+      - 子タスク: Line 354-361（spanタグから`flex-1`削除）
+    - QueuePanel.tsx:
+      - Line 105-107（親pタグの`flex-1 min-w-0`調整）
+    - CompletedPage.tsx:
+      - h3タグの`font-medium`はそのまま（flex-1なし）
+    - ArchivedPage.tsx:
+      - h3タグの`font-medium`はそのまま（flex-1なし）
+  - 注意点:
+    - QueuePanelは`truncate`クラスとの併用あり → 親要素調整必要
+    - 親タスクonClickハンドラは親div要素で維持（影響なし）
+- **Risks**: QueuePanelのtruncate機能への影響（要確認）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: TaskPool親・子タスク修正完了
+  - [ ] DoD-2: QueuePanel修正完了
+  - [ ] DoD-3: CompletedPage/ArchivedPage確認完了
+  - [ ] DoD-4: Frontendコンパイル成功
+  - [ ] DoD-5: UI動作確認（タイトル幅がテキストのみ、選択領域正常）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-033: D&Dライブラリ統合
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: FrontendUI
+- **Maps to**
+  - REQ: REQ-0028
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: @dnd-kit/coreライブラリのインストールと基本設定
+- **Implementation Notes**:
+  - ライブラリインストール:
+    ```bash
+    npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+    ```
+  - SolidJS互換性確認（SolidJS用のラッパーが必要か調査）
+  - 代替案: @thisbeyond/solid-dnd（SolidJS専用）も検討
+  - package.json更新確認
+- **Risks**: SolidJSとの互換性（@dnd-kitはReact前提、solid-dnd検討）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: ライブラリインストール完了
+  - [ ] DoD-2: SolidJS互換性確認完了
+  - [ ] DoD-3: 必要に応じてsolid-dndに切り替え
+  - [ ] DoD-4: Frontendコンパイル成功
+  - [ ] DoD-5: 基本的なD&Dサンプル動作確認
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-034: QueuePanel D&D実装
+- **Status**: UnDone
+- **Priority**: P2
+- **Component(s)**: QueuePanel
+- **Maps to**
+  - REQ: REQ-0028
+  - HTTP operationId: reorderTaskQueue
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-033
+- **Summary**: QueuePanelにドラッグ&ドロップ機能実装
+- **Implementation Notes**:
+  - src/components/QueuePanel.tsx:
+    - DndContext でキューリストをラップ
+    - SortableContext でタスクカードをラップ
+    - useSortable フックで各タスクカードをソート可能に
+    - onDragEnd ハンドラ実装:
+      - 新しいタスクID配列を生成
+      - queueActions.reorderQueue(taskIds) 呼び出し
+      - 楽観的UI更新（ローカル状態即座反映）
+      - エラー時はリロードで元に戻す
+    - ドラッグ中のプレビュー表示（視覚フィードバック）
+  - 既存reorderQueue API使用（バックエンド変更なし）
+- **Risks**: UX（ドラッグ中のフィードバック）、エラーハンドリング（リロード処理）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: DndContext統合完了
+  - [ ] DoD-2: onDragEnd実装完了
+  - [ ] DoD-3: 楽観的UI更新実装完了
+  - [ ] DoD-4: エラーハンドリング実装完了
+  - [ ] DoD-5: Frontendコンパイル成功
+  - [ ] DoD-6: UI動作確認（ドラッグ&ドロップ、順序変更、エラー時リカバリ）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+
+### TASK-NEW-035: ドキュメント更新
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: Documentation
+- **Maps to**
+  - REQ: REQ-0023, REQ-0024, REQ-0025, REQ-0026, REQ-0027, REQ-0028
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-024〜TASK-NEW-034
+- **Summary**: 新機能のドキュメント更新とtraceability完成
+- **Implementation Notes**:
+  - 更新対象ファイル:
+    - requirements.md: REQ-0023〜REQ-0028追加済み
+    - openapi.yaml: listTasksPaginated追加済み、reorderTaskQueue x-requirements更新済み
+    - design.md: 全設計追加済み
+    - tasks.md: TASK-NEW-024〜TASK-NEW-035追加済み
+    - traceability.md: REQ-0023〜REQ-0028マッピング追加
+  - gen_all.sh実行: context_bundle.md自動更新
+  - 進捗確認: Task Progress更新、REQ Coverage確認
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: traceability.md更新完了
+  - [ ] DoD-2: gen_all.sh実行成功
+  - [ ] DoD-3: context_bundle.md自動更新確認
+  - [ ] DoD-4: Pre-flight Checks全合格
+  - [ ] DoD-5: Task Progress計算確認（Done/Total）
+- **Updated**: 2025-12-28
+- **Completed**: N/A
+
+---
+> タスクの分類を固定すると、抜け漏れが減る。
+
+- Contract tasks:
+  - OpenAPI update, schema validation, backward compatibility checks
+- Event contract tasks:
+  - AsyncAPI update, messageId versioning rules, schema validation
+- Implementation tasks:
+  - Component implementation, migrations
+- Quality tasks:
+  - Tests, observability, alert rules
+- Review tasks:
+  - traceability completion, bundle update
+
+---
+
+## 4. Task Types (Optional, but recommended)
+## 5. Change Log
+- 2025-12-21 Initial task breakdown for TMS-v2 implementation
+- 2025-12-27 TASK-0007 completed: QueueService implementation with status auto-update logic
+- 2025-12-27 TASK-0009 completed: SolidJS UI basic structure with task CRUD functionality
+- 2025-12-27 TASK-0011 completed: Task queue UI with split layout, real-time sync, and dual removal patterns
+- 2025-12-27 TASK-0004 completed: Task hierarchy management (Backend childrenIds + Frontend hierarchical display/expand-collapse)
+- 2025-12-27 TASK-0010 completed: Task pool UI with hierarchy display, parent selection, and real-time updates
+- 2025-12-27 Bug fixes: Added loadTasks() after create/update/delete operations for real-time UI updates
+- 2025-12-27 Known issue documented: Parent tasks cannot be deleted if they have completed child tasks (to be addressed in separate ticket)
+- 2025-12-27 TASK-0005 completed: TagService implementation with CRUD operations and usage count tracking (4 Tauri commands, 7 unit tests)
+- 2025-12-27 TASK-0006 completed: Task search and filter implementation (SearchTasksParams, universal search API with keyword/status/tag filters, 6 unit tests)
+- 2025-12-27 TASK-0008 completed: IPC Router implementation (16 operationIds, unified error handling with Japanese messages, 5s timeout on frontend, OpenAPI spec finalized)
+- 2025-12-27 TASK-0012 completed: IPC Integration Tests (25 tests covering all 16 operationIds, service layer testing with in-memory SQLite, 100% pass rate)
+- 2025-12-27 Added 12 new tasks (TASK-NEW-001 to TASK-NEW-012) for additional requirements (REQ-0008 to REQ-0015): parent-child status auto-sync, queue registration restrictions, search/filter UI, UI improvements
+- 2025-12-28 TASK-NEW-001 completed: Parent-child status auto-sync implementation (BR-013 + BR-016: 2-level hierarchy restriction, 3 new methods, 8 unit tests + 2 integration tests, 80 total tests passing)
+- 2025-12-28 TASK-NEW-002 completed: Queue registration restriction for parent tasks (BR-015: has_children check in add_to_queue, 2 unit tests + 1 integration test, 83 total tests passing)
+- 2025-12-28 TASK-NEW-003 completed: list_tasks API change to show Draft + Active tasks (1-line filter change, all existing tests passing)
+- 2025-12-28 TASK-NEW-004 completed: Integration test updates (all 83 tests passing, comprehensive coverage for new features)
+- 2025-12-28 Step 0 (UI Template Application) completed: Migrated V0-generated UI template from Next.js/React to Solid.js/Tauri
+- 2025-12-28 TASK-NEW-005 completed: Search bar and filter UI (integrated in TaskPool component with real-time filtering)
+- 2025-12-28 TASK-NEW-006 completed: List-style task display (TaskPool with hierarchical list, status icons, action buttons)
+- 2025-12-28 TASK-NEW-008 completed: Completed/Archived pages (timeline view with date grouping, Solid Router integration)
+- 2025-12-28 TASK-NEW-010 completed: Queue UI improvements (QueuePanel redesign with OKLch colors, In Progress highlighting)
+- 2025-12-28 TASK-NEW-011 completed: Layout adjustments (removed task pool title, optimized spacing)
+- 2025-12-28 TASK-NEW-012 completed: Documentation update (all documents updated for Step 0 completion and new requirements REQ-0008〜REQ-0015)
+- 2025-12-28 Added 11 new tasks (TASK-NEW-013 to TASK-NEW-023) for additional requirements (REQ-0016 to REQ-0022): Draft status restrictions, physical delete, restore function, list_tasks API improvement, filter UI improvement
+- 2025-12-28 TASK-NEW-012 completed: Documentation updates (tasks.md: Step 0 completion reflected, traceability.md: all 15 REQs mapped and marked Done, context_bundle.md: auto-updated via gen_all.sh, Task Progress: 92% = 22/24, REQ Coverage: 100%)
+- 2025-12-28 TASK-NEW-013 completed: TaskService編集・削除制限実装 (Draft状態チェック追加、TaskNotDraftエラー型、単体テスト3個、Tauriダイアログプラグイン導入でフロントエンド削除機能動作確認完了)
+- 2025-12-28 TASK-NEW-014 completed: 物理削除API実装 (delete_task_permanently実装、TaskNotArchivedエラー型、CASCADEマイグレーション実行、単体テスト4個、全テスト合格: 65 unit + 32 integration)
+- 2025-12-28 TASK-NEW-015 completed: restore_task API実装 (Archived → Draft復元機能、restore_taskメソッド実装、Tauriコマンド追加・登録、単体テスト3個、全テスト合格: 68 unit + 32 integration)
+- 2025-12-28 TASK-NEW-016 completed: list_tasks statusパラメータ対応 (enrich_task_responseヘルパー関数作成、list_tasksにstatus: Option<Vec<String>>パラメータ追加、search_tasksリファクタリング、単体テスト5個、統合テスト修正、全テスト合格: 73 unit + 32 integration)
+- 2025-12-28 TASK-NEW-017 completed: 統合テスト更新 (新規機能の統合テスト5個追加: Draft以外編集拒否、Draft以外削除拒否、物理削除、restore、list_tasks statusフィルタ、全テスト合格: 73 unit + 37 integration = 110 tests)
+- 2025-12-28 TASK-NEW-018 completed: TaskPool編集・削除ボタン条件表示 (親タスク・子タスク両方にShow when={status === "draft"}追加、子タスクを持つ親タスクではキューボタン非表示でREQ-0009対応、ボタンエリア固定高さ追加でレイアウト安定化、Frontend + Tauriビルド成功)
+- 2025-12-28 TASK-NEW-020 completed: CompletedPage/ArchivedPageのAPI修正 (tasksApi.listByStatus実装、CompletedPage/ArchivedPageでstatusパラメータ使用、クライアント側フィルタリング削除でパフォーマンス改善、Frontendビルド成功)
+- 2025-12-28 TASK-NEW-021 completed: ArchivedPageのrestore/delete機能実装 (tasksApi.restore/deletePermanently実装、handleRestore/handleDeletePermanently実装、物理削除確認ダイアログ追加、Trash2Iconコンポーネント追加、タスクリスト更新ロジック実装、Frontendビルド成功、全P0タスク完了)
+- 2025-12-28 TASK-NEW-019 completed: フィルターチップからCompleted削除 (TaskPool.tsxからCompletedフィルターボタン削除、Draft/Activeのみ残す、Frontendビルド成功: 715ms)
+- 2025-12-28 TASK-NEW-022 completed: QueuePanel空時UI改善 (h-64をmin-h-24（96px）に変更、メッセージを"Queue is empty"に変更、高さ調整プロセス: flex-1→min-h-64→min-h-32→min-h-24、Frontendビルド成功: 731ms)
+- 2025-12-28 Added 12 new tasks (TASK-NEW-024 to TASK-NEW-035) for additional requirements (REQ-0023 to REQ-0028): バグ修正、ページネーション、3点リーダーメニュー、タイトルspan調整、D&D機能
+- 2025-12-29 TASK-NEW-024 completed: バグ修正 - completed時のupdated_at更新 (queue.rs Line 178-185修正、chrono::Utc import追加、タプル形式で2フィールド同時更新、単体テスト追加: test_remove_from_queue_updates_updated_at、全テスト合格: 74 unit + 37 integration)
+- 2025-12-29 TASK-NEW-025 completed: ページネーション API実装 (models/task.rs: ListTasksPaginatedParams/PaginatedTaskResponse型追加、service/task.rs: list_tasks_paginated関数実装、commands/task.rs: Tauriコマンド追加、単体テスト4個追加、統合テスト2個追加、全テスト合格: 78 unit + 39 integration)
+- 2025-12-29 TASK-NEW-026 completed: PaginatedTaskResponse型フロントエンド追加 (types/task.ts: PaginatedTaskResponse interface追加、api/tasks.ts: listPaginated関数実装、Frontendビルド成功: 721ms)
+- 2025-12-29 TASK-NEW-027 completed: Pagination UIコンポーネント実装 (components/Pagination.tsx新規作成、< [number input] > UI形式、入力検証・Enter対応・自動補正機能、totalPages > 1時のみ表示、テーマ変数使用、spinner非表示CSS、Frontendビルド成功: 719ms)
+- 2025-12-29 TASK-NEW-028 completed: CompletedPage ページネーション実装 (ITEMS_PER_PAGE=20定数追加、currentPage/totalItems/totalPages state追加、loadCompletedTasks関数でlistPaginated API使用、Paginationコンポーネント統合、ページ単位日付グループ化、Frontendビルド成功: 720ms)
+- 2025-12-29 TASK-NEW-029 completed: ArchivedPage ページネーション実装 (ITEMS_PER_PAGE=20定数追加、currentPage/totalItems/totalPages state追加、loadArchivedTasks関数でlistPaginated API使用、handleRestore/handleDeletePermanently修正で現在ページリロード、Paginationコンポーネント統合、ページ単位日付グループ化、Frontendビルド成功: 721ms)
+- 2025-12-29 TASK-NEW-030 completed: DropdownMenu コンポーネント実装 (components/DropdownMenu.tsx新規作成、Kobalte Dropdown Menu使用、MoreVerticalIcon実装、DropdownMenuItem interface定義、destructive variant対応、英語ラベル・アイコンなし仕様、Frontendビルド成功: 740ms)
+- 2025-12-29 TASK-NEW-031 completed: ArchivedPage 3点リーダーメニュー実装 (既存2ボタン（Restore/Delete Permanently）をDropdownMenuに置き換え、メニュー項目2個（Restore/Delete permanently）、destructive variant適用、Frontendビルド成功: 740ms)
+- 2025-12-29 TASK-NEW-032 completed: タイトルspanサイズ調整 (TaskPool.tsx: 親タスク・子タスクのタイトルspanからflex-1削除、flex-1 spacer div追加でボタン右寄せ維持、select-none追加でテキスト選択防止、Frontendビルド成功: 740ms)
+- 2025-12-29 Bug fix: グローバルテキスト選択無効化 (index.css: bodyにuser-select: none, cursor: default追加、アプリ全体でダブルクリック時の青いハイライト防止、TaskPool.tsxのデバッグログ削除、Frontendビルド成功: 740ms)
+- 2025-12-29 TASK-NEW-035 completed: ドキュメント更新 (requirements.md: REQ-0023〜0027のStatusをDraft→Doneに更新、traceability.md: REQ-0023のStatusをPlanned→Doneに更新、tasks.md: TASK-NEW-035をDone、Task Progress: 89% = 42/47)
+- 2025-12-29 TASK-NEW-023 completed: ドキュメント更新 (requirements.md: REQ-0016〜0022のStatusをDraft→Doneに更新、traceability.md: REQ-0016/0022のStatusをPlanned→Doneに更新、tasks.md: TASK-NEW-023をDone、Task Progress: 91% = 43/47)
+- 2025-12-29 TASK-NEW-033 completed: D&Dライブラリ統合 (@thisbeyond/solid-dnd v0.7.5インストール、package.json更新、ビルド検証成功: 741ms、Task Progress: 94% = 44/47)
