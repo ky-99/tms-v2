@@ -1,10 +1,12 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, createEffect } from "solid-js";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { TaskHoverPopup } from "./TaskHoverPopup";
+import { TagFilter } from "./TagFilter";
 import { cn } from "../lib/utils";
 import type { TaskHierarchy } from "../types/task";
 import type { Tag } from "../types/tag";
+import { tasksApi } from "../api/tasks";
 
 interface TaskPoolProps {
   tasks: TaskHierarchy[];
@@ -138,6 +140,8 @@ export function TaskPool(props: TaskPoolProps) {
   const [expandedTasks, setExpandedTasks] = createSignal<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = createSignal("");
   const [activeFilters, setActiveFilters] = createSignal<Set<string>>(new Set());
+  const [selectedTags, setSelectedTags] = createSignal<string[]>([]);
+  const [tagFilteredTaskIds, setTagFilteredTaskIds] = createSignal<Set<string> | null>(null);
 
   const toggleExpand = (taskId: string) => {
     const newExpanded = new Set(expandedTasks());
@@ -159,13 +163,38 @@ export function TaskPool(props: TaskPoolProps) {
     setActiveFilters(newFilters);
   };
 
+  // タグフィルターが選択されたら search_tasks API を呼ぶ
+  createEffect(() => {
+    const tags = selectedTags();
+    if (tags.length === 0) {
+      setTagFilteredTaskIds(null);
+      return;
+    }
+
+    // search_tasks APIを呼んでタグでフィルタリング
+    tasksApi.search(undefined, undefined, tags).then((results) => {
+      const taskIds = new Set(results.map((task) => task.id));
+      setTagFilteredTaskIds(taskIds);
+    }).catch((error) => {
+      console.error("Tag filter search failed:", error);
+      setTagFilteredTaskIds(null);
+    });
+  });
+
   const filteredTasks = () => {
     return props.tasks.filter((task) => {
       const matchesSearch =
         task.title.toLowerCase().includes(searchQuery().toLowerCase()) ||
         task.children?.some((child) => child.title.toLowerCase().includes(searchQuery().toLowerCase()));
       const matchesFilter = activeFilters().size === 0 || activeFilters().has(task.status);
-      return matchesSearch && matchesFilter;
+
+      // タグフィルター: 親タスクまたは子タスクがマッチすればOK
+      const tagIds = tagFilteredTaskIds();
+      const matchesTags = tagIds === null ||
+        tagIds.has(task.id) ||
+        task.children?.some((child) => tagIds.has(child.id));
+
+      return matchesSearch && matchesFilter && matchesTags;
     });
   };
 
@@ -251,6 +280,11 @@ export function TaskPool(props: TaskPoolProps) {
           >
             Active
           </button>
+          <TagFilter
+            availableTags={props.availableTags}
+            selectedTags={selectedTags()}
+            onTagsChange={setSelectedTags}
+          />
         </div>
       </div>
 

@@ -98,4 +98,23 @@ export const tasksApi = {
   async getHierarchy(): Promise<TaskHierarchy[]> {
     return await invokeWithTimeout<TaskHierarchy[]>("get_task_hierarchy");
   },
+
+  /**
+   * タスクを検索（キーワード、ステータス、タグでフィルタリング）
+   * @param q - キーワード（タイトル、説明で検索）
+   * @param status - ステータスフィルタ
+   * @param tags - タグフィルタ（OR条件）
+   * @returns マッチしたタスクリスト
+   */
+  async search(
+    q?: string,
+    status?: string,
+    tags?: string[]
+  ): Promise<Task[]> {
+    return await invokeWithTimeout<Task[]>("search_tasks", {
+      q: q ?? null,
+      status: status ?? null,
+      tags: tags ?? null,
+    });
+  },
 };

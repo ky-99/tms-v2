@@ -90,8 +90,8 @@ References:
 | TASK-NEW-034 | QueuePanel D&D実装 | Done | P2 | Developer | TASK-NEW-033 | REQ-0028 |
 | TASK-NEW-035 | ドキュメント更新 | Done | P1 | Developer | TASK-NEW-024〜034 | REQ-0023〜REQ-0028 |
 | TASK-NEW-036 | TagInput コンポーネント実装 | Done | P1 | Developer | - | REQ-0029 |
-| TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | UnDone | P1 | Developer | TASK-NEW-036 | REQ-0029 |
-| TASK-NEW-038 | タグフィルター展開式UI実装 | UnDone | P1 | Developer | TASK-NEW-036 | REQ-0030 |
+| TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | Done | P1 | Developer | TASK-NEW-036 | REQ-0029 |
+| TASK-NEW-038 | タグフィルター展開式UI実装 | Done | P1 | Developer | TASK-NEW-036 | REQ-0030 |
 | TASK-NEW-007 | タスクホバー詳細ポップアップ実装 | Done | P2 | Developer | - | REQ-0015 |
 | TASK-NEW-039 | タグカラーピッカー実装 | UnDone | P2 | Developer | TASK-NEW-036 | REQ-0031 |
 | TASK-NEW-040 | ドキュメント更新 | UnDone | P1 | Developer | TASK-NEW-036〜039 | REQ-0029〜REQ-0031, REQ-0015 |
@@ -102,10 +102,10 @@ Priority: P0 (must), P1 (should), P2 (could)
 
 ## 2.5 Task Progress Summary
 - Total Tasks: 52
-- Done: 47
+- Done: 49
 - Processing: 0
-- UnDone: 5
-- Progress: 90% (47/52)
+- UnDone: 3
+- Progress: 94% (49/52)
 
 ---
 
@@ -1750,7 +1750,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-038: タグフィルター展開式UI実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
 - **Component(s)**: TagFilter, TaskPool
 - **Maps to**
@@ -1766,19 +1766,23 @@ Priority: P0 (must), P1 (should), P2 (could)
   - 複数タグ選択可能（OR条件）
   - 選択中のタグ数をボタンに表示（例: `+ Tags (2)`）
   - search_tasks APIを呼び出し（tags パラメータ）
-- **Risks**: タグ数が多い場合のUI、検索パフォーマンス
+  - tasksApi.search()をフロントエンドAPIに追加（src/api/tasks.ts）
+  - createEffect()でタグ選択時にsearch_tasks API呼び出し
+  - filteredTasks()でタグフィルター結果を組み込み（検索クエリ、ステータスフィルターと併用）
+  - タグフィルターは親タスクまたは子タスクがマッチすればOK
+- **Risks**: タグ数が多い場合のUI、検索パフォーマンス → 解決済み（createEffectで非同期処理）
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: TagFilterコンポーネント（src/components/TagFilter.tsx）作成完了
-  - [ ] DoD-2: TaskPool画面に「+ Tags」ボタンが追加され、クリックでドロップダウン表示
-  - [ ] DoD-3: ドロップダウン内に全タグがチェックボックスリストで表示
-  - [ ] DoD-4: 複数タグ選択でsearch_tasks APIを呼び出し、フィルタリング動作
-  - [ ] DoD-5: 選択中のタグ数がボタンに表示される
-  - [ ] DoD-6: Frontendビルド成功
+  - [x] DoD-1: TagFilterコンポーネント（src/components/TagFilter.tsx）作成完了
+  - [x] DoD-2: TaskPool画面に「+ Tags」ボタンが追加され、クリックでドロップダウン表示
+  - [x] DoD-3: ドロップダウン内に全タグがチェックボックスリストで表示
+  - [x] DoD-4: 複数タグ選択でsearch_tasks APIを呼び出し、フィルタリング動作
+  - [x] DoD-5: 選択中のタグ数がボタンに表示される
+  - [x] DoD-6: Frontendビルド成功（vite build 901ms, 227.80 KB）
 - **Verification**:
-  - Type: E2E
-  - Evidence: タグフィルターの動作確認（タグ選択でタスクフィルタリング）、ビルド成功
+  - Type: E2E + Build verification
+  - Evidence: タグフィルターの動作確認（タグ選択でタスクフィルタリング）、ビルド成功、タグ色表示、使用回数表示、複数選択OR条件対応
 - **Updated**: 2025-12-29
-- **Completed**: N/A
+- **Completed**: 2025-12-29
 
 ---
 
@@ -1791,37 +1795,44 @@ Priority: P0 (must), P1 (should), P2 (could)
   - HTTP operationId: N/A（既存データ使用）
   - Event messageId: N/A
 - **Depends on**: None（タグ表示はTASK-NEW-036完了後に追加）
-- **Summary**: タスクタイトルホバー時（2秒間）で詳細ポップアップをタイトルの上または下に表示し、descriptionとtagsを確認できるようにする
+- **Summary**: タスクタイトルクリックで詳細ポップアップをタイトルの上または下に表示し、descriptionとtagsを確認できるようにする
 - **Implementation Notes**:
-  - **最終版実装（2025-12-29更新）**:
+  - **最終版実装（2025-12-29 17:00更新 - クリック操作に変更）**:
     - Kobalte Popoverを使用（placement="top"で上部表示、自動フリップで下部表示可能）
+    - **クリックのみで表示**: ホバー遅延を完全に削除、タイトルクリックでポップアップ表示
+    - **イベント伝播制御**: TaskHoverPopup.TriggerにonClick={(e) => e.stopPropagation()}追加
+    - **親タスクの動作分離**:
+      - タイトルクリック → ポップアップ表示のみ（折りたたみトグルなし）
+      - カード（タイトル以外）クリック → 子タスクの折りたたみ/展開トグル
+    - **ポップアップサイズ**: w-64（コンパクト版）
+    - **ポップアップ内容**: description（全文、なければ "No description"）、tags（色付き表示、Show/For使用）
+    - **タグ色表示**: availableTags propからタグ名で色を取得、`${color}20`背景 + color文字色
+    - **青色枠線削除**: outline-none focus:outline-none を Trigger と Content に追加
+    - 不要なインポート削除: createSignal, onCleanup
+  - **中間版実装（2025-12-29午前 - ホバー版）**:
     - ホバー開始から2000ms後にポップアップ表示（window.setTimeoutでタイマー制御）
     - マウスカーソル離脱でポップアップ非表示（onMouseLeave + clearTimeout）
-    - **タイトルのみホバー対応**: TaskPool.tsx でタイトルspan（親タスク: 行291-300、子タスク: 行360-369）のみをTaskHoverPopupでラップ
-    - **ホバー時の色変化**: タイトルに `hover:text-primary transition-colors cursor-pointer` 追加
-    - **ポップアップサイズ**: w-64（コンパクト版）
-    - **ポップアップ内容**: description（全文、なければ "No description"）、tags（Show when条件付き、For each表示）
-    - **青色枠線削除**: outline-none focus:outline-none を Trigger と Content に追加
-    - タイトル、status、created/updated日時は削除（descriptionとtagsのみ表示）
-  - **初回実装（2025-12-29）**:
+    - タイトルのみホバー対応、ホバー時の色変化（hover:text-primary）
+  - **初回実装（2025-12-29早朝）**:
     - タスクカード全体をTaskHoverPopupでラップ（後に変更）
-    - 500msホバー遅延（後に2000msに変更）
-    - タイトル、description、status、created/updated日時を表示（後にdescription+tagsのみに変更）
-- **Risks**: ホバータイマーの実装、ポップアップ位置の調整 → 解決済み
+    - 500msホバー遅延（後に2000msに変更、最終的に削除）
+- **Risks**: ホバータイマーの実装、ポップアップ位置の調整 → 解決済み、クリック操作への変更 → 完了
 - **Definition of Done (DoD)**:
   - [x] DoD-1: TaskHoverPopupコンポーネント（src/components/TaskHoverPopup.tsx）作成完了
-  - [x] DoD-2: タイトルに2000msホバーでポップアップ表示（タイトルの上または下）
+  - [x] DoD-2: タイトルクリックでポップアップ表示（タイトルの上または下）
   - [x] DoD-3: ポップアップにdescription、tagsが表示（コンパクト版、w-64）
-  - [x] DoD-4: マウスカーソル離脱でポップアップ非表示
-  - [x] DoD-5: タグ表示実装完了（Show/For使用）
+  - [x] DoD-4: 再クリックまたは外クリックでポップアップ非表示
+  - [x] DoD-5: タグ色表示実装完了（availableTags連携、色付き表示）
   - [x] DoD-6: ホバー時タイトル色変化実装（hover:text-primary）
   - [x] DoD-7: 青色枠線削除完了
-  - [x] DoD-8: Frontendビルド成功（864ms）
+  - [x] DoD-8: 親タスクのタイトルクリック時、折りたたみトグル発生しない（e.stopPropagation()）
+  - [x] DoD-9: 親タスクのカードクリック時、折りたたみトグル正常動作
+  - [x] DoD-10: Frontendビルド成功（890ms、225.03KB）
 - **Verification**:
-  - Type: Build
-  - Evidence: Frontendビルド成功（864ms）、TaskHoverPopup.tsx更新完了、TaskPool.tsx統合完了（タイトルのみラップ、ホバー色変化追加）
+  - Type: Build + UX verification
+  - Evidence: Frontendビルド成功（890ms）、クリック操作のみ実装完了、親タスクの動作分離完了（タイトルクリック=ポップアップ、カードクリック=トグル）
 - **Updated**: 2025-12-29
-- **Completed**: 2025-12-29
+- **Completed**: 2025-12-29 (クリック操作版として最終完了)
 
 ---
 
