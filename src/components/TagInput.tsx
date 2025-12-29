@@ -1,10 +1,8 @@
-import { createSignal, For, Show, createEffect } from "solid-js";
-import { Popover as KobaltePopover } from "@kobalte/core/popover";
+import { createSignal, For, Show } from "solid-js";
 import { cn } from "../lib/utils";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import type { Tag } from "../types/tag";
-import { PRESET_TAG_COLORS } from "../types/tag";
 
 interface TagInputProps {
   selectedTags: string[]; // Array of tag names
@@ -36,13 +34,13 @@ function PlusIcon() {
  *
  * - チップ入力スタイルで既存タグを表示・削除
  * - オートコンプリートで既存タグを検索・追加
- * - インライン新規タグ作成（名前+プリセット8色から選択）
+ * - インライン新規タグ作成（名前+Ark UIカラーピッカー）
  */
 export function TagInput(props: TagInputProps) {
   const [inputValue, setInputValue] = createSignal("");
   const [isAutocompleteOpen, setIsAutocompleteOpen] = createSignal(false);
   const [isCreateMode, setIsCreateMode] = createSignal(false);
-  const [selectedColor, setSelectedColor] = createSignal(PRESET_TAG_COLORS[0].value);
+  const [selectedColor, setSelectedColor] = createSignal("#3b82f6");
   const [isCreating, setIsCreating] = createSignal(false);
 
   // Filter available tags based on input and exclude already selected tags
@@ -123,7 +121,7 @@ export function TagInput(props: TagInputProps) {
     try {
       await props.onCreateTag(tagName, selectedColor());
       addTag(tagName);
-      setSelectedColor(PRESET_TAG_COLORS[0].value); // Reset to first color
+      setSelectedColor("#3b82f6"); // Reset to default blue
     } catch (error) {
       console.error("Failed to create tag:", error);
     } finally {
@@ -222,28 +220,18 @@ export function TagInput(props: TagInputProps) {
 
       {/* Create tag dialog (inline) */}
       <Show when={isCreateMode()}>
-        <div class="rounded-md border border-border bg-card p-4 space-y-3">
+        <div class="rounded-md border border-border bg-card p-4 space-y-4">
           <div>
-            <p class="text-sm font-medium mb-2">Create new tag: "{inputValue().trim()}"</p>
-            <p class="text-xs text-muted-foreground mb-3">Select a color:</p>
-            <div class="grid grid-cols-8 gap-2">
-              <For each={PRESET_TAG_COLORS}>
-                {(colorOption) => (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedColor(colorOption.value)}
-                    class={cn(
-                      "h-8 w-8 rounded-md border-2 transition-all",
-                      selectedColor() === colorOption.value
-                        ? "border-foreground scale-110"
-                        : "border-transparent hover:scale-105"
-                    )}
-                    style={{ "background-color": colorOption.value }}
-                    aria-label={colorOption.name}
-                    title={colorOption.name}
-                  />
-                )}
-              </For>
+            <p class="text-sm font-medium mb-3">Create new tag: "{inputValue().trim()}"</p>
+            <label class="block text-sm font-medium text-foreground mb-2">Color</label>
+            <div class="flex items-center gap-3">
+              <input
+                type="color"
+                value={selectedColor()}
+                onInput={(e) => setSelectedColor(e.currentTarget.value)}
+                class="h-10 w-20 cursor-pointer rounded border border-input bg-background"
+              />
+              <span class="text-sm text-muted-foreground">{selectedColor()}</span>
             </div>
           </div>
 

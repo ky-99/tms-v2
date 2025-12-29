@@ -96,3 +96,84 @@
     display: none; /* Chrome, Safari, Opera */
   }
 }
+
+/* Ark UI ColorPicker Styles */
+@layer components {
+  /* ColorPicker Area */
+  [data-scope="color-picker"][data-part="area"] {
+    @apply relative overflow-hidden;
+    background: linear-gradient(to bottom, transparent, #000),
+      linear-gradient(to right, #fff, currentColor);
+  }
+
+  [data-scope="color-picker"][data-part="area-background"] {
+    @apply w-full h-full;
+  }
+
+  [data-scope="color-picker"][data-part="area-thumb"] {
+    @apply absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md cursor-grab;
+  }
+
+  [data-scope="color-picker"][data-part="area-thumb"]:active {
+    @apply cursor-grabbing;
+  }
+
+  /* ColorPicker Channel Slider */
+  [data-scope="color-picker"][data-part="channel-slider-track"] {
+    @apply relative w-full overflow-hidden;
+  }
+
+  [data-scope="color-picker"][data-part="channel-slider-track"][data-channel="hue"] {
+    background: linear-gradient(
+      to right,
+      rgb(255, 0, 0) 0%,
+      rgb(255, 255, 0) 17%,
+      rgb(0, 255, 0) 33%,
+      rgb(0, 255, 255) 50%,
+      rgb(0, 0, 255) 67%,
+      rgb(255, 0, 255) 83%,
+      rgb(255, 0, 0) 100%
+    );
+  }
+
+  [data-scope="color-picker"][data-part="channel-slider-track"][data-channel="alpha"] {
+    @apply bg-gradient-to-r from-transparent to-current;
+  }
+
+  [data-scope="color-picker"][data-part="channel-slider-thumb"] {
+    @apply absolute top-1/2 w-3 h-full -translate-x-1/2 -translate-y-1/2 rounded border-2 border-white shadow-md cursor-grab;
+  }
+
+  [data-scope="color-picker"][data-part="channel-slider-thumb"]:active {
+    @apply cursor-grabbing;
+  }
+
+  /* ColorPicker Value Swatch */
+  [data-scope="color-picker"][data-part="swatch"] {
+    @apply relative overflow-hidden;
+  }
+
+  /* Transparency Grid */
+  [data-scope="color-picker"][data-part="transparency-grid"] {
+    @apply absolute inset-0;
+    background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  }
+
+  /* Swatch Group & Trigger */
+  [data-scope="color-picker"][data-part="swatch-group"] {
+    @apply flex flex-wrap gap-2;
+  }
+
+  [data-scope="color-picker"][data-part="swatch-trigger"] {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md;
+  }
+
+  [data-scope="color-picker"][data-part="swatch-indicator"] {
+    @apply w-full h-full rounded-md;
+  }
+}

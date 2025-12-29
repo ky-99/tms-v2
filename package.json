@@ -12,6 +12,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@ark-ui/solid": "^5.30.0",
     "@kobalte/core": "^0.13.11",
     "@solidjs/router": "^0.15.4",
     "@tauri-apps/api": "^2",
