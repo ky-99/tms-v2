@@ -67,13 +67,15 @@ pub fn run() {
             commands::task::list_tasks_paginated,
             commands::task::get_task_hierarchy,
             commands::task::search_tasks,
-            // Task Queue Management (6 commands)
+            // Task Queue Management (7 commands)
             // - Daily task queue operations
             // - Position management and reordering
+            // - Batch operations (complete all, clear all)
             commands::queue::get_task_queue,
             commands::queue::add_task_to_queue,
             commands::queue::remove_task_from_queue,
             commands::queue::clear_task_queue,
+            commands::queue::complete_all_queue,
             commands::queue::update_queue_position,
             commands::queue::reorder_task_queue,
             // Tag Management (4 commands)

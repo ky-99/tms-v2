@@ -347,7 +347,7 @@ export function TaskPool(props: TaskPoolProps) {
                           e.stopPropagation();
                           props.onEdit(task);
                         }}
-                        class="h-8 w-8 p-0"
+                        class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                         title="Edit Task"
                       >
                         <PencilIcon />
@@ -358,7 +358,7 @@ export function TaskPool(props: TaskPoolProps) {
                           e.stopPropagation();
                           props.onDelete(task);
                         }}
-                        class="h-8 w-8 p-0"
+                        class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                         title="Archive Task"
                       >
                         <ArchiveIcon />
@@ -371,7 +371,7 @@ export function TaskPool(props: TaskPoolProps) {
                           e.stopPropagation();
                           props.onMoveToQueue(task);
                         }}
-                        class="h-8 w-8 p-0"
+                        class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                         title="Add to Queue"
                         disabled={props.queueTaskIds.has(task.id)}
                       >
@@ -416,7 +416,7 @@ export function TaskPool(props: TaskPoolProps) {
                                   e.stopPropagation();
                                   props.onEdit(child);
                                 }}
-                                class="h-8 w-8 p-0"
+                                class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                                 title="Edit Task"
                               >
                                 <PencilIcon />
@@ -427,7 +427,7 @@ export function TaskPool(props: TaskPoolProps) {
                                   e.stopPropagation();
                                   props.onDelete(child);
                                 }}
-                                class="h-8 w-8 p-0"
+                                class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                                 title="Archive Task"
                               >
                                 <ArchiveIcon />
@@ -436,7 +436,7 @@ export function TaskPool(props: TaskPoolProps) {
                             <Button
                               variant="ghost"
                               onClick={() => props.onMoveToQueue(child)}
-                              class="h-8 w-8 p-0"
+                              class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                               title="Add to Queue"
                               disabled={props.queueTaskIds.has(child.id)}
                             >

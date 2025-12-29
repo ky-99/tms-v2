@@ -1,6 +1,7 @@
-import { For, onMount, Show, createMemo } from "solid-js";
+import { For, onMount, Show, createMemo, createSignal } from "solid-js";
 import { queueStore, queueActions } from "../stores/queueStore";
 import { Button } from "./Button";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { cn } from "../lib/utils";
 import {
   DragDropProvider,
@@ -146,6 +147,9 @@ function SortableTask(props: SortableTaskProps) {
 }
 
 export function QueuePanel() {
+  const [confirmDialogOpen, setConfirmDialogOpen] = createSignal(false);
+  const [confirmAction, setConfirmAction] = createSignal<"complete" | "clear">("complete");
+
   onMount(() => {
     queueActions.loadQueue();
   });
@@ -166,6 +170,28 @@ export function QueuePanel() {
       await queueActions.markAsCompleted(taskId);
     } catch (error) {
       console.error("Failed to mark as completed:", error);
+    }
+  };
+
+  const handleCompleteAll = () => {
+    setConfirmAction("complete");
+    setConfirmDialogOpen(true);
+  };
+
+  const handleClearAll = () => {
+    setConfirmAction("clear");
+    setConfirmDialogOpen(true);
+  };
+
+  const executeAction = async () => {
+    try {
+      if (confirmAction() === "complete") {
+        await queueActions.completeAll();
+      } else {
+        await queueActions.clearQueue();
+      }
+    } catch (error) {
+      console.error("Failed to execute action:", error);
     }
   };
 
@@ -197,10 +223,30 @@ export function QueuePanel() {
   return (
     <div class="flex w-80 flex-col border-l border-border">
       <div class="border-b border-border bg-card px-6 py-4">
-        <h2 class="text-xl font-semibold text-foreground">Task Queue</h2>
-        <p class="mt-1 text-sm text-muted-foreground">
-          Active: {queueStore.queue.length} tasks
-        </p>
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-foreground">
+            Task Queue ({queueStore.queue.length})
+          </h2>
+        </div>
+        <Show when={queueStore.queue.length > 0}>
+          <div class="flex gap-2 mt-3">
+            <Button
+              onClick={handleCompleteAll}
+              class="flex-1 py-1.5 text-xs"
+              disabled={queueStore.loading}
+            >
+              Complete All
+            </Button>
+            <Button
+              onClick={handleClearAll}
+              variant="secondary"
+              class="flex-1 py-1.5 text-xs"
+              disabled={queueStore.loading}
+            >
+              Clear All
+            </Button>
+          </div>
+        </Show>
       </div>
 
       <div class="flex-1 overflow-y-auto p-4">
@@ -231,6 +277,21 @@ export function QueuePanel() {
           </DragDropProvider>
         </Show>
       </div>
+
+      <ConfirmDialog
+        open={confirmDialogOpen()}
+        onOpenChange={setConfirmDialogOpen}
+        title={confirmAction() === "complete" ? "Complete All Tasks" : "Clear All Tasks"}
+        description={
+          confirmAction() === "complete"
+            ? `Are you sure you want to mark all ${queueStore.queue.length} tasks in the queue as completed? This action cannot be undone.`
+            : `Are you sure you want to clear all ${queueStore.queue.length} tasks from the queue? Tasks will be moved back to draft status.`
+        }
+        confirmText={confirmAction() === "complete" ? "Complete All" : "Clear All"}
+        cancelText="Cancel"
+        variant={confirmAction() === "complete" ? "default" : "destructive"}
+        onConfirm={executeAction}
+      />
     </div>
   );
 }

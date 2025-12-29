@@ -1,6 +1,7 @@
 import { invokeWithTimeout } from "../lib/invoke";
 import type {
   AddToQueueRequest,
+  CompleteAllQueueResponse,
   QueueEntry,
   QueueEntryWithTask,
   RemoveFromQueueRequest,
@@ -54,6 +55,13 @@ export const queueApi = {
    */
   async clearQueue(): Promise<void> {
     return await invokeWithTimeout<void>("clear_task_queue");
+  },
+
+  /**
+   * キュー内の全タスクを完了状態にする
+   */
+  async completeAll(): Promise<CompleteAllQueueResponse> {
+    return await invokeWithTimeout<CompleteAllQueueResponse>("complete_all_queue");
   },
 
   /**

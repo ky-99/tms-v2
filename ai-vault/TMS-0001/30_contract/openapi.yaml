@@ -361,6 +361,34 @@ paths:
         "200":
           description: Queue cleared
 
+  /queue/complete-all:
+    post:
+      tags: [TaskQueue]
+      operationId: completeAllQueue
+      summary: Complete all tasks in queue
+      description: |
+        Marks all tasks in the current queue as completed and removes them from the queue.
+        This is a convenience operation for batch completion.
+        - Updates each task's status to "completed"
+        - Updates each task's updated_at timestamp
+        - Removes all tasks from the queue
+        - Executes in a transaction (all or nothing)
+      x-requirements: [REQ-0038]
+      responses:
+        "200":
+          description: All tasks completed and removed from queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  completedCount:
+                    type: integer
+                    description: Number of tasks that were completed
+                    example: 5
+        "500":
+          description: Server error (transaction rolled back)
+
   /queue/position:
     put:
       tags: [TaskQueue]

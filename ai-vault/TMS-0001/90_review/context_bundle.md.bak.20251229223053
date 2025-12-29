@@ -4,8 +4,8 @@
 > Repo: <repo-name>  
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
-> Phase: Contract
-> Updated: 2025-12-29 22:30 (JST)
+> Phase: Implementation
+> Updated: 2025-12-29 15:20 (JST)
 > Owner: <name>
 
 ---
@@ -186,7 +186,6 @@
 |---|---|---|---|
 | addTaskToQueue | POST /queue | REQ-0006, REQ-0009 | - |
 | clearTaskQueue | POST /queue/clear | REQ-0006 | - |
-| completeAllQueue | POST /queue/complete-all | REQ-0038 | - |
 | createTag | POST /tags | REQ-0005 | - |
 | createTask | POST /tasks | REQ-0002 | - |
 | deleteTag | DELETE /tags/{id} | REQ-0005 | - |
@@ -221,16 +220,22 @@ N/A
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
+| TASK-NEW-037 | タスク編集Dialogにタグ選択UI追加 | UnDone | P1 | REQ-0029 |
+| TASK-NEW-038 | タグフィルター展開式UI実装 | UnDone | P1 | REQ-0030 |
+| TASK-NEW-039 | タグカラーピッカー実装 | UnDone | P2 | REQ-0031 |
+| TASK-NEW-040 | ドキュメント更新 | UnDone | P1 | REQ-0029〜REQ-0031, REQ-0015 |
 
 ### 8.2 Task Progress
-- Total Tasks: 63
-- Done: 61
+- Total Tasks: 53
+- Done: 48
 - Processing: 0
-- UnDone: 1
-- Progress: 97% (61/63)
+- UnDone: 5
+- Progress: 91% (48/53)
 
 ### 8.3 Next Actions
 1. Start TASK-NEW-009 (カラーパレット適用)
+2. Start TASK-NEW-037 (タスク編集Dialogにタグ選択UI追加)
+3. Start TASK-NEW-038 (タグフィルター展開式UI実装)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -267,7 +272,7 @@ N/A
 ## 9) Pre-flight Checks (Gate)
 <!-- AUTO:BEGIN preflight_checks -->
 ### 9.1 Coverage Checks
-- [x] All operationIds have x-requirements (20/20)
+- [x] All operationIds have x-requirements (19/19)
 - [x] All messageIds have x-requirements (0/0)
 - [x] Focus REQs defined (10 REQs)
 
@@ -278,9 +283,9 @@ N/A
 
 ### 9.3 Quality Metrics
 - REQ Coverage: 10 REQs
-- API Coverage: 20/20
+- API Coverage: 19/19
 - Event Coverage: N/A
-- Task Completion: 97% (61/63)
+- Task Completion: 91% (48/53)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**

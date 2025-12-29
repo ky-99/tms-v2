@@ -30,3 +30,7 @@ export interface UpdateQueueRequest {
 export interface ReorderQueueRequest {
   taskIds: string[];
 }
+
+export interface CompleteAllQueueResponse {
+  completedCount: number;
+}

@@ -856,24 +856,27 @@
 
 ---
 
-### REQ-0038: キュー一括操作（未実装）
+### REQ-0038: キュー一括操作
 - **Priority**: SHOULD
-- **Status**: Planned
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: QueuePanelに複数タスクが存在
 - **Trigger**: 一括操作ボタンクリック
 - **Acceptance (the only one)**:
   - **Given**: QueuePanelに2つ以上のタスクがある
-  - **When**: 「すべて完了」または「すべて削除」ボタンをクリック
+  - **When**: 「Complete All」または「Clear All」ボタンをクリック
   - **Then**: キュー内の全タスクが一括で完了またはキューから削除される
 - **Negative/Boundary**: 確認ダイアログで操作をキャンセル可能
 - **Depends on**: REQ-0006
-- **Notes**: 新規API `batch_complete_queue`, `batch_remove_from_queue`を実装予定
+- **Notes**:
+  - Complete All: 新規API `complete_all_queue`を実装（全タスクをcompletedステータスに更新）
+  - Clear All: 既存API `clear_task_queue`を使用（全タスクをdraftに戻す）
+  - ConfirmDialogコンポーネントによる確認ダイアログ実装
 - **Trace Hooks (optional)**:
-  - API: batch_complete_queue (新規), batch_remove_from_queue (新規)
-  - Component: QueuePanel
-  - Task: TBD
+  - API: complete_all_queue (新規), clear_task_queue (既存)
+  - Component: QueuePanel, ConfirmDialog
+  - Task: TASK-NEW-050
 
 ---
 
@@ -1062,3 +1065,4 @@
 - 2025-12-29 ステータス更新 - REQ-0015, 0029, 0030: Done, REQ-0031: Hold（将来的に柔軟なカラーピッカーに置き換え予定）
 - 2025-12-29 追加要件定義 (REQ-0032〜REQ-0046) - UI/UX改善第3弾（ローディング削除、文字数制限、スクロールバー削除、タイトルバー削除、角丸、フォーカスリング調整、ConfirmDialog実装、アーカイブボタン変更）、API軽量化、タグ管理画面、タググルーピング（未実装含む）
 - 2025-12-29 ステータス更新 - REQ-0032, 0033, 0034, 0035, 0036, 0037, 0046: Done, REQ-0038〜0041: Planned, REQ-0042〜0045: Deferred（デザイン要件待ち）
+- 2025-12-29 REQ-0038実装完了 - キュー一括操作機能の実装（Complete All/Clear All）

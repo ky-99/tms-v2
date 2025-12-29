@@ -111,7 +111,33 @@ export const queueActions = {
     setQueueStore("error", null);
     try {
       await queueApi.clearQueue();
-      setQueueStore("queue", []);
+      // キューを再読み込み
+      await queueActions.loadQueue();
+      // タスクプールも再読み込み（draftタスクとして表示されるように）
+      await taskActions.loadHierarchy();
+    } catch (error) {
+      setQueueStore(
+        "error",
+        error instanceof Error ? error.message : String(error)
+      );
+      throw error;
+    } finally {
+      setQueueStore("loading", false);
+    }
+  },
+
+  /**
+   * キュー内の全タスクを完了状態にする
+   */
+  async completeAll(): Promise<void> {
+    setQueueStore("loading", true);
+    setQueueStore("error", null);
+    try {
+      await queueApi.completeAll();
+      // キューを再読み込み（空になるはず）
+      await queueActions.loadQueue();
+      // タスクプールも再読み込み（完了タスクが移動したため）
+      await taskActions.loadHierarchy();
     } catch (error) {
       setQueueStore(
         "error",

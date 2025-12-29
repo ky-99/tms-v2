@@ -6,7 +6,7 @@
 > Branch: feature/tms-v2-poc
 > Owner: Developer
 > Created: 2025-12-21
-> Last Updated: 2025-12-28
+> Last Updated: 2025-12-29
 
 References:
 - Requirements: `10_prd/requirements.md`
@@ -104,18 +104,19 @@ References:
 | TASK-NEW-047 | ConfirmDialogコンポーネント実装 | Done | P1 | Developer | - | REQ-0037 |
 | TASK-NEW-048 | ConfirmDialog統合とTauriプラグイン削除 | Done | P1 | Developer | TASK-NEW-047 | REQ-0037 |
 | TASK-NEW-049 | アーカイブボタン表示変更 | Done | P2 | Developer | - | REQ-0046 |
+| TASK-NEW-050 | キュー一括操作機能実装 | Done | P1 | Developer | - | REQ-0038 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 61
-- Done: 59
+- Total Tasks: 62
+- Done: 60
 - Processing: 0
 - UnDone: 1
 - Hold: 1
-- Progress: 96.7% (59/61)
+- Progress: 96.8% (60/62)
 
 ---
 
@@ -2196,6 +2197,52 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Completed**: 2025-12-29
 
 ---
+
+### TASK-NEW-050: キュー一括操作機能実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: QueuePanel, ConfirmDialog, QueueService, queueStore, queueApi
+- **Maps to**
+  - REQ: REQ-0038
+  - HTTP operationId: complete_all_queue (新規), clear_task_queue (既存)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: QueuePanelに「Complete All」「Clear All」ボタンを追加し、ConfirmDialogによる確認後にキュー内の全タスクを一括処理する
+- **Implementation Notes**:
+  - **Backend実装**:
+    - `openapi.yaml`: `/queue/complete-all` エンドポイント追加
+    - `service/queue.rs`: `complete_all_queue` メソッド実装（全タスクをcompletedステータスに更新、キューから削除、親ステータス更新、トランザクション処理）
+    - `models/queue.rs`: `CompleteAllQueueResponse` 構造体追加
+    - `commands/queue.rs`: `complete_all_queue` Tauri command追加
+    - `lib.rs`: 新規コマンド登録
+  - **Frontend実装**:
+    - `types/queue.ts`: `CompleteAllQueueResponse` interface追加
+    - `api/queue.ts`: `completeAll()` メソッド追加
+    - `stores/queueStore.ts`:
+      - `completeAll()` アクション追加（loadQueue + loadHierarchy）
+      - **Bug fix**: `clearQueue()` メソッドに `loadQueue()` + `loadHierarchy()` 追加（リアルタイム更新対応）
+    - `components/QueuePanel.tsx`:
+      - 「Complete All」「Clear All」ボタン追加（キューが空でない時のみ表示）
+      - ConfirmDialog統合（confirmAction state、executeAction関数）
+      - 確認ダイアログメッセージ動的生成（タスク数表示）
+      - **UI調整**: ヘッダー表記変更（「Active: X tasks」→「Task Queue (X)」形式）
+      - **UI調整**: タイトル縦位置調整（mb-3削除、ボタンコンテナにmt-3追加）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: openapi.yamlに`/queue/complete-all` エンドポイント定義完了
+  - [x] DoD-2: Backend service/models/commands実装完了
+  - [x] DoD-3: Backend lib.rsにコマンド登録完了
+  - [x] DoD-4: Frontend types/api/store実装完了
+  - [x] DoD-5: QueuePanelにボタンとConfirmDialog統合完了
+  - [x] DoD-6: Backend buildエラーなし
+  - [x] DoD-7: Frontend buildエラーなし
+- **Verification**:
+  - Type: Build
+  - Evidence: Backend build成功（0.33s）、Frontend build成功（1.01s）
+- **Updated**: 2025-12-29
+- **Completed**: 2025-12-29
+
+---
 ---
 > タスクの分類を固定すると、抜け漏れが減る。
 
@@ -2272,3 +2319,5 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-29 TASK-NEW-036 completed: TagInput コンポーネント実装 (types/tag.ts新規作成: Tag/CreateTagRequest/UpdateTagRequest型定義、PRESET_TAG_COLORS（8色）定義、components/TagInput.tsx新規作成: チップ入力、オートコンプリート、新規タグ作成（インラインカラーピッカー）、Enter/Escape対応、Frontendビルド成功: 900ms、Task Progress: 90% = 47/52)
 - 2025-12-29 TASK-NEW-007 updated: タスクホバー詳細ポップアップ更新 (ホバー遅延500ms→2000ms、タイトルのみホバー対応に変更、タイトルホバー時色変化追加（hover:text-primary）、ポップアップをdescription+tagsのみに簡素化（w-64）、placement="top"でタイトル上/下表示、青色枠線削除、Frontendビルド成功: 864ms)
 - 2025-12-29 UI/UX Phase 3 completed (TASK-NEW-041〜049): ページローディング削除、タスクタイトル文字数制限、グローバルスクロールバー削除、タイトルバー削除＋角丸ウィンドウ、フォーカスリング調整、ConfirmDialog実装＋統合、アーカイブボタン変更、Task Progress: 96.7% = 59/61
+- 2025-12-29 TASK-NEW-050 completed: キュー一括操作機能実装 (Backend: complete_all_queue API追加、service/models/commands実装、Frontend: QueuePanel「Complete All」「Clear All」ボタン追加、ConfirmDialog統合、queueStore completeAll action追加、Backend build: 0.33s、Frontend build: 1.01s、Task Progress: 96.8% = 60/62)
+- 2025-12-29 TASK-NEW-050 bug fix & UI adjustments: clearQueue()リアルタイム更新対応（loadQueue + loadHierarchy追加）、QueuePanelヘッダー表記変更（「Task Queue (X)」形式）、タイトル縦位置調整、Frontend build: 974ms

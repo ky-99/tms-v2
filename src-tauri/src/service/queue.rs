@@ -191,6 +191,58 @@ impl QueueService {
         })
     }
 
+    /// キュー内の全タスクを完了状態にする
+    ///
+    /// # Arguments
+    /// * `conn` - データベース接続
+    ///
+    /// # Returns
+    /// * `Ok(usize)` - 完了したタスク数
+    /// * `Err(ServiceError)` - エラー
+    ///
+    /// # Business Logic
+    /// - **全タスクを完了状態に更新**
+    ///   - 全タスクのステータスを"completed"に変更
+    ///   - 全タスクのupdated_atを現在時刻に更新
+    ///   - 親ステータスを更新（子タスクの場合）
+    ///   - キュー全体を削除
+    ///   - トランザクション内で実行（all or nothing）
+    pub fn complete_all_queue(conn: &mut SqliteConnection) -> Result<usize, ServiceError> {
+        // キュー内の全タスクIDを取得
+        let task_ids: Vec<String> = task_queue::table
+            .select(task_queue::task_id)
+            .load::<String>(conn)?;
+
+        let completed_count = task_ids.len();
+
+        // トランザクション内で処理
+        conn.transaction::<(), ServiceError, _>(|conn| {
+            let now = Utc::now().to_rfc3339();
+
+            // 各タスクをcompletedステータスに更新
+            for task_id in &task_ids {
+                diesel::update(tasks::table.find(task_id))
+                    .set((
+                        tasks::status.eq(TaskStatus::Completed.as_str()),
+                        tasks::updated_at.eq(&now),
+                    ))
+                    .execute(conn)?;
+            }
+
+            // キュー全体を削除
+            diesel::delete(task_queue::table).execute(conn)?;
+
+            // 親ステータスを更新
+            for task_id in &task_ids {
+                TaskService::update_parent_status_if_needed(conn, task_id)?;
+            }
+
+            Ok(())
+        })?;
+
+        Ok(completed_count)
+    }
+
     /// キュー全体をクリア
     ///
     /// # Arguments

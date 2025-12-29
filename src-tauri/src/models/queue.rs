@@ -76,3 +76,10 @@ pub struct UpdateQueueRequest {
 pub struct ReorderQueueRequest {
     pub task_ids: Vec<String>, // 新しい順序でのタスクIDリスト
 }
+
+/// キュー内全タスク完了レスポンス
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompleteAllQueueResponse {
+    pub completed_count: usize,
+}

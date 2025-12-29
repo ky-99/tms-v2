@@ -2,8 +2,8 @@ use tauri::State;
 
 use crate::error::ServiceError;
 use crate::models::queue::{
-    AddToQueueRequest, QueueEntry, QueueEntryWithTask, RemoveFromQueueRequest,
-    ReorderQueueRequest, UpdateQueueRequest,
+    AddToQueueRequest, CompleteAllQueueResponse, QueueEntry, QueueEntryWithTask,
+    RemoveFromQueueRequest, ReorderQueueRequest, UpdateQueueRequest,
 };
 use crate::service::QueueService;
 use crate::DbPool;
@@ -61,6 +61,14 @@ pub fn remove_task_from_queue(
 pub fn clear_task_queue(pool: State<DbPool>) -> Result<(), String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
     QueueService::clear_queue(&mut conn).map_err(format_error)
+}
+
+/// キュー内の全タスクを完了状態にする
+#[tauri::command]
+pub fn complete_all_queue(pool: State<DbPool>) -> Result<CompleteAllQueueResponse, String> {
+    let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
+    let completed_count = QueueService::complete_all_queue(&mut conn).map_err(format_error)?;
+    Ok(CompleteAllQueueResponse { completed_count })
 }
 
 /// タスクのキュー内位置を更新
