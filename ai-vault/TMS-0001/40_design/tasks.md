@@ -1719,7 +1719,17 @@ Priority: P0 (must), P1 (should), P2 (could)
     2. handleCreateTag が tagsApi.create を呼び出し
     3. loadTags() でタグ一覧を再読み込み
     4. 新しく作成されたタグが即座にavailableTagsに追加される
-- **Risks**: タグAPIとの連携 → 解決済み、初期値設定のロジック → formDataで自動設定
+  - **バグ修正（2025-12-29）**:
+    1. **TagInput内ボタンがformをsubmitする問題**: 全ボタンに `type="button"` 追加（チップ削除、タグ選択、新規作成、カラーピッカー、Create/Cancelボタン）
+    2. **ポップアップのタグ色が反映されない問題**: TaskHoverPopupに `availableTags` prop追加、タグ名から色を取得して適用
+    3. **編集時にタグが紐づかない問題（バックエンド）**:
+       - `UpdateTaskRequestInput`構造体を新規作成（フロントエンドから受け取る型、tagsフィールドあり）
+       - `UpdateTaskRequest`構造体をDB更新専用に変更（tagsフィールドなし、AsChangeset用）
+       - `service/task.rs`の`update_task`関数でタグ更新処理追加（既存task_tags削除 → 新規タグ挿入）
+       - `commands/task.rs`を`UpdateTaskRequestInput`を使用するように修正
+    4. **修正ファイル**: TagInput.tsx, TaskHoverPopup.tsx, TaskPool.tsx, TaskPage.tsx, models/task.rs, service/task.rs, commands/task.rs
+    5. **最終ビルド**: Backend成功(0.31s), Frontend成功(885ms, 225.22KB)
+- **Risks**: タグAPIとの連携 → 解決済み、初期値設定のロジック → formDataで自動設定、フォームsubmitバグ → 解決済み、タグ更新バグ → 解決済み
 - **Definition of Done (DoD)**:
   - [x] DoD-1: Dialog内にTagInputコンポーネントが追加され、タグ選択可能
   - [x] DoD-2: タスク作成時、選択したタグがAPIリクエストに含まれる（CreateTaskRequest.tags）
@@ -1727,11 +1737,15 @@ Priority: P0 (must), P1 (should), P2 (could)
   - [x] DoD-4: UpdateTaskRequestにtags追加、handleUpdateでタグがAPI送信される
   - [x] DoD-5: handleCreateTag実装でインラインタグ作成が可能
   - [x] DoD-6: Frontendビルド成功（891ms、バンドルサイズ: 224.85 KB）
+  - [x] DoD-7: TagInputボタンがformをsubmitしない（type="button"追加済み）
+  - [x] DoD-8: タスク編集時にタグが正しく紐づく（バックエンド修正完了）
+  - [x] DoD-9: ポップアップでタグ色が正しく表示される
+  - [x] DoD-10: 最終ビルド成功（Backend 0.31s, Frontend 885ms, 225.22KB）
 - **Verification**:
-  - Type: Build verification
-  - Evidence: Frontendビルド成功、TagInputコンポーネントが両Dialogに統合完了、タグAPI連携実装完了
+  - Type: Build verification + Bug fix verification
+  - Evidence: 全ビルド成功、TagInput統合完了、タグAPI連携完了、全バグ修正完了（formsubmit防止、タグ色表示、タグ更新処理）
 - **Updated**: 2025-12-29
-- **Completed**: 2025-12-29
+- **Completed**: 2025-12-29 (バグ修正含む最終完了)
 
 ---
 

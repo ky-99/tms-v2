@@ -1,5 +1,5 @@
 import { Popover as KobaltePopover } from "@kobalte/core/popover";
-import { JSX, createSignal, onCleanup, Show, For } from "solid-js";
+import { JSX, Show, For } from "solid-js";
 import { cn } from "../lib/utils";
 import type { Task } from "../types/task";
 import type { Tag } from "../types/tag";
@@ -11,49 +11,22 @@ interface TaskHoverPopupProps {
 }
 
 /**
- * タスクホバー詳細ポップアップコンポーネント
+ * タスク詳細ポップアップコンポーネント
  *
- * タイトル上で2000ms以上ホバーすると詳細ポップアップを表示します。
+ * タイトルクリックで詳細ポップアップを表示します。
  * - description、tagsを表示（コンパクト版）
  */
 export function TaskHoverPopup(props: TaskHoverPopupProps) {
-  const [isOpen, setIsOpen] = createSignal(false);
-  let hoverTimer: number | undefined;
-
-  const handleMouseEnter = () => {
-    // 2000ms後にポップアップを表示
-    hoverTimer = window.setTimeout(() => {
-      setIsOpen(true);
-    }, 2000);
-  };
-
-  const handleMouseLeave = () => {
-    // タイマーをクリアしてポップアップを閉じる
-    if (hoverTimer) {
-      clearTimeout(hoverTimer);
-      hoverTimer = undefined;
-    }
-    setIsOpen(false);
-  };
-
-  // コンポーネントのクリーンアップ時にタイマーをクリア
-  onCleanup(() => {
-    if (hoverTimer) {
-      clearTimeout(hoverTimer);
-    }
-  });
-
   // Get tag color from available tags
   const getTagColor = (tagName: string): string | undefined => {
     return props.availableTags.find((t) => t.name === tagName)?.color;
   };
 
   return (
-    <KobaltePopover open={isOpen()} onOpenChange={setIsOpen} placement="top">
+    <KobaltePopover placement="top">
       <KobaltePopover.Trigger
         class="outline-none focus:outline-none"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onClick={(e: MouseEvent) => e.stopPropagation()}
       >
         {props.children}
       </KobaltePopover.Trigger>
