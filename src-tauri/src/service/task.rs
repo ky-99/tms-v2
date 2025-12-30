@@ -34,7 +34,7 @@ impl TaskService {
         // バリデーション: タイトルが空でないこと
         if req.title.trim().is_empty() {
             return Err(ServiceError::InvalidInput(
-                "Title cannot be empty".to_string(),
+                "タイトルは必須です".to_string(),
             ));
         }
 
@@ -347,34 +347,39 @@ impl TaskService {
         hierarchy
     }
 
-    /// タスク検索（フィルタ・キーワード対応）
+    /// タスク検索（フィルタ・キーワード対応、ページネーション対応）
     ///
     /// # Arguments
     /// * `conn` - データベース接続
-    /// * `params` - 検索パラメータ（q: キーワード、status: ステータス、tags: タグフィルタ）
+    /// * `params` - 検索パラメータ（q: キーワード、status: ステータス、tags: タグフィルタ、limit: 件数、offset: オフセット）
     ///
     /// # Returns
-    /// * `Ok(Vec<TaskResponse>)` - 検索結果のタスクリスト（タグ・子タスクID含む）
+    /// * `Ok(PaginatedTaskResponse)` - 検索結果（tasks + total）
     /// * `Err(ServiceError)` - エラー
     ///
     /// # Search Logic
     /// - q: タイトル・説明文のLIKE検索（部分一致）
     /// - status: ステータスフィルタ（未指定時はarchived以外）
     /// - tags: タグ名のOR条件フィルタ
+    /// - limit: 1ページあたりの件数（デフォルト: 100）
+    /// - offset: スキップする件数（デフォルト: 0）
     /// - 全パラメータは任意かつ組み合わせ可能
     pub fn search_tasks(
         conn: &mut SqliteConnection,
         params: SearchTasksParams,
-    ) -> Result<Vec<TaskResponse>, ServiceError> {
-        // ベースクエリ（boxedで条件分岐可能に）
-        let mut query = tasks::table.into_boxed();
+    ) -> Result<PaginatedTaskResponse, ServiceError> {
+        // デフォルト値設定
+        let limit = params.limit.unwrap_or(100);
+        let offset = params.offset.unwrap_or(0);
 
-        // キーワード検索（タイトル OR 説明文）
-        if let Some(keyword) = params.q {
+        // === COUNT QUERY ===
+        let mut count_query = tasks::table.into_boxed();
+
+        // キーワード検索フィルタ適用
+        if let Some(ref keyword) = params.q {
             if !keyword.trim().is_empty() {
                 let pattern = format!("%{}%", keyword);
-                // パターンをクローンして所有権を渡す
-                query = query.filter(
+                count_query = count_query.filter(
                     tasks::title
                         .like(pattern.clone())
                         .or(tasks::description.like(pattern)),
@@ -382,48 +387,96 @@ impl TaskService {
             }
         }
 
-        // ステータスフィルタ
-        if let Some(status) = params.status {
-            query = query.filter(tasks::status.eq(status));
+        // ステータスフィルタ適用
+        if let Some(ref status) = params.status {
+            count_query = count_query.filter(tasks::status.eq(status));
         } else {
-            // デフォルト: archived以外
-            query = query.filter(tasks::status.ne("archived"));
+            count_query = count_query.filter(tasks::status.ne("archived"));
         }
 
-        // タグフィルタ（OR条件）
-        if let Some(tag_names) = params.tags {
+        // タグフィルタ適用（既存ロジック再利用）
+        let tag_ids_for_count = if let Some(ref tag_names) = params.tags {
             if !tag_names.is_empty() {
-                // タグ名からタグIDを取得
                 let tag_ids: Vec<String> = tags::table
-                    .filter(tags::name.eq_any(&tag_names))
+                    .filter(tags::name.eq_any(tag_names))
                     .select(tags::id)
                     .load::<String>(conn)?;
 
-                if !tag_ids.is_empty() {
-                    // task_tagsでフィルタ（サブクエリ使用）
-                    // tag_idsをクローンして所有権を渡す
-                    query = query.filter(
-                        tasks::id.eq_any(
-                            task_tags::table
-                                .filter(task_tags::tag_id.eq_any(tag_ids))
-                                .select(task_tags::task_id),
-                        ),
-                    );
-                } else {
-                    // タグが見つからない場合は空の結果を返す
-                    return Ok(Vec::new());
+                if tag_ids.is_empty() {
+                    // タグが見つからない場合は空の結果
+                    return Ok(PaginatedTaskResponse {
+                        tasks: Vec::new(),
+                        total: 0,
+                    });
                 }
+
+                count_query = count_query.filter(
+                    tasks::id.eq_any(
+                        task_tags::table
+                            .filter(task_tags::tag_id.eq_any(tag_ids.clone()))
+                            .select(task_tags::task_id),
+                    ),
+                );
+
+                Some(tag_ids)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // 総件数取得
+        let total = count_query.count().get_result::<i64>(conn)?;
+
+        // === DATA QUERY ===
+        let mut data_query = tasks::table.into_boxed();
+
+        // 同じフィルタを再適用
+        if let Some(ref keyword) = params.q {
+            if !keyword.trim().is_empty() {
+                let pattern = format!("%{}%", keyword);
+                data_query = data_query.filter(
+                    tasks::title
+                        .like(pattern.clone())
+                        .or(tasks::description.like(pattern)),
+                );
             }
         }
 
-        // クエリ実行
-        let found_tasks = query.order(tasks::created_at.desc()).load::<Task>(conn)?;
+        if let Some(ref status) = params.status {
+            data_query = data_query.filter(tasks::status.eq(status));
+        } else {
+            data_query = data_query.filter(tasks::status.ne("archived"));
+        }
 
-        // 各タスクにタグと子タスクIDを追加（共通ヘルパー使用）
-        found_tasks
+        if let Some(tag_ids) = tag_ids_for_count {
+            data_query = data_query.filter(
+                tasks::id.eq_any(
+                    task_tags::table
+                        .filter(task_tags::tag_id.eq_any(tag_ids))
+                        .select(task_tags::task_id),
+                ),
+            );
+        }
+
+        // LIMIT/OFFSET適用してタスク取得
+        let found_tasks = data_query
+            .order(tasks::created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .load::<Task>(conn)?;
+
+        // タグと子タスクIDを追加（既存のenrich_task_responseを使用）
+        let enriched_tasks: Result<Vec<TaskResponse>, ServiceError> = found_tasks
             .into_iter()
             .map(|task| Self::enrich_task_response(conn, task))
-            .collect()
+            .collect();
+
+        Ok(PaginatedTaskResponse {
+            tasks: enriched_tasks?,
+            total,
+        })
     }
 
     /// タスクIDのみを検索（軽量版）
@@ -576,7 +629,7 @@ impl TaskService {
         if let Some(ref title) = req_input.title {
             if title.trim().is_empty() {
                 return Err(ServiceError::InvalidInput(
-                    "Title cannot be empty".to_string(),
+                    "タイトルは必須です".to_string(),
                 ));
             }
         }
@@ -1748,20 +1801,24 @@ mod tests {
             q: Some("Rust".to_string()),
             status: None,
             tags: None,
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].title, "Rust programming");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1);
+        assert_eq!(result.tasks[0].title, "Rust programming");
 
         // キーワード検索: "web"（description内）
         let params = SearchTasksParams {
             q: Some("web".to_string()),
             status: None,
             tags: None,
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].title, "Python coding");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1);
+        assert_eq!(result.tasks[0].title, "Python coding");
     }
 
     #[test]
@@ -1799,20 +1856,24 @@ mod tests {
             q: None,
             status: Some("draft".to_string()),
             tags: None,
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].title, "Draft Task");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1);
+        assert_eq!(result.tasks[0].title, "Draft Task");
 
         // ステータス検索: "active"
         let params = SearchTasksParams {
             q: None,
             status: Some("active".to_string()),
             tags: None,
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].title, "Active Task");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1);
+        assert_eq!(result.tasks[0].title, "Active Task");
     }
 
     #[test]
@@ -1855,19 +1916,23 @@ mod tests {
             q: None,
             status: None,
             tags: Some(vec!["work".to_string()]),
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].title, "Work Task");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1);
+        assert_eq!(result.tasks[0].title, "Work Task");
 
         // タグ検索: "work" OR "personal"
         let params = SearchTasksParams {
             q: None,
             status: None,
             tags: Some(vec!["work".to_string(), "personal".to_string()]),
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 2);
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 2);
     }
 
     #[test]
@@ -1905,10 +1970,12 @@ mod tests {
             q: Some("Rust".to_string()),
             status: None,
             tags: Some(vec!["urgent".to_string()]),
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].title, "Urgent Rust Task");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1);
+        assert_eq!(result.tasks[0].title, "Urgent Rust Task");
     }
 
     #[test]
@@ -1929,18 +1996,24 @@ mod tests {
             q: Some("NonExistentKeyword".to_string()),
             status: None,
             tags: None,
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 0);
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 0);
+        assert_eq!(result.total, 0);
 
         // 存在しないタグで検索
         let params = SearchTasksParams {
             q: None,
             status: None,
             tags: Some(vec!["nonexistent".to_string()]),
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 0);
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 0);
+        assert_eq!(result.total, 0);
     }
 
     #[test]
@@ -1978,10 +2051,206 @@ mod tests {
             q: None,
             status: None,
             tags: None,
+            limit: None,
+            offset: None,
         };
-        let results = TaskService::search_tasks(&mut conn, params).unwrap();
-        assert_eq!(results.len(), 1); // archived以外
-        assert_eq!(results[0].title, "Task 1");
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 1); // archived以外
+        assert_eq!(result.total, 1);
+        assert_eq!(result.tasks[0].title, "Task 1");
+    }
+
+    #[test]
+    fn test_search_tasks_with_pagination_default() {
+        let mut conn = setup_test_db();
+
+        // 120件のタスクを作成
+        for i in 0..120 {
+            let req = CreateTaskRequest {
+                title: format!("Test Task {}", i),
+                description: None,
+                parent_id: None,
+                tags: vec![],
+            };
+            TaskService::create_task(&mut conn, req).unwrap();
+        }
+
+        // デフォルトページネーション（limit=100, offset=0）
+        let params = SearchTasksParams {
+            q: None,
+            status: None,
+            tags: None,
+            limit: None,
+            offset: None,
+        };
+
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+
+        assert_eq!(result.tasks.len(), 100, "デフォルトlimit=100が適用される");
+        assert_eq!(result.total, 120, "総件数は120件");
+    }
+
+    #[test]
+    fn test_search_tasks_with_pagination_custom() {
+        let mut conn = setup_test_db();
+
+        // 30件のタスクを作成
+        for i in 0..30 {
+            let req = CreateTaskRequest {
+                title: format!("Task {}", i),
+                description: None,
+                parent_id: None,
+                tags: vec![],
+            };
+            TaskService::create_task(&mut conn, req).unwrap();
+        }
+
+        // カスタムページネーション（limit=10, offset=5）
+        let params = SearchTasksParams {
+            q: None,
+            status: None,
+            tags: None,
+            limit: Some(10),
+            offset: Some(5),
+        };
+
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+
+        assert_eq!(result.tasks.len(), 10, "limit=10が適用される");
+        assert_eq!(result.total, 30, "総件数は30件");
+    }
+
+    #[test]
+    fn test_search_tasks_pagination_total_count() {
+        let mut conn = setup_test_db();
+
+        // 25件のタスクを作成
+        for i in 0..25 {
+            let req = CreateTaskRequest {
+                title: format!("Task {}", i),
+                description: None,
+                parent_id: None,
+                tags: vec![],
+            };
+            TaskService::create_task(&mut conn, req).unwrap();
+        }
+
+        // 1ページ目（limit=10, offset=0）
+        let params = SearchTasksParams {
+            q: None,
+            status: None,
+            tags: None,
+            limit: Some(10),
+            offset: Some(0),
+        };
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 10, "1ページ目は10件");
+        assert_eq!(result.total, 25, "総件数は25件");
+
+        // 2ページ目（limit=10, offset=10）
+        let params = SearchTasksParams {
+            q: None,
+            status: None,
+            tags: None,
+            limit: Some(10),
+            offset: Some(10),
+        };
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 10, "2ページ目は10件");
+        assert_eq!(result.total, 25, "総件数は25件");
+
+        // 3ページ目（limit=10, offset=20）
+        let params = SearchTasksParams {
+            q: None,
+            status: None,
+            tags: None,
+            limit: Some(10),
+            offset: Some(20),
+        };
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+        assert_eq!(result.tasks.len(), 5, "3ページ目は残り5件");
+        assert_eq!(result.total, 25, "総件数は25件");
+    }
+
+    #[test]
+    fn test_search_tasks_with_filters_and_pagination() {
+        use crate::models::tag::CreateTagRequest;
+        use crate::service::TagService;
+
+        let mut conn = setup_test_db();
+
+        // タグ作成
+        let tag_req = CreateTagRequest {
+            name: "important".to_string(),
+            color: Some("#FF0000".to_string()),
+        };
+        TagService::create_tag(&mut conn, tag_req).unwrap();
+
+        // タグ付きタスク15件、タグなしタスク10件作成
+        for i in 0..15 {
+            let req = CreateTaskRequest {
+                title: format!("Important Task {}", i),
+                description: None,
+                parent_id: None,
+                tags: vec!["important".to_string()],
+            };
+            TaskService::create_task(&mut conn, req).unwrap();
+        }
+
+        for i in 0..10 {
+            let req = CreateTaskRequest {
+                title: format!("Normal Task {}", i),
+                description: None,
+                parent_id: None,
+                tags: vec![],
+            };
+            TaskService::create_task(&mut conn, req).unwrap();
+        }
+
+        // 一部をcompleted状態に変更
+        let all_tasks_params = SearchTasksParams {
+            q: None,
+            status: None,
+            tags: None,
+            limit: Some(100),
+            offset: None,
+        };
+        let all_tasks = TaskService::search_tasks(&mut conn, all_tasks_params)
+            .unwrap()
+            .tasks;
+
+        for (i, task) in all_tasks.iter().enumerate() {
+            if i < 5 {
+                let update_req = UpdateTaskRequestInput {
+                    title: None,
+                    description: None,
+                    status: Some("completed".to_string()),
+                    parent_id: None,
+                    tags: None,
+                };
+                TaskService::update_task(&mut conn, &task.id, update_req).unwrap();
+            }
+        }
+
+        // フィルタ適用：completed + important（limit=5）
+        let params = SearchTasksParams {
+            q: None,
+            status: Some("completed".to_string()),
+            tags: Some(vec!["important".to_string()]),
+            limit: Some(5),
+            offset: None,
+        };
+
+        let result = TaskService::search_tasks(&mut conn, params).unwrap();
+
+        // completedかつimportantなタスクが存在する分だけ取得される
+        assert!(result.tasks.len() <= 5, "limit=5が適用される");
+        assert!(result.total <= 5, "completedかつimportantなタスクの総数");
+
+        // 全てのタスクがcompletedステータス
+        for task in &result.tasks {
+            assert_eq!(task.status, TaskStatus::Completed);
+        }
     }
 
     #[test]

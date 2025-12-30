@@ -197,12 +197,14 @@ fn test_search_tasks_with_filters() {
         q: Some("キーワード".to_string()),
         status: None,
         tags: None,
+        limit: None,
+        offset: None,
     };
     let result = TaskService::search_tasks(&mut conn, params);
     assert!(result.is_ok());
-    let tasks = result.unwrap();
-    assert_eq!(tasks.len(), 1);
-    assert_eq!(tasks[0].title, "検索対象1");
+    let response = result.unwrap();
+    assert_eq!(response.tasks.len(), 1);
+    assert_eq!(response.tasks[0].title, "検索対象1");
 }
 
 // ========================================
@@ -659,10 +661,12 @@ fn test_tag_filter_workflow() {
         q: None,
         status: None,
         tags: Some(vec![tag1.name]),
+        limit: None,
+        offset: None,
     };
-    let results = TaskService::search_tasks(&mut conn, params).unwrap();
-    assert_eq!(results.len(), 1);
-    assert_eq!(results[0].title, "バグ修正");
+    let result = TaskService::search_tasks(&mut conn, params).unwrap();
+    assert_eq!(result.tasks.len(), 1);
+    assert_eq!(result.tasks[0].title, "バグ修正");
 }
 
 // ========================================

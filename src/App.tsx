@@ -4,6 +4,7 @@ import { TaskPage } from "./pages/TaskPage";
 import { CompletedPage } from "./pages/CompletedPage";
 import { ArchivedPage } from "./pages/ArchivedPage";
 import { TagManagementPage } from "./pages/TagManagementPage";
+import { ErrorToastProvider } from "./components/ErrorToast";
 import type { RouteSectionProps } from "@solidjs/router";
 
 // Root Layout Component - Router context内で動作
@@ -20,12 +21,14 @@ function RootLayout(props: RouteSectionProps) {
 
 function App() {
   return (
-    <Router root={RootLayout}>
-      <Route path="/" component={TaskPage} />
-      <Route path="/completed" component={CompletedPage} />
-      <Route path="/archive" component={ArchivedPage} />
-      <Route path="/tags" component={TagManagementPage} />
-    </Router>
+    <ErrorToastProvider>
+      <Router root={RootLayout}>
+        <Route path="/" component={TaskPage} />
+        <Route path="/completed" component={CompletedPage} />
+        <Route path="/archive" component={ArchivedPage} />
+        <Route path="/tags" component={TagManagementPage} />
+      </Router>
+    </ErrorToastProvider>
   );
 }
 

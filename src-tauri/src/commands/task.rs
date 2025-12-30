@@ -2,7 +2,6 @@ use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use tauri::State;
 
-use crate::error::ServiceError;
 use crate::models::task::{
     CreateTaskRequest, ListTasksPaginatedParams, PaginatedTaskResponse, SearchTasksParams,
     TaskHierarchyResponse, TaskResponse, UpdateTaskRequestInput,
@@ -12,40 +11,6 @@ use crate::service::TaskService;
 /// データベース接続プール型
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
 
-/// ServiceErrorを分かりやすい日本語メッセージに変換
-fn format_error(err: ServiceError) -> String {
-    match err {
-        ServiceError::TaskNotFound(id) => format!("タスクが見つかりません（ID: {}）", id),
-        ServiceError::ParentTaskNotFound(id) => {
-            format!("指定された親タスクが見つかりません（ID: {}）", id)
-        }
-        ServiceError::InvalidInput(msg) => format!("入力値が不正です: {}", msg),
-        ServiceError::CircularDependency(id) => {
-            format!("循環参照が検出されました。タスク {} を親に設定できません", id)
-        }
-        ServiceError::TaskHasChildren(id) => {
-            format!(
-                "子タスクが存在するため削除できません（タスクID: {}）",
-                id
-            )
-        }
-        ServiceError::TaskNotDraft(id) => {
-            format!(
-                "Draft状態のタスクのみ編集・削除できます（タスクID: {}）",
-                id
-            )
-        }
-        ServiceError::TaskNotArchived(id) => {
-            format!(
-                "Archived状態のタスクのみ物理削除できます（タスクID: {}）",
-                id
-            )
-        }
-        ServiceError::DatabaseError(e) => format!("データベースエラー: {}", e),
-        _ => err.to_string(),
-    }
-}
-
 /// タスクを作成
 #[tauri::command]
 pub fn create_task(
@@ -53,14 +18,14 @@ pub fn create_task(
     req: CreateTaskRequest,
 ) -> Result<TaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::create_task(&mut conn, req).map_err(format_error)
+    TaskService::create_task(&mut conn, req).map_err(|e| e.to_string())
 }
 
 /// タスクを取得
 #[tauri::command]
 pub fn get_task(pool: State<DbPool>, task_id: String) -> Result<TaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::get_task(&mut conn, &task_id).map_err(format_error)
+    TaskService::get_task(&mut conn, &task_id).map_err(|e| e.to_string())
 }
 
 /// タスクを更新
@@ -71,14 +36,14 @@ pub fn update_task(
     req: UpdateTaskRequestInput,
 ) -> Result<TaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::update_task(&mut conn, &task_id, req).map_err(format_error)
+    TaskService::update_task(&mut conn, &task_id, req).map_err(|e| e.to_string())
 }
 
 /// タスクを削除（論理削除: Draft → Archived）
 #[tauri::command]
 pub fn delete_task(pool: State<DbPool>, task_id: String) -> Result<(), String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::delete_task(&mut conn, &task_id).map_err(format_error)
+    TaskService::delete_task(&mut conn, &task_id).map_err(|e| e.to_string())
 }
 
 /// タスクを完全に削除（物理削除: データベースから削除）
@@ -89,7 +54,7 @@ pub fn delete_task(pool: State<DbPool>, task_id: String) -> Result<(), String> {
 #[tauri::command]
 pub fn delete_task_permanently(pool: State<DbPool>, task_id: String) -> Result<(), String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::delete_task_permanently(&mut conn, &task_id).map_err(format_error)
+    TaskService::delete_task_permanently(&mut conn, &task_id).map_err(|e| e.to_string())
 }
 
 /// タスクを復元（Archived → Draft）
@@ -100,7 +65,7 @@ pub fn delete_task_permanently(pool: State<DbPool>, task_id: String) -> Result<(
 #[tauri::command]
 pub fn restore_task(pool: State<DbPool>, task_id: String) -> Result<TaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::restore_task(&mut conn, &task_id).map_err(format_error)
+    TaskService::restore_task(&mut conn, &task_id).map_err(|e| e.to_string())
 }
 
 /// タスク一覧を取得（ステータスフィルタ対応）
@@ -117,7 +82,7 @@ pub fn list_tasks(
     status: Option<Vec<String>>,
 ) -> Result<Vec<TaskResponse>, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::list_tasks(&mut conn, status).map_err(format_error)
+    TaskService::list_tasks(&mut conn, status).map_err(|e| e.to_string())
 }
 
 /// タスク一覧を取得（ページネーション対応）
@@ -140,7 +105,7 @@ pub fn list_tasks_paginated(
     params: ListTasksPaginatedParams,
 ) -> Result<PaginatedTaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::list_tasks_paginated(&mut conn, params).map_err(format_error)
+    TaskService::list_tasks_paginated(&mut conn, params).map_err(|e| e.to_string())
 }
 
 /// タスク階層を取得（Draft/Active な親 + Draft/Active/Completed な子）
@@ -149,20 +114,28 @@ pub fn get_task_hierarchy(
     pool: State<DbPool>,
 ) -> Result<Vec<TaskHierarchyResponse>, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::get_hierarchy(&mut conn).map_err(format_error)
+    TaskService::get_hierarchy(&mut conn).map_err(|e| e.to_string())
 }
 
-/// タスク検索（フィルタ・キーワード対応）
+/// タスク検索（フィルタ・キーワード対応、ページネーション対応）
 #[tauri::command]
 pub fn search_tasks(
     pool: State<DbPool>,
     q: Option<String>,
     status: Option<String>,
     tags: Option<Vec<String>>,
-) -> Result<Vec<TaskResponse>, String> {
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> Result<PaginatedTaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    let params = SearchTasksParams { q, status, tags };
-    TaskService::search_tasks(&mut conn, params).map_err(format_error)
+    let params = SearchTasksParams {
+        q,
+        status,
+        tags,
+        limit,
+        offset,
+    };
+    TaskService::search_tasks(&mut conn, params).map_err(|e| e.to_string())
 }
 
 /// タスクIDのみを検索（軽量版）
@@ -173,5 +146,5 @@ pub fn search_task_ids(
     status: Option<String>,
 ) -> Result<Vec<String>, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    TaskService::search_task_ids(&mut conn, tags, status).map_err(format_error)
+    TaskService::search_task_ids(&mut conn, tags, status).map_err(|e| e.to_string())
 }

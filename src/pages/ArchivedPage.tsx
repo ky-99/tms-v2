@@ -1,11 +1,12 @@
 import { createSignal, createMemo, For, Show, onMount } from "solid-js";
 import { Card } from "../components/Card";
 import { Input } from "../components/Input";
+import { Button } from "../components/Button";
 import { DropdownMenu } from "../components/DropdownMenu";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import Pagination from "../components/Pagination";
 import { tasksApi } from "../api/tasks";
-import type { Task } from "../types/task";
+import type { Task, PaginatedTaskResponse } from "../types/task";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -68,11 +69,28 @@ export function ArchivedPage() {
     setLoading(true);
     try {
       const offset = (page - 1) * ITEMS_PER_PAGE;
-      const result = await tasksApi.listPaginated(
-        ["archived"],
-        ITEMS_PER_PAGE,
-        offset
-      );
+      const query = searchQuery();
+
+      let result: PaginatedTaskResponse;
+
+      if (query.trim()) {
+        // Backend search with pagination
+        result = await tasksApi.searchPaginated(
+          query,
+          "archived",
+          undefined, // tags
+          ITEMS_PER_PAGE,
+          offset
+        );
+      } else {
+        // Normal list with pagination (no search)
+        result = await tasksApi.listPaginated(
+          ["archived"],
+          ITEMS_PER_PAGE,
+          offset
+        );
+      }
+
       setArchivedTasks(result.tasks);
       setTotalItems(result.total);
       setCurrentPage(page);
@@ -85,6 +103,17 @@ export function ArchivedPage() {
 
   const handlePageChange = (page: number) => {
     loadArchivedTasks(page);
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    loadArchivedTasks(1);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   onMount(async () => {
@@ -142,13 +171,8 @@ export function ArchivedPage() {
   };
 
   const filteredAndGroupedTasks = createMemo(() => {
-    const filtered = archivedTasks().filter(
-      (task) =>
-        task.title.toLowerCase().includes(searchQuery().toLowerCase()) ||
-        (task.description &&
-          task.description.toLowerCase().includes(searchQuery().toLowerCase()))
-    );
-    return groupTasksByDate(filtered);
+    // Backend already filtered, just group by date
+    return groupTasksByDate(archivedTasks());
   });
 
   return (
@@ -164,17 +188,23 @@ export function ArchivedPage() {
             </h1>
           </div>
 
-          <div class="relative">
-            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              <SearchIcon />
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <SearchIcon />
+              </div>
+              <Input
+                type="text"
+                placeholder="Search archived tasks..."
+                value={searchQuery()}
+                onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                onKeyDown={handleKeyDown}
+                class="pl-9"
+              />
             </div>
-            <Input
-              type="text"
-              placeholder="Search archived tasks..."
-              value={searchQuery()}
-              onInput={(e) => setSearchQuery(e.currentTarget.value)}
-              class="pl-9"
-            />
+            <Button onClick={handleSearch}>
+              <SearchIcon />
+            </Button>
           </div>
         </div>
 

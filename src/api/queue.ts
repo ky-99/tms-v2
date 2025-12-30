@@ -1,4 +1,5 @@
 import { invokeWithTimeout } from "../lib/invoke";
+import { withErrorHandling } from "../lib/errorHandler";
 import type {
   AddToQueueRequest,
   CompleteAllQueueResponse,
@@ -14,7 +15,10 @@ export const queueApi = {
    * キュー全体を取得（タスク情報含む）
    */
   async getQueue(): Promise<QueueEntryWithTask[]> {
-    return await invokeWithTimeout<QueueEntryWithTask[]>("get_task_queue");
+    return await withErrorHandling(
+      () => invokeWithTimeout<QueueEntryWithTask[]>("get_task_queue"),
+      "キューの取得に失敗しました"
+    );
   },
 
   /**
@@ -22,7 +26,10 @@ export const queueApi = {
    */
   async addToQueue(taskId: string): Promise<QueueEntry> {
     const req: AddToQueueRequest = { taskId };
-    return await invokeWithTimeout<QueueEntry>("add_task_to_queue", { req });
+    return await withErrorHandling(
+      () => invokeWithTimeout<QueueEntry>("add_task_to_queue", { req }),
+      "タスクのキュー追加に失敗しました"
+    );
   },
 
   /**
@@ -33,7 +40,10 @@ export const queueApi = {
     targetStatus: "draft" | "completed"
   ): Promise<void> {
     const req: RemoveFromQueueRequest = { taskId, targetStatus };
-    return await invokeWithTimeout<void>("remove_task_from_queue", { req });
+    return await withErrorHandling(
+      () => invokeWithTimeout<void>("remove_task_from_queue", { req }),
+      "タスクのキュー削除に失敗しました"
+    );
   },
 
   /**
@@ -54,14 +64,20 @@ export const queueApi = {
    * キュー全体をクリア
    */
   async clearQueue(): Promise<void> {
-    return await invokeWithTimeout<void>("clear_task_queue");
+    return await withErrorHandling(
+      () => invokeWithTimeout<void>("clear_task_queue"),
+      "キューのクリアに失敗しました"
+    );
   },
 
   /**
    * キュー内の全タスクを完了状態にする
    */
   async completeAll(): Promise<CompleteAllQueueResponse> {
-    return await invokeWithTimeout<CompleteAllQueueResponse>("complete_all_queue");
+    return await withErrorHandling(
+      () => invokeWithTimeout<CompleteAllQueueResponse>("complete_all_queue"),
+      "全タスクの完了に失敗しました"
+    );
   },
 
   /**
@@ -72,7 +88,10 @@ export const queueApi = {
     newPosition: number
   ): Promise<QueueEntry> {
     const req: UpdateQueueRequest = { taskId, newPosition };
-    return await invokeWithTimeout<QueueEntry>("update_queue_position", { req });
+    return await withErrorHandling(
+      () => invokeWithTimeout<QueueEntry>("update_queue_position", { req }),
+      "キュー位置の更新に失敗しました"
+    );
   },
 
   /**
@@ -80,6 +99,9 @@ export const queueApi = {
    */
   async reorderQueue(taskIds: string[]): Promise<QueueEntry[]> {
     const req: ReorderQueueRequest = { taskIds };
-    return await invokeWithTimeout<QueueEntry[]>("reorder_task_queue", { req });
+    return await withErrorHandling(
+      () => invokeWithTimeout<QueueEntry[]>("reorder_task_queue", { req }),
+      "キューの並び替えに失敗しました"
+    );
   },
 };

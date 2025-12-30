@@ -212,6 +212,12 @@ pub struct SearchTasksParams {
     /// タグフィルタ（OR条件）
     #[serde(default)]
     pub tags: Option<Vec<String>>,
+    /// 1ページあたりの件数（デフォルト: 100）
+    #[serde(default)]
+    pub limit: Option<i64>,
+    /// スキップする件数（デフォルト: 0）
+    #[serde(default)]
+    pub offset: Option<i64>,
 }
 
 /// タスク一覧取得（ページネーション対応）パラメータ（API受信用）

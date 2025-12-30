@@ -1,4 +1,5 @@
 import { invokeWithTimeout } from "../lib/invoke";
+import { withErrorHandling } from "../lib/errorHandler";
 import type {
   Task,
   TaskHierarchy,
@@ -15,28 +16,39 @@ export const tasksApi = {
    * タスクを作成
    */
   async create(request: CreateTaskRequest): Promise<Task> {
-    return await invokeWithTimeout<Task>("create_task", { req: request });
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task>("create_task", { req: request }),
+      "タスクの作成に失敗しました"
+    );
   },
 
   /**
    * タスクを取得
    */
   async get(taskId: string): Promise<Task> {
-    return await invokeWithTimeout<Task>("get_task", { taskId });
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task>("get_task", { taskId })
+    );
   },
 
   /**
    * タスクを更新
    */
   async update(taskId: string, request: UpdateTaskRequest): Promise<Task> {
-    return await invokeWithTimeout<Task>("update_task", { taskId, req: request });
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task>("update_task", { taskId, req: request }),
+      "タスクの更新に失敗しました"
+    );
   },
 
   /**
    * タスクを削除（論理削除: Draft → Archived）
    */
   async delete(taskId: string): Promise<void> {
-    return await invokeWithTimeout<void>("delete_task", { taskId });
+    return await withErrorHandling(
+      () => invokeWithTimeout<void>("delete_task", { taskId }),
+      "タスクの削除に失敗しました"
+    );
   },
 
   /**
@@ -44,28 +56,38 @@ export const tasksApi = {
    * ※Archivedステータスのタスクのみ削除可能
    */
   async deletePermanently(taskId: string): Promise<void> {
-    return await invokeWithTimeout<void>("delete_task_permanently", { taskId });
+    return await withErrorHandling(
+      () => invokeWithTimeout<void>("delete_task_permanently", { taskId }),
+      "タスクの完全削除に失敗しました"
+    );
   },
 
   /**
    * タスクを復元（Archived → Draft）
    */
   async restore(taskId: string): Promise<Task> {
-    return await invokeWithTimeout<Task>("restore_task", { taskId });
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task>("restore_task", { taskId }),
+      "タスクの復元に失敗しました"
+    );
   },
 
   /**
    * タスク一覧を取得
    */
   async list(): Promise<Task[]> {
-    return await invokeWithTimeout<Task[]>("list_tasks");
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task[]>("list_tasks")
+    );
   },
 
   /**
    * ステータスでフィルタしてタスク一覧を取得
    */
   async listByStatus(status: string[]): Promise<Task[]> {
-    return await invokeWithTimeout<Task[]>("list_tasks", { status });
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task[]>("list_tasks", { status })
+    );
   },
 
   /**
@@ -80,15 +102,15 @@ export const tasksApi = {
     limit?: number,
     offset?: number
   ): Promise<PaginatedTaskResponse> {
-    return await invokeWithTimeout<PaginatedTaskResponse>(
-      "list_tasks_paginated",
-      {
-        params: {
-          status: status ?? null,
-          limit: limit ?? null,
-          offset: offset ?? null,
-        },
-      }
+    return await withErrorHandling(
+      () =>
+        invokeWithTimeout<PaginatedTaskResponse>("list_tasks_paginated", {
+          params: {
+            status: status ?? null,
+            limit: limit ?? null,
+            offset: offset ?? null,
+          },
+        })
     );
   },
 
@@ -96,7 +118,9 @@ export const tasksApi = {
    * タスク階層を取得（Draft/Active な親 + Draft/Active/Completed な子）
    */
   async getHierarchy(): Promise<TaskHierarchy[]> {
-    return await invokeWithTimeout<TaskHierarchy[]>("get_task_hierarchy");
+    return await withErrorHandling(
+      () => invokeWithTimeout<TaskHierarchy[]>("get_task_hierarchy")
+    );
   },
 
   /**
@@ -111,11 +135,42 @@ export const tasksApi = {
     status?: string,
     tags?: string[]
   ): Promise<Task[]> {
-    return await invokeWithTimeout<Task[]>("search_tasks", {
-      q: q ?? null,
-      status: status ?? null,
-      tags: tags ?? null,
-    });
+    return await withErrorHandling(
+      () =>
+        invokeWithTimeout<Task[]>("search_tasks", {
+          q: q ?? null,
+          status: status ?? null,
+          tags: tags ?? null,
+        })
+    );
+  },
+
+  /**
+   * タスク検索（ページネーション対応、Backend search）
+   * @param q - 検索キーワード（タイトル・説明文）
+   * @param status - ステータスフィルタ
+   * @param tags - タグフィルタ（OR条件）
+   * @param limit - 1ページあたりの件数（デフォルト: 100）
+   * @param offset - オフセット（デフォルト: 0）
+   * @returns ページネーション対応の検索結果
+   */
+  async searchPaginated(
+    q?: string,
+    status?: string,
+    tags?: string[],
+    limit?: number,
+    offset?: number
+  ): Promise<PaginatedTaskResponse> {
+    return await withErrorHandling(
+      () =>
+        invokeWithTimeout<PaginatedTaskResponse>("search_tasks", {
+          q: q ?? null,
+          status: status ?? null,
+          tags: tags ?? null,
+          limit: limit ?? null,
+          offset: offset ?? null,
+        })
+    );
   },
 
   /**
@@ -125,13 +180,13 @@ export const tasksApi = {
    * @param status - ステータスフィルタ（デフォルト: draft + active + completed）
    * @returns マッチしたタスクIDリスト
    */
-  async searchIds(
-    tags?: string[],
-    status?: string
-  ): Promise<string[]> {
-    return await invokeWithTimeout<string[]>("search_task_ids", {
-      tags: tags ?? null,
-      status: status ?? null,
-    });
+  async searchIds(tags?: string[], status?: string): Promise<string[]> {
+    return await withErrorHandling(
+      () =>
+        invokeWithTimeout<string[]>("search_task_ids", {
+          tags: tags ?? null,
+          status: status ?? null,
+        })
+    );
   },
 };

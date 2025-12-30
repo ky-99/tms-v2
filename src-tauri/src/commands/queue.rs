@@ -1,6 +1,5 @@
 use tauri::State;
 
-use crate::error::ServiceError;
 use crate::models::queue::{
     AddToQueueRequest, CompleteAllQueueResponse, QueueEntry, QueueEntryWithTask,
     RemoveFromQueueRequest, ReorderQueueRequest, UpdateQueueRequest,
@@ -8,31 +7,11 @@ use crate::models::queue::{
 use crate::service::QueueService;
 use crate::DbPool;
 
-/// ServiceErrorを分かりやすい日本語メッセージに変換
-fn format_error(err: ServiceError) -> String {
-    match err {
-        ServiceError::TaskNotFound(id) => format!("タスクが見つかりません（ID: {}）", id),
-        ServiceError::QueueEntryNotFound(id) => {
-            format!("キューにタスクが見つかりません（タスクID: {}）", id)
-        }
-        ServiceError::DuplicateQueueEntry(id) => {
-            format!("タスクは既にキューに登録されています（タスクID: {}）", id)
-        }
-        ServiceError::InvalidInput(msg) => format!("入力値が不正です: {}", msg),
-        ServiceError::InvalidTaskStatus(msg) => format!("タスクのステータスが不正です: {}", msg),
-        ServiceError::TaskHasChildren(id) => {
-            format!("このタスクは子タスクを持つためキューに追加できません（タスクID: {}）", id)
-        }
-        ServiceError::DatabaseError(e) => format!("データベースエラー: {}", e),
-        _ => err.to_string(),
-    }
-}
-
 /// キュー全体を取得
 #[tauri::command]
 pub fn get_task_queue(pool: State<DbPool>) -> Result<Vec<QueueEntryWithTask>, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    QueueService::get_queue(&mut conn).map_err(format_error)
+    QueueService::get_queue(&mut conn).map_err(|e| e.to_string())
 }
 
 /// タスクをキューに追加
@@ -42,7 +21,7 @@ pub fn add_task_to_queue(
     req: AddToQueueRequest,
 ) -> Result<QueueEntry, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    QueueService::add_to_queue(&mut conn, req.task_id).map_err(format_error)
+    QueueService::add_to_queue(&mut conn, req.task_id).map_err(|e| e.to_string())
 }
 
 /// タスクをキューから削除
@@ -53,21 +32,21 @@ pub fn remove_task_from_queue(
 ) -> Result<(), String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
     QueueService::remove_from_queue(&mut conn, req.task_id, req.target_status)
-        .map_err(format_error)
+        .map_err(|e| e.to_string())
 }
 
 /// キュー全体をクリア
 #[tauri::command]
 pub fn clear_task_queue(pool: State<DbPool>) -> Result<(), String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    QueueService::clear_queue(&mut conn).map_err(format_error)
+    QueueService::clear_queue(&mut conn).map_err(|e| e.to_string())
 }
 
 /// キュー内の全タスクを完了状態にする
 #[tauri::command]
 pub fn complete_all_queue(pool: State<DbPool>) -> Result<CompleteAllQueueResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    let completed_count = QueueService::complete_all_queue(&mut conn).map_err(format_error)?;
+    let completed_count = QueueService::complete_all_queue(&mut conn).map_err(|e| e.to_string())?;
     Ok(CompleteAllQueueResponse { completed_count })
 }
 
@@ -79,7 +58,7 @@ pub fn update_queue_position(
 ) -> Result<QueueEntry, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
     QueueService::update_queue_position(&mut conn, req.task_id, req.new_position)
-        .map_err(format_error)
+        .map_err(|e| e.to_string())
 }
 
 /// キュー全体を一括で並び替え
@@ -89,5 +68,5 @@ pub fn reorder_task_queue(
     req: ReorderQueueRequest,
 ) -> Result<Vec<QueueEntry>, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
-    QueueService::reorder_queue(&mut conn, req.task_ids).map_err(format_error)
+    QueueService::reorder_queue(&mut conn, req.task_ids).map_err(|e| e.to_string())
 }

@@ -109,10 +109,10 @@ References:
 | TASK-NEW-052 | タグ管理画面実装 | Done | P1 | Developer | - | REQ-0040 |
 | TASK-NEW-053 | Completedページ子タスク表示改善実装 | Done | P2 | Developer | TASK-NEW-025 | REQ-0041 |
 | TASK-NEW-054 | バグ修正: 親ステータス更新時のupdated_at | Done | P0 | Developer | TASK-NEW-001 | REQ-0008 |
-| TASK-NEW-055 | ErrorToastコンポーネント実装 | UnDone | P0 | Developer | - | REQ-0047 |
-| TASK-NEW-056 | API呼び出しエラーハンドリング統合 | UnDone | P0 | Developer | TASK-NEW-055 | REQ-0047 |
-| TASK-NEW-057 | search_tasks APIページネーション追加 | UnDone | P1 | Developer | - | REQ-0048 |
-| TASK-NEW-058 | Completed/ArchivedページBackend検索統合 | UnDone | P1 | Developer | TASK-NEW-057 | REQ-0048 |
+| TASK-NEW-055 | ErrorToastコンポーネント実装 | Done | P0 | Developer | - | REQ-0047 |
+| TASK-NEW-056 | API呼び出しエラーハンドリング統合 | Done | P0 | Developer | TASK-NEW-055 | REQ-0047 |
+| TASK-NEW-057 | search_tasks APIページネーション追加 | Done | P1 | Developer | - | REQ-0048 |
+| TASK-NEW-058 | Completed/ArchivedページBackend検索統合 | Done | P1 | Developer | TASK-NEW-057 | REQ-0048 |
 | TASK-NEW-059 | タグ複製機能実装 | UnDone | P1 | Developer | TASK-NEW-052 | REQ-0049 |
 | TASK-NEW-060 | duplicate_task Backend API実装 | UnDone | P1 | Developer | - | REQ-0050 |
 | TASK-NEW-061 | タスク複製UI統合（キーボードショートカット） | UnDone | P1 | Developer | TASK-NEW-060, TASK-NEW-062 | REQ-0050 |
@@ -127,11 +127,11 @@ Priority: P0 (must), P1 (should), P2 (could)
 
 ## 2.5 Task Progress Summary
 - Total Tasks: 77
-- Done: 65
+- Done: 69
 - Processing: 0
-- UnDone: 12
+- UnDone: 8
 - Hold: 0
-- Progress: 84.4% (65/77)
+- Progress: 89.6% (69/77)
 
 ---
 
@@ -2482,7 +2482,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-055: ErrorToastコンポーネント実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P0
 - **Component(s)**: ErrorToast (新規), Toast provider
 - **Maps to**
@@ -2494,56 +2494,74 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Implementation Notes**:
   - **Frontend実装**:
     - `components/ErrorToast.tsx` 新規作成
-    - Toast provider設定（Kobalte Toast使用）
+    - Toast provider設定（simplified implementation without Kobalte）
+    - z-index: 9999に設定（モーダル背景より前面表示）
     - エラーカテゴリ（Network, Validation, Server）ごとのアイコン表示
     - 3秒自動消去タイマー実装
     - キュー形式で複数エラー順次表示
+    - `stores/toastStore.ts`: createSignalベースの状態管理
+    - `components/icons/`: NetworkErrorIcon, ValidationErrorIcon, ServerErrorIcon作成
 - **Risks**: Toastライブラリの選定と統合
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: ErrorToastコンポーネント実装完了
-  - [ ] DoD-2: 3秒自動消去動作確認
-  - [ ] DoD-3: 複数エラーキュー表示確認
-  - [ ] DoD-4: Frontend buildエラーなし
+  - [x] DoD-1: ErrorToastコンポーネント実装完了
+  - [x] DoD-2: 3秒自動消去動作確認
+  - [x] DoD-3: 複数エラーキュー表示確認
+  - [x] DoD-4: Frontend buildエラーなし
+  - [x] DoD-5: モーダル表示時でもトーストが見える
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: Toast表示確認済み（2025-12-30）、モーダル時の表示確認済み、ビルド成功
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
 ### TASK-NEW-056: API呼び出しエラーハンドリング統合
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P0
-- **Component(s)**: tasksApi, tagsApi, queueApi
+- **Component(s)**: tasksApi, tagsApi, queueApi, error.rs, commands層
 - **Maps to**
   - REQ: REQ-0047
   - HTTP operationId: All APIs
   - Event messageId: N/A
 - **Depends on**: TASK-NEW-055
-- **Summary**: 全API呼び出しにErrorToast統合し、統一的なエラーハンドリングを実現
+- **Summary**: 全API呼び出しにErrorToast統合し、統一的なエラーハンドリングを実現。バックエンドエラーメッセージをユーザーフレンドリーに改善
 - **Implementation Notes**:
   - **Frontend実装**:
-    - `api/*.ts`: 全API関数にtry-catchとErrorToast呼び出し追加
-    - エラーメッセージの多言語対応（日本語）
-    - 技術的詳細はconsole.errorに出力
-    - クリティカルエラー（認証失敗等）はモーダル表示に分岐
-- **Risks**: 全APIファイルの一斉修正
+    - `lib/errorHandler.ts`: withErrorHandling wrapper function作成
+    - エラー形式の多様性に対応（Error, string, object with message, その他）
+    - `api/tasks.ts`: 全11メソッドにwithErrorHandling適用
+    - `api/tags.ts`: 全4メソッドにwithErrorHandling適用
+    - `api/queue.ts`: 全9メソッドにwithErrorHandling適用
+    - サーバーエラーメッセージをそのまま表示（技術的詳細はconsole.errorに出力）
+  - **Backend実装**:
+    - `error.rs`: 全エラーメッセージをユーザーフレンドリーな日本語に変更
+      - ID等の技術的詳細を削除
+      - 直感的に理解できるメッセージに統一
+      - TagInUseエラー削除（タグは使用中でも削除可能な仕様）
+    - `service/tag.rs`: UNIQUE制約違反を検出してDuplicateEntryエラーを返す
+    - `commands/tag.rs`, `commands/task.rs`, `commands/queue.rs`: format_error関数削除
+      - error.rsのメッセージを直接使用するように変更
+      - ServiceErrorのimport削除
+- **Risks**: 全APIファイルの一斉修正、既存エラーメッセージへの依存
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: 全API関数にエラーハンドリング追加完了
-  - [ ] DoD-2: エラー発生時のToast表示確認（3種類以上）
-  - [ ] DoD-3: console.errorログ出力確認
-  - [ ] DoD-4: Frontend buildエラーなし
+  - [x] DoD-1: 全API関数にエラーハンドリング追加完了
+  - [x] DoD-2: エラー発生時のToast表示確認（3種類以上）
+  - [x] DoD-3: console.errorログ出力確認
+  - [x] DoD-4: Frontend buildエラーなし
+  - [x] DoD-5: Backend buildエラー・警告なし
+  - [x] DoD-6: ユーザーフレンドリーなエラーメッセージ表示確認
+  - [x] DoD-7: タグ重複時の適切なエラーメッセージ表示確認
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: 全24 API関数にwithErrorHandling適用完了、バックエンド・フロントエンドビルド成功（2025-12-30）、エラーメッセージ日本語化完了、タグ重複エラー改善確認
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
 ### TASK-NEW-057: search_tasks APIページネーション追加
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
 - **Component(s)**: TaskService, models/task, commands/task
 - **Maps to**
@@ -2562,21 +2580,21 @@ Priority: P0 (must), P1 (should), P2 (could)
     - Integration test追加: search with pagination
 - **Risks**: 既存search_tasks利用箇所への影響
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: SearchTasksParams拡張完了
-  - [ ] DoD-2: search_tasks関数修正完了
-  - [ ] DoD-3: Unit test追加・合格
-  - [ ] DoD-4: Integration test追加・合格
-  - [ ] DoD-5: Backend buildエラーなし
+  - [x] DoD-1: SearchTasksParams拡張完了
+  - [x] DoD-2: search_tasks関数修正完了
+  - [x] DoD-3: Unit test追加・合格
+  - [x] DoD-4: Integration test追加・合格
+  - [x] DoD-5: Backend buildエラーなし
 - **Verification**:
   - Type: Build + Test
-  - Evidence: TBD
+  - Evidence: Backend build成功、全テスト合格
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
 ### TASK-NEW-058: Completed/ArchivedページBackend検索統合
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
 - **Component(s)**: CompletedPage, ArchivedPage, tasksApi
 - **Maps to**
@@ -2584,26 +2602,27 @@ Priority: P0 (must), P1 (should), P2 (could)
   - HTTP operationId: search_tasks
   - Event messageId: N/A
 - **Depends on**: TASK-NEW-057
-- **Summary**: Completed/Archivedページのフロントエンド検索をBackend `search_tasks` APIに切り替え、パフォーマンス向上を実現
+- **Summary**: Completed/Archivedページのフロントエンド検索をBackend `search_tasks` APIに切り替え、パフォーマンス向上を実現（検索ボタン方式）
 - **Implementation Notes**:
   - **Frontend実装**:
-    - `api/tasks.ts`: `searchTasksPaginated`関数追加
-    - `CompletedPage.tsx`: フィルタリングロジックをsearch_tasks API呼び出しに変更
+    - `api/tasks.ts`: `searchPaginated`関数追加
+    - `CompletedPage.tsx`: クライアントサイドフィルタリングをBackend search_tasks API呼び出しに変更
     - `ArchivedPage.tsx`: 同上
-    - 検索クエリ変更時にAPIリクエスト（デバウンス300ms）
+    - 検索ボタンまたはEnterキーで検索実行（デバウンスの代わりに明示的な検索実行）
     - ページネーション連動
-- **Risks**: 検索UXの変化（リアルタイム→API遅延）
+    - 検索時はページ1にリセット
+- **Risks**: 検索UXの変化（自動フィルタ→明示的検索）
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: searchTasksPaginated関数実装完了
-  - [ ] DoD-2: CompletedPage検索統合完了
-  - [ ] DoD-3: ArchivedPage検索統合完了
-  - [ ] DoD-4: デバウンス動作確認
-  - [ ] DoD-5: Frontend buildエラーなし
+  - [x] DoD-1: searchPaginated関数実装完了
+  - [x] DoD-2: CompletedPage検索統合完了
+  - [x] DoD-3: ArchivedPage検索統合完了
+  - [x] DoD-4: 検索ボタン・Enterキー動作確認
+  - [x] DoD-5: Frontend buildエラーなし
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: Frontend build成功、動作確認完了（ユーザー確認済み）
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 

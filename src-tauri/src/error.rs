@@ -3,52 +3,49 @@ use thiserror::Error;
 /// サービス層のエラー型
 #[derive(Error, Debug)]
 pub enum ServiceError {
-    #[error("Task not found: {0}")]
+    #[error("指定されたタスクが見つかりません")]
     TaskNotFound(String),
 
-    #[error("Parent task not found: {0}")]
+    #[error("親タスクが見つかりません")]
     ParentTaskNotFound(String),
 
-    #[error("Tag not found: {0}")]
+    #[error("指定されたタグが見つかりません")]
     TagNotFound(String),
 
-    #[error("Invalid input: {0}")]
+    #[error("{0}")]
     InvalidInput(String),
 
-    #[error("Circular dependency detected: task {0} creates a cycle")]
+    #[error("循環参照エラー：このタスクを親に設定できません")]
     CircularDependency(String),
 
-    #[error("Task has children and cannot be deleted: {0}")]
+    #[error("子タスクが存在するため削除できません。先に子タスクを削除してください")]
     TaskHasChildren(String),
 
-    #[error("Task is not in draft status and cannot be edited or deleted: {0}")]
+    #[error("Draft状態のタスクのみ編集・削除できます")]
     TaskNotDraft(String),
 
-    #[error("Task is not archived and cannot be permanently deleted: {0}")]
+    #[error("Archived状態のタスクのみ完全削除できます")]
     TaskNotArchived(String),
 
-    #[error("孫タスクの作成は禁止されています。階層は最大2レベル（親-子）までです。")]
+    #[error("孫タスクは作成できません。タスク階層は親→子の2階層までです")]
     GrandchildNotAllowed,
 
-    #[error("Tag is in use and cannot be deleted: {0}")]
-    TagInUse(String),
-
-    #[error("Duplicate entry: {0}")]
+    #[error("このタグはすでに存在しています")]
     DuplicateEntry(String),
 
-    #[error("Queue entry not found: {0}")]
+    #[error("キューにこのタスクが見つかりません")]
     QueueEntryNotFound(String),
 
-    #[error("Duplicate queue entry: {0}")]
+    #[error("このタスクはすでにキューに登録されています")]
     DuplicateQueueEntry(String),
 
-    #[error("Invalid task status: {0}")]
+    #[error("タスクのステータスが不正です")]
     InvalidTaskStatus(String),
 
-    #[error("Database error: {0}")]
+    #[error("データベースエラーが発生しました。もう一度お試しください")]
     DatabaseError(#[from] diesel::result::Error),
 
-    #[error("Internal error: {0}")]
+    #[error("システムエラーが発生しました。もう一度お試しください")]
     InternalError(String),
 }
 

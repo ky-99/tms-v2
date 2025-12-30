@@ -77,8 +77,8 @@
 | REQ-0044 | タグ作成画面改良（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0040 |
 | REQ-0045 | タググルーピング機能（未実装、デザイン要件待ち） | WONT | Deferred | UI/Backend | REQ-0029 |
 | REQ-0046 | アーカイブボタン表示変更 | SHOULD | Done | UI | REQ-0016 |
-| REQ-0047 | 統一的なフロントエンドエラーハンドリング | MUST | Planned | UI | - |
-| REQ-0048 | Completed/Archivedページ検索のBackend API化 | SHOULD | Planned | UI/Backend | REQ-0013, REQ-0014 |
+| REQ-0047 | 統一的なフロントエンドエラーハンドリング | MUST | Done | UI | - |
+| REQ-0048 | Completed/Archivedページ検索のBackend API化 | SHOULD | Done | UI/Backend | REQ-0013, REQ-0014 |
 | REQ-0049 | タグ複製機能 | SHOULD | Planned | UI | REQ-0040 |
 | REQ-0050 | タスク複製機能 | SHOULD | Planned | UI | REQ-0002 |
 | REQ-0051 | キーボードショートカット機能 | SHOULD | Planned | UI | - |
@@ -1072,7 +1072,7 @@
 
 ### REQ-0047: 統一的なフロントエンドエラーハンドリング
 - **Priority**: MUST
-- **Status**: Planned
+- **Status**: Done
 - **Area**: UI
 - **Actor**: System
 - **Preconditions**: アプリケーションが起動している
@@ -1088,31 +1088,31 @@
 - **Notes**: ユーザーフレンドリーなエラーメッセージを表示し、技術的詳細はコンソールログに出力
 - **Trace Hooks (optional)**:
   - API: 全API呼び出し
-  - Component: ErrorToast (新規作成)
-  - Task: TBD
+  - Component: ErrorToast
+  - Task: TASK-NEW-055, TASK-NEW-056
 
 ---
 
 ### REQ-0048: Completed/Archivedページ検索のBackend API化
 - **Priority**: SHOULD
-- **Status**: Planned
+- **Status**: Done
 - **Area**: UI/Backend
 - **Actor**: User
 - **Preconditions**: Completed/Archivedページが表示されている
-- **Trigger**: 検索バーに文字列を入力
+- **Trigger**: 検索バーに文字列を入力し、検索ボタンをクリックまたはEnterキーを押下
 - **Acceptance (the only one)**:
   - **Given**: Completed/Archivedページで検索バーに文字列を入力
-  - **When**: 検索を実行
+  - **When**: 検索ボタンクリックまたはEnterキーで検索を実行
   - **Then**: Backend `search_tasks` APIにステータスフィルター（completed/archived）とキーワードを渡し、サーバー側でフィルタリングされた結果をページネーション付きで取得・表示
 - **Negative/Boundary**:
   - 検索結果が0件の場合は"No tasks found"を表示
   - search_tasks APIにページネーション（limit, offset）パラメータを追加実装
 - **Depends on**: REQ-0013, REQ-0014, REQ-0039
-- **Notes**: 現在のフロントエンド側フィルタリングからBackend API化することでパフォーマンス向上とコード統一化を実現
+- **Notes**: クライアントサイドフィルタリングからBackend API化し、パフォーマンス向上とコード統一化を実現。検索ボタン方式により明示的な検索実行を実現。
 - **Trace Hooks (optional)**:
   - API: search_tasks (拡張)
   - Component: CompletedPage, ArchivedPage
-  - Task: TBD
+  - Task: TASK-NEW-057, TASK-NEW-058
 
 ---
 

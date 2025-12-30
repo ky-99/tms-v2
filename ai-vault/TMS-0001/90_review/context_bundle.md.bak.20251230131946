@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Contract
-> Updated: 2025-12-30 15:27 (JST)
+> Updated: 2025-12-30 12:11 (JST)
 > Owner: <name>
 
 ---
@@ -201,7 +201,7 @@
 | reorderTaskQueue | POST /queue/reorder | REQ-0006, REQ-0028 | - |
 | restoreTask | POST /tasks/{id}/restore | REQ-0022 | - |
 | searchTaskIds | GET /tasks/search-ids | REQ-0039 | - |
-| searchTasks | GET /tasks/search | REQ-0005, REQ-0011, REQ-0012, REQ-0048 | - |
+| searchTasks | GET /tasks/search | REQ-0005, REQ-0011, REQ-0012 | - |
 | updateQueuePosition | PUT /queue/position | REQ-0006 | - |
 | updateTag | PUT /tags/{id} | REQ-0005 | - |
 | updateTask | PUT /tasks/{id} | REQ-0002, REQ-0016 | - |
@@ -222,22 +222,22 @@ N/A
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
+| TASK-NEW-055 | ErrorToastコンポーネント実装 | UnDone | P0 | REQ-0047 |
+| TASK-NEW-056 | API呼び出しエラーハンドリング統合 | UnDone | P0 | REQ-0047 |
 | TASK-NEW-057 | search_tasks APIページネーション追加 | UnDone | P1 | REQ-0048 |
 | TASK-NEW-058 | Completed/ArchivedページBackend検索統合 | UnDone | P1 | REQ-0048 |
-| TASK-NEW-059 | タグ複製機能実装 | UnDone | P1 | REQ-0049 |
-| TASK-NEW-060 | duplicate_task Backend API実装 | UnDone | P1 | REQ-0050 |
 
 ### 8.2 Task Progress
 - Total Tasks: 78
-- Done: 68
+- Done: 66
 - Processing: 0
-- UnDone: 10
-- Progress: 87% (68/78)
+- UnDone: 12
+- Progress: 85% (66/78)
 
 ### 8.3 Next Actions
 1. Start TASK-NEW-009 (カラーパレット適用)
-2. Start TASK-NEW-057 (search_tasks APIページネーション追加)
-3. Start TASK-NEW-058 (Completed/ArchivedページBackend検索統合)
+2. Start TASK-NEW-055 (ErrorToastコンポーネント実装)
+3. Start TASK-NEW-056 (API呼び出しエラーハンドリング統合)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -287,7 +287,7 @@ N/A
 - REQ Coverage: 10 REQs
 - API Coverage: 21/21
 - Event Coverage: N/A
-- Task Completion: 87% (68/78)
+- Task Completion: 85% (66/78)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**

@@ -64,11 +64,18 @@ impl TagService {
 
         let new_tag = NewTag::from_request(req);
 
-        diesel::insert_into(tags::table)
+        // タグを挿入（UNIQUE制約違反を検出）
+        match diesel::insert_into(tags::table)
             .values(&new_tag)
-            .execute(conn)?;
-
-        Self::get_tag(conn, &new_tag.id)
+            .execute(conn)
+        {
+            Ok(_) => Self::get_tag(conn, &new_tag.id),
+            Err(diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::UniqueViolation,
+                _,
+            )) => Err(ServiceError::DuplicateEntry(new_tag.name)),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// タグ更新

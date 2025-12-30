@@ -205,11 +205,11 @@ paths:
     get:
       tags: [Tasks]
       operationId: searchTasks
-      summary: Search and filter tasks
+      summary: Search and filter tasks (paginated)
       description: |
         Searches tasks by keywords and/or filters by status and tags.
-        At least one parameter must be provided.
-      x-requirements: [REQ-0005, REQ-0011, REQ-0012]
+        Returns paginated results with total count.
+      x-requirements: [REQ-0005, REQ-0011, REQ-0012, REQ-0048]
       parameters:
         - name: q
           in: query
@@ -231,16 +231,31 @@ paths:
             type: array
             items:
               type: string
-            description: Filter by tag IDs (tasks matching any of the provided tags)
+            description: Filter by tag names (tasks matching any of the provided tags)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+            description: Number of tasks per page (default 100)
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+            description: Number of tasks to skip (default 0)
       responses:
         "200":
-          description: Search results
+          description: Paginated search results
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Task"
+                $ref: "#/components/schemas/PaginatedTaskResponse"
 
   /tasks/search-ids:
     get:
