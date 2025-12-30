@@ -70,6 +70,7 @@ impl Task {
             status,
             tags,
             parent_id: self.parent_id,
+            parent_title: None, // 初期化（後でサービス層で設定）
             created_at: self.created_at,
             updated_at: self.updated_at,
             children_ids: Vec::new(), // 初期化（後でサービス層で設定）
@@ -89,6 +90,8 @@ pub struct TaskResponse {
     pub tags: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_title: Option<String>, // 親タスクのタイトル
     pub created_at: String,
     pub updated_at: String,
     pub children_ids: Vec<String>, // 子タスクのIDリスト

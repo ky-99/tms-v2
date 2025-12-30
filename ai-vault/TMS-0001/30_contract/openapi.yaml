@@ -663,6 +663,15 @@ components:
           type: string
           description: Parent task ID (null if root task)
           nullable: true
+        parentTitle:
+          type: string
+          description: Parent task title (null if root task or parent not found)
+          nullable: true
+        childrenIds:
+          type: array
+          items:
+            type: string
+          description: List of child task IDs
         createdAt:
           type: string
           format: date-time

@@ -13,6 +13,7 @@ export interface Task {
   status: TaskStatus;
   tags: string[];
   parentId?: string;
+  parentTitle?: string; // 親タスクのタイトル
   createdAt: string;
   updatedAt: string;
   childrenIds: string[]; // 子タスクのIDリスト

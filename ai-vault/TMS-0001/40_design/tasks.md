@@ -107,18 +107,31 @@ References:
 | TASK-NEW-050 | キュー一括操作機能実装 | Done | P1 | Developer | - | REQ-0038 |
 | TASK-NEW-051 | search_task_ids API実装 | Done | P1 | Developer | - | REQ-0039 |
 | TASK-NEW-052 | タグ管理画面実装 | Done | P1 | Developer | - | REQ-0040 |
+| TASK-NEW-053 | Completedページ子タスク表示改善実装 | Done | P2 | Developer | TASK-NEW-025 | REQ-0041 |
+| TASK-NEW-054 | バグ修正: 親ステータス更新時のupdated_at | Done | P0 | Developer | TASK-NEW-001 | REQ-0008 |
+| TASK-NEW-055 | ErrorToastコンポーネント実装 | UnDone | P0 | Developer | - | REQ-0047 |
+| TASK-NEW-056 | API呼び出しエラーハンドリング統合 | UnDone | P0 | Developer | TASK-NEW-055 | REQ-0047 |
+| TASK-NEW-057 | search_tasks APIページネーション追加 | UnDone | P1 | Developer | - | REQ-0048 |
+| TASK-NEW-058 | Completed/ArchivedページBackend検索統合 | UnDone | P1 | Developer | TASK-NEW-057 | REQ-0048 |
+| TASK-NEW-059 | タグ複製機能実装 | UnDone | P1 | Developer | TASK-NEW-052 | REQ-0049 |
+| TASK-NEW-060 | duplicate_task Backend API実装 | UnDone | P1 | Developer | - | REQ-0050 |
+| TASK-NEW-061 | タスク複製UI統合（キーボードショートカット） | UnDone | P1 | Developer | TASK-NEW-060, TASK-NEW-062 | REQ-0050 |
+| TASK-NEW-062 | キーボードショートカット基盤実装 | UnDone | P1 | Developer | - | REQ-0051 |
+| TASK-NEW-063 | タスク選択状態管理実装 | UnDone | P1 | Developer | TASK-NEW-062 | REQ-0051 |
+| TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | UnDone | P2 | Developer | - | REQ-0052 |
+| TASK-NEW-065 | タブ領域ドラッグ実装 | UnDone | P2 | Developer | - | REQ-0053 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 64
-- Done: 63
+- Total Tasks: 77
+- Done: 65
 - Processing: 0
-- UnDone: 1
+- UnDone: 12
 - Hold: 0
-- Progress: 98.4% (63/64)
+- Progress: 84.4% (65/77)
 
 ---
 
@@ -2274,6 +2287,98 @@ Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
+### TASK-NEW-053: Completedページ子タスク表示改善実装
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: TaskResponse, TaskService, CompletedPage, ArchivedPage, openapi.yaml
+- **Maps to**
+  - REQ: REQ-0041
+  - HTTP operationId: list_tasks_paginated (拡張)
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-025
+- **Summary**: CompletedPage/ArchivedPageで子タスクに親タスク名を表示する機能を実装（`@親タスク名/子タスク名`形式）
+- **Implementation Notes**:
+  - **Backend実装**:
+    - `models/task.rs`: TaskResponse構造体に`parent_title: Option<String>`フィールド追加
+    - `service/task.rs`: `list_tasks_paginated`関数にバッチクエリ最適化実装
+      - 全parent_idを収集 → 1回のSELECTで親タイトル取得 → HashMapでマッピング
+      - O(n)のパフォーマンス（20タスク/ページで効率的）
+    - `service/task.rs`: エンリッチ関数追加（`enrich_task_response_with_parent_title`）
+    - Unit tests追加（3テスト）
+  - **Contract更新**:
+    - `openapi.yaml`: Taskスキーマに`parentTitle`と`childrenIds`フィールド追加
+  - **Frontend実装**:
+    - `types/task.ts`: Task型に`parentTitle?: string`追加
+    - `pages/CompletedPage.tsx`: 表示ロジック修正（`@親タスク名/子タスク名`形式）
+    - `pages/ArchivedPage.tsx`: 同様の表示ロジック適用
+  - **Testing**:
+    - Unit tests: 3テスト（子タスクparent_title設定、ルートタスクparent_title=None、バッチフェッチ）
+    - Integration tests: 4テスト（CompletedPage子タスク、ArchivedPageルートタスク、バッチフェッチ、Archived子タスク）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: TaskResponse構造体にparent_titleフィールド追加完了
+  - [x] DoD-2: list_tasks_paginatedにバッチクエリ実装完了
+  - [x] DoD-3: openapi.yamlにparentTitle追加完了
+  - [x] DoD-4: TypeScript型定義にparentTitle追加完了
+  - [x] DoD-5: CompletedPage表示ロジック修正完了
+  - [x] DoD-6: ArchivedPage表示ロジック修正完了
+  - [x] DoD-7: Unit tests追加・合格（3/3）
+  - [x] DoD-8: Integration tests追加・合格（4/4）
+  - [x] DoD-9: Backend buildエラーなし
+  - [x] DoD-10: Frontend buildエラーなし
+  - [x] DoD-11: 動作確認完了
+- **Verification**:
+  - Type: Build + Test + Manual
+  - Evidence:
+    - Backend build成功（0.28s）
+    - Frontend build成功（1.04s）
+    - Unit tests: 3/3 合格
+    - Integration tests: 4/4 合格
+    - 動作確認完了
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-054: バグ修正: 親ステータス更新時のupdated_at
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService
+- **Maps to**
+  - REQ: REQ-0008
+  - HTTP operationId: N/A (内部ロジック修正)
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-001
+- **Summary**: 子タスクのステータス変更時に親タスクのステータスが自動更新される際、`updated_at`フィールドも更新されるようバグ修正
+- **Implementation Notes**:
+  - **Backend実装**:
+    - `service/task.rs`: `update_parent_status_if_needed`関数修正
+      - 親タスクステータス更新時に`updated_at`も現在時刻に更新
+      - `chrono::Utc::now().to_rfc3339()`を使用
+  - **Testing**:
+    - Unit test: `test_parent_updated_at_changes_when_child_status_changes`追加
+    - Integration tests: 2テスト追加
+      - `test_parent_updated_at_is_updated_on_child_status_change`
+      - `test_parent_updated_at_multiple_child_changes`
+    - 既存テスト全て合格確認（parent status sync, queue tests）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: update_parent_status_if_needed修正完了
+  - [x] DoD-2: Unit test追加・合格（1/1）
+  - [x] DoD-3: Integration tests追加・合格（2/2）
+  - [x] DoD-4: 既存テスト全て合格確認
+  - [x] DoD-5: Backend buildエラーなし
+- **Verification**:
+  - Type: Build + Test
+  - Evidence:
+    - Backend build成功
+    - New tests: 3/3 合格
+    - Existing tests: 全て合格（parent status sync, queue tests）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
 ### TASK-NEW-051: search_task_ids API実装
 - **Status**: Done
 - **Priority**: P1
@@ -2376,6 +2481,360 @@ Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
+### TASK-NEW-055: ErrorToastコンポーネント実装
+- **Status**: UnDone
+- **Priority**: P0
+- **Component(s)**: ErrorToast (新規), Toast provider
+- **Maps to**
+  - REQ: REQ-0047
+  - HTTP operationId: N/A (UI component)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: エラーカテゴリ別アイコン付きToast通知コンポーネントを実装し、3秒自動消去機能を追加
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `components/ErrorToast.tsx` 新規作成
+    - Toast provider設定（Kobalte Toast使用）
+    - エラーカテゴリ（Network, Validation, Server）ごとのアイコン表示
+    - 3秒自動消去タイマー実装
+    - キュー形式で複数エラー順次表示
+- **Risks**: Toastライブラリの選定と統合
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: ErrorToastコンポーネント実装完了
+  - [ ] DoD-2: 3秒自動消去動作確認
+  - [ ] DoD-3: 複数エラーキュー表示確認
+  - [ ] DoD-4: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-056: API呼び出しエラーハンドリング統合
+- **Status**: UnDone
+- **Priority**: P0
+- **Component(s)**: tasksApi, tagsApi, queueApi
+- **Maps to**
+  - REQ: REQ-0047
+  - HTTP operationId: All APIs
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-055
+- **Summary**: 全API呼び出しにErrorToast統合し、統一的なエラーハンドリングを実現
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `api/*.ts`: 全API関数にtry-catchとErrorToast呼び出し追加
+    - エラーメッセージの多言語対応（日本語）
+    - 技術的詳細はconsole.errorに出力
+    - クリティカルエラー（認証失敗等）はモーダル表示に分岐
+- **Risks**: 全APIファイルの一斉修正
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: 全API関数にエラーハンドリング追加完了
+  - [ ] DoD-2: エラー発生時のToast表示確認（3種類以上）
+  - [ ] DoD-3: console.errorログ出力確認
+  - [ ] DoD-4: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-057: search_tasks APIページネーション追加
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: TaskService, models/task, commands/task
+- **Maps to**
+  - REQ: REQ-0048
+  - HTTP operationId: search_tasks (拡張)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: search_tasks APIに`limit`, `offset`パラメータを追加し、ページネーション対応を実現
+- **Implementation Notes**:
+  - **Backend実装**:
+    - `models/task.rs`: `SearchTasksParams`に`limit`, `offset`フィールド追加
+    - `service/task.rs`: `search_tasks`関数にLIMIT/OFFSET句追加（デフォルト: limit=100）
+    - 返却値を`PaginatedTaskResponse`に変更（total count含む）
+  - **Testing**:
+    - Unit test追加: ページネーション動作確認
+    - Integration test追加: search with pagination
+- **Risks**: 既存search_tasks利用箇所への影響
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: SearchTasksParams拡張完了
+  - [ ] DoD-2: search_tasks関数修正完了
+  - [ ] DoD-3: Unit test追加・合格
+  - [ ] DoD-4: Integration test追加・合格
+  - [ ] DoD-5: Backend buildエラーなし
+- **Verification**:
+  - Type: Build + Test
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-058: Completed/ArchivedページBackend検索統合
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: CompletedPage, ArchivedPage, tasksApi
+- **Maps to**
+  - REQ: REQ-0048
+  - HTTP operationId: search_tasks
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-057
+- **Summary**: Completed/Archivedページのフロントエンド検索をBackend `search_tasks` APIに切り替え、パフォーマンス向上を実現
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `api/tasks.ts`: `searchTasksPaginated`関数追加
+    - `CompletedPage.tsx`: フィルタリングロジックをsearch_tasks API呼び出しに変更
+    - `ArchivedPage.tsx`: 同上
+    - 検索クエリ変更時にAPIリクエスト（デバウンス300ms）
+    - ページネーション連動
+- **Risks**: 検索UXの変化（リアルタイム→API遅延）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: searchTasksPaginated関数実装完了
+  - [ ] DoD-2: CompletedPage検索統合完了
+  - [ ] DoD-3: ArchivedPage検索統合完了
+  - [ ] DoD-4: デバウンス動作確認
+  - [ ] DoD-5: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-059: タグ複製機能実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: TagManagementPage, tagsApi
+- **Maps to**
+  - REQ: REQ-0049
+  - HTTP operationId: create_tag
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-052
+- **Summary**: タグ管理画面にDuplicate機能を追加し、既存タグをタイムスタンプサフィックス付きで複製
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `TagManagementPage.tsx`: DropdownMenuに"Duplicate"項目追加
+    - `handleDuplicate`関数実装
+      - タグ名に`_YYYYMMDD_HHmmss`サフィックス追加
+      - 色・メタデータは元タグと同一
+      - `create_tag` API呼び出し
+    - 複製後リスト更新
+- **Risks**: タグ名重複時の一意性保証
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: DropdownMenuにDuplicate項目追加完了
+  - [ ] DoD-2: handleDuplicate関数実装完了
+  - [ ] DoD-3: タイムスタンプサフィックス生成確認
+  - [ ] DoD-4: 複製後リスト更新確認
+  - [ ] DoD-5: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-060: duplicate_task Backend API実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: TaskService, commands/task
+- **Maps to**
+  - REQ: REQ-0050
+  - HTTP operationId: duplicate_task (新規)
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タスク複製API実装。親タスクの場合は子タスクも再帰的に複製し、タイムスタンプサフィックス付き・Draft状態で新規作成
+- **Implementation Notes**:
+  - **Backend実装**:
+    - `service/task.rs`: `duplicate_task`関数実装
+      - 元タスク取得（title, description, tags, children）
+      - タイトルに`_YYYYMMDD_HHmmss`サフィックス追加
+      - ステータスをDraftに設定
+      - 子タスクを再帰的に複製（parent_id更新）
+      - タグ関連付けコピー
+    - `commands/task.rs`: Tauriコマンド`duplicate_task`追加
+  - **Testing**:
+    - Unit test: 親タスク複製、子タスク複製
+    - Integration test: タグ・子タスク含む複製
+- **Risks**: 再帰的複製のパフォーマンス、深いネスト時の処理
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: duplicate_task関数実装完了
+  - [ ] DoD-2: Tauriコマンド追加完了
+  - [ ] DoD-3: Unit test追加・合格
+  - [ ] DoD-4: Integration test追加・合格
+  - [ ] DoD-5: Backend buildエラーなし
+- **Verification**:
+  - Type: Build + Test
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-061: タスク複製UI統合（キーボードショートカット）
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: TaskPool, TaskQueue, KeyboardShortcuts
+- **Maps to**
+  - REQ: REQ-0050
+  - HTTP operationId: duplicate_task
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-060, TASK-NEW-062
+- **Summary**: Cmd/Ctrl+D でタスク複製を実行するキーボードショートカット統合
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `api/tasks.ts`: `duplicateTask`関数追加
+    - `useKeyboardShortcuts.tsx`: Cmd/Ctrl+D ハンドラ追加
+      - 選択タスク取得
+      - `duplicateTask` API呼び出し
+      - 成功後リスト更新（loadHierarchy）
+- **Risks**: UIボタンなし仕様の説明不足
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: duplicateTask関数実装完了
+  - [ ] DoD-2: キーボードショートカット追加完了
+  - [ ] DoD-3: Cmd/Ctrl+D動作確認（Mac/Windows）
+  - [ ] DoD-4: 複製後リスト更新確認
+  - [ ] DoD-5: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-062: キーボードショートカット基盤実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: KeyboardShortcuts (新規), App
+- **Maps to**
+  - REQ: REQ-0051
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: グローバルキーボードショートカット基盤を実装し、Cmd/Ctrl+N/E/A/Q/D/F に対応
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `hooks/useKeyboardShortcuts.tsx` 新規作成
+      - `onKeyDown`イベントリスナー登録
+      - Cmd/Ctrl判定（Mac/Windows）
+      - 入力欄フォーカス中は無効化
+      - 各ショートカットハンドラ呼び出し
+    - `App.tsx`: useKeyboardShortcuts統合
+    - 操作不可状態（非Draft等）時は無効化
+- **Risks**: 既存キーボードイベントとの競合
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: useKeyboardShortcuts実装完了
+  - [ ] DoD-2: 全6ショートカット動作確認（N/E/A/Q/D/F）
+  - [ ] DoD-3: 入力欄フォーカス中無効化確認
+  - [ ] DoD-4: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-063: タスク選択状態管理実装
+- **Status**: UnDone
+- **Priority**: P1
+- **Component(s)**: TaskPool, TaskQueue, selectedTaskStore (新規)
+- **Maps to**
+  - REQ: REQ-0051
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-062
+- **Summary**: クリックによるタスク選択状態を保持し、キーボードショートカットで操作可能にする
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `stores/selectedTaskStore.ts` 新規作成
+      - selectedTask state管理
+      - setSelectedTask/clearSelectedTask actions
+    - `TaskPool.tsx`: タスククリック時にsetSelectedTask呼び出し
+    - `TaskQueue.tsx`: 同上
+    - 選択タスクに視覚的ハイライト（border-primary）追加
+- **Risks**: 選択状態のクリア忘れ（ページ遷移時等）
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: selectedTaskStore実装完了
+  - [ ] DoD-2: TaskPool/TaskQueue統合完了
+  - [ ] DoD-3: クリック選択動作確認
+  - [ ] DoD-4: 視覚的ハイライト表示確認
+  - [ ] DoD-5: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-064: TaskHoverPopup説明文スクロール実装
+- **Status**: UnDone
+- **Priority**: P2
+- **Component(s)**: TaskHoverPopup
+- **Maps to**
+  - REQ: REQ-0052
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: TaskHoverPopupの説明文エリアに`max-h-40 overflow-y-auto`を適用し、長文時のスクロール表示を実現
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `TaskHoverPopup.tsx`: description pタグに以下追加
+      - `max-h-40` (最大高さ160px)
+      - `overflow-y-auto` (超過時縦スクロール)
+    - 短文時はスクロールバー非表示（自動）
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: max-h-40 overflow-y-auto追加完了
+  - [ ] DoD-2: 長文説明文でスクロール表示確認
+  - [ ] DoD-3: 短文説明文でスクロールなし確認
+  - [ ] DoD-4: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
+### TASK-NEW-065: タブ領域ドラッグ実装
+- **Status**: UnDone
+- **Priority**: P2
+- **Component(s)**: Header
+- **Maps to**
+  - REQ: REQ-0053
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タブ領域（ヘッダー）の空白部分に`data-tauri-drag-region`属性を追加し、ウィンドウドラッグ可能化
+- **Implementation Notes**:
+  - **Frontend実装**:
+    - `Header.tsx`: ヘッダー空白部分に`data-tauri-drag-region`属性追加
+    - ボタン部分（タブボタン等）はドラッグ無効のまま維持
+    - 全画面モード時は属性削除
+  - **Platform**: Tauri機能使用
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [ ] DoD-1: data-tauri-drag-region追加完了
+  - [ ] DoD-2: 空白部分ドラッグでウィンドウ移動確認
+  - [ ] DoD-3: ボタン部分クリック動作確認
+  - [ ] DoD-4: Frontend buildエラーなし
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: TBD
+- **Updated**: 2025-12-30
+- **Completed**: -
+
+---
+
 ## 4. Task Types (Optional, but recommended)
 ## 5. Change Log
 - 2025-12-21 Initial task breakdown for TMS-v2 implementation
@@ -2443,3 +2902,4 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-30 TASK-NEW-052 追加修正: UI/UX改善＋CASCADE削除有効化 (Frontend: usageCount表示バグ修正（snake_case→camelCase）、プリセット色→HTML5カラーピッカー変更、タグ表示スタイルTaskPool統一、Input component統一、Backend: service/tag.rs usage_countチェック削除（CASCADE削除依存）、lib.rs ForeignKeyEnabler実装（PRAGMA foreign_keys=ON自動実行）、テスト修正: UpdateTaskRequest→UpdateTaskRequestInput統一（21箇所）、全79テスト合格、実機検証: タグ「さdf」CASCADE削除成功（task_tags 2件自動削除、タスク保持、孤立レコード0件）、Backend release build: 41.29s)
 - 2025-12-30 TASK-NEW-039 completed: タグカラーピッカー改良 (Frontend: TagInput.tsx プリセット8色→HTML5カラーピッカー置き換え、PRESET_TAG_COLORS依存削除、selectedColor初期値#3b82f6、type="color" input + Hex値表示、タグ管理画面と統一実装、任意色選択可能に、Frontend build: 828ms、Task Progress: 98.4% = 63/64)
 - 2025-12-30 TASK-NEW-052 bug fix: Edit DialogのArk UI ColorPicker不具合修正 (TagManagementPage Edit Dialog: Ark UI ColorPicker（channel="hue"）削除→HTML5カラーピッカー統一、"Unknown color channel: hue"エラー解消、未使用ColorPicker/parseColorインポート削除、Create/Edit両Dialogで同一UI実装、Frontend build: 完了)
+- 2025-12-30 Added 11 new tasks (TASK-NEW-055 to TASK-NEW-065) for additional requirements (REQ-0047 to REQ-0053): 統一エラーハンドリング、Backend検索統合、タグ/タスク複製、キーボードショートカット、TaskHoverPopup改善、タブドラッグ機能

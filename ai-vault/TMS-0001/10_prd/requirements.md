@@ -62,9 +62,31 @@
 | REQ-0029 | タグシステムUI統合 | SHOULD | Done | UI | REQ-0005 |
 | REQ-0030 | タグフィルター展開式UI | SHOULD | Done | UI | REQ-0029 |
 | REQ-0031 | タグカラー管理 | COULD | Hold | UI | REQ-0029 |
+| REQ-0032 | ページローディング文字削除 | SHOULD | Done | UI | REQ-0024 |
+| REQ-0033 | タスクタイトル文字数制限 | SHOULD | Done | UI | REQ-0002 |
+| REQ-0034 | グローバルスクロールバー削除 | SHOULD | Done | UI | REQ-0004 |
+| REQ-0035 | ウィンドウ装飾削除と角丸 | SHOULD | Done | UI/Platform | - |
+| REQ-0036 | 入力欄フォーカスリング調整 | SHOULD | Done | UI | REQ-0002 |
+| REQ-0037 | カスタム確認ダイアログ（タスク名検証付き） | MUST | Done | UI | - |
+| REQ-0038 | キュー一括操作 | SHOULD | Done | UI | REQ-0006 |
+| REQ-0039 | search_tasks API軽量化 | SHOULD | Done | Backend | REQ-0005 |
+| REQ-0040 | タグ管理画面 | SHOULD | Done | UI | REQ-0029 |
+| REQ-0041 | Completedページ子タスク表示改善 | COULD | Done | UI | REQ-0013 |
+| REQ-0042 | 作成/編集モーダルUI改善（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0002 |
+| REQ-0043 | タグフィルターUI改善（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0029 |
+| REQ-0044 | タグ作成画面改良（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0040 |
+| REQ-0045 | タググルーピング機能（未実装、デザイン要件待ち） | WONT | Deferred | UI/Backend | REQ-0029 |
+| REQ-0046 | アーカイブボタン表示変更 | SHOULD | Done | UI | REQ-0016 |
+| REQ-0047 | 統一的なフロントエンドエラーハンドリング | MUST | Planned | UI | - |
+| REQ-0048 | Completed/Archivedページ検索のBackend API化 | SHOULD | Planned | UI/Backend | REQ-0013, REQ-0014 |
+| REQ-0049 | タグ複製機能 | SHOULD | Planned | UI | REQ-0040 |
+| REQ-0050 | タスク複製機能 | SHOULD | Planned | UI | REQ-0002 |
+| REQ-0051 | キーボードショートカット機能 | SHOULD | Planned | UI | - |
+| REQ-0052 | TaskHoverPopup説明文表示制限 | SHOULD | Planned | UI | REQ-0015 |
+| REQ-0053 | タブ領域ドラッグ可能化 | COULD | Planned | UI/Platform | - |
 
-**Priority**: MUST / SHOULD / COULD
-**Status**: Draft / Approved / Implementing / Done / Hold / Deprecated
+**Priority**: MUST / SHOULD / COULD / WONT
+**Status**: Draft / Approved / Implementing / Done / Hold / Deprecated / Deferred / Planned
 
 ---
 
@@ -880,9 +902,9 @@
 
 ---
 
-### REQ-0039: search_tasks API軽量化（未実装）
+### REQ-0039: search_tasks API軽量化
 - **Priority**: SHOULD
-- **Status**: Planned
+- **Status**: Done
 - **Area**: Backend
 - **Actor**: System
 - **Preconditions**: タグフィルター使用時
@@ -901,9 +923,9 @@
 
 ---
 
-### REQ-0040: タグ管理画面（未実装）
+### REQ-0040: タグ管理画面
 - **Priority**: SHOULD
-- **Status**: Planned
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: タグが存在する
@@ -922,9 +944,9 @@
 
 ---
 
-### REQ-0041: Completedページ子タスク表示改善（未実装）
+### REQ-0041: Completedページ子タスク表示改善
 - **Priority**: COULD
-- **Status**: Planned
+- **Status**: Done
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: Completedページで子タスクが表示されている
@@ -1048,6 +1070,170 @@
 
 ---
 
+### REQ-0047: 統一的なフロントエンドエラーハンドリング
+- **Priority**: MUST
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: System
+- **Preconditions**: アプリケーションが起動している
+- **Trigger**: API呼び出しエラー、バリデーションエラー、その他エラー発生時
+- **Acceptance (the only one)**:
+  - **Given**: 任意の操作でエラーが発生した
+  - **When**: エラーハンドリングが実行される
+  - **Then**: エラーカテゴリ（ネットワーク、バリデーション、サーバー等）に応じたアイコン付きToast通知が3秒間表示され、自動的に消える
+- **Negative/Boundary**:
+  - 同時に複数エラーが発生した場合はキュー形式で順次表示
+  - クリティカルエラー（認証失敗等）の場合はToastではなくモーダル表示
+- **Depends on**: None
+- **Notes**: ユーザーフレンドリーなエラーメッセージを表示し、技術的詳細はコンソールログに出力
+- **Trace Hooks (optional)**:
+  - API: 全API呼び出し
+  - Component: ErrorToast (新規作成)
+  - Task: TBD
+
+---
+
+### REQ-0048: Completed/Archivedページ検索のBackend API化
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI/Backend
+- **Actor**: User
+- **Preconditions**: Completed/Archivedページが表示されている
+- **Trigger**: 検索バーに文字列を入力
+- **Acceptance (the only one)**:
+  - **Given**: Completed/Archivedページで検索バーに文字列を入力
+  - **When**: 検索を実行
+  - **Then**: Backend `search_tasks` APIにステータスフィルター（completed/archived）とキーワードを渡し、サーバー側でフィルタリングされた結果をページネーション付きで取得・表示
+- **Negative/Boundary**:
+  - 検索結果が0件の場合は"No tasks found"を表示
+  - search_tasks APIにページネーション（limit, offset）パラメータを追加実装
+- **Depends on**: REQ-0013, REQ-0014, REQ-0039
+- **Notes**: 現在のフロントエンド側フィルタリングからBackend API化することでパフォーマンス向上とコード統一化を実現
+- **Trace Hooks (optional)**:
+  - API: search_tasks (拡張)
+  - Component: CompletedPage, ArchivedPage
+  - Task: TBD
+
+---
+
+### REQ-0049: タグ複製機能
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タグ管理画面が表示されている
+- **Trigger**: タグの3点リーダーメニューから"Duplicate"を選択
+- **Acceptance (the only one)**:
+  - **Given**: タグ管理画面で既存タグを選択
+  - **When**: アクションメニューから"Duplicate"を実行
+  - **Then**: タグ名に`_YYYYMMDD_HHmmss`サフィックスを付けた新規タグが作成され、色・メタデータは元タグと同一になる
+- **Negative/Boundary**: タグ名が重複する場合は再度タイムスタンプを付与して一意性を保証
+- **Depends on**: REQ-0040
+- **Notes**: タグ名以外（色など）は全てコピー
+- **Trace Hooks (optional)**:
+  - API: create_tag
+  - Component: TagsPage
+  - Task: TBD
+
+---
+
+### REQ-0050: タスク複製機能
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タスクが選択されている
+- **Trigger**: キーボードショートカット（Cmd+D / Ctrl+D）を押下
+- **Acceptance (the only one)**:
+  - **Given**: タスクが選択されている
+  - **When**: Cmd+D (Mac) または Ctrl+D (Windows/Linux) を押下
+  - **Then**: タスク名に`_YYYYMMDD_HHmmss`サフィックスを付け、ステータスをDraftに変更した複製タスクが作成される。親タスクの場合は子タスクも再帰的に複製される
+- **Negative/Boundary**:
+  - UIボタンは提供せず、キーボードショートカットのみで実行
+  - タスク未選択時は何もしない
+- **Depends on**: REQ-0002, REQ-0051
+- **Notes**: 複製時は説明文、タグも全てコピーする
+- **Trace Hooks (optional)**:
+  - API: create_task (複数回呼び出し)
+  - Component: TaskPool, TaskQueue
+  - Task: TBD
+
+---
+
+### REQ-0051: キーボードショートカット機能
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: アプリケーションが起動している
+- **Trigger**: 特定のキーボードショートカットを押下
+- **Acceptance (the only one)**:
+  - **Given**: アプリケーションが起動している
+  - **When**: 以下のショートカットを押下
+    - Cmd/Ctrl+N: 新規タスク作成
+    - Cmd/Ctrl+E: 選択タスク編集
+    - Cmd/Ctrl+A: 選択タスクアーカイブ
+    - Cmd/Ctrl+Q: 選択タスクをキューに追加
+    - Cmd/Ctrl+D: 選択タスク複製
+    - Cmd/Ctrl+F: 検索バーにフォーカス
+    - クリック: タスク選択
+  - **Then**: 対応する操作が実行される
+- **Negative/Boundary**:
+  - 入力欄フォーカス中はショートカット無効
+  - 操作が実行できない状態（例: 非Draft状態で編集）の場合は何もしない
+- **Depends on**: None
+- **Notes**: MacはCmd、Windows/LinuxはCtrlを使用。クリックによるタスク選択状態の保持が前提
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: KeyboardShortcuts (新規作成), TaskPool, TaskQueue
+  - Task: TBD
+
+---
+
+### REQ-0052: TaskHoverPopup説明文表示制限
+- **Priority**: SHOULD
+- **Status**: Planned
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: タスクタイトルをクリックしてTaskHoverPopupを表示
+- **Trigger**: 長文の説明文を持つタスクのポップアップ表示
+- **Acceptance (the only one)**:
+  - **Given**: 長文説明文を持つタスクのポップアップを表示
+  - **When**: ポップアップが開く
+  - **Then**: 説明文エリアに`max-h-40 overflow-y-auto`（最大高さ160px、超過時スクロール）が適用され、ポップアップが画面外にはみ出さない
+- **Negative/Boundary**: 説明文が短い場合はスクロールバーは表示されない
+- **Depends on**: REQ-0015
+- **Notes**: 現在は`whitespace-pre-wrap`のみで制限なし。max-heightとスクロールを追加
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskHoverPopup
+  - Task: TBD
+
+---
+
+### REQ-0053: タブ領域ドラッグ可能化
+- **Priority**: COULD
+- **Status**: Planned
+- **Area**: UI/Platform
+- **Actor**: User
+- **Preconditions**: アプリケーションが起動している
+- **Trigger**: タブ領域（ヘッダー部分）をドラッグ
+- **Acceptance (the only one)**:
+  - **Given**: アプリケーションウィンドウが表示されている
+  - **When**: タブ領域の空白部分をドラッグ
+  - **Then**: ウィンドウが移動する。ボタン部分（ページ切り替えタブ等）はクリック可能で、ドラッグ無効
+- **Negative/Boundary**:
+  - ボタンエリアはドラッグ不可
+  - 全画面モード時はドラッグ無効
+- **Depends on**: None
+- **Notes**: Tauriの`data-tauri-drag-region`属性をタブ領域の空白部分に適用
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: Header/Navigation
+  - Task: TBD
+
+---
+
 ## 4. Requirement Split / Merge Log
 > 粒度調整の履歴を残す（後工程での参照ズレを防ぐ）
 
@@ -1066,3 +1252,5 @@
 - 2025-12-29 追加要件定義 (REQ-0032〜REQ-0046) - UI/UX改善第3弾（ローディング削除、文字数制限、スクロールバー削除、タイトルバー削除、角丸、フォーカスリング調整、ConfirmDialog実装、アーカイブボタン変更）、API軽量化、タグ管理画面、タググルーピング（未実装含む）
 - 2025-12-29 ステータス更新 - REQ-0032, 0033, 0034, 0035, 0036, 0037, 0046: Done, REQ-0038〜0041: Planned, REQ-0042〜0045: Deferred（デザイン要件待ち）
 - 2025-12-29 REQ-0038実装完了 - キュー一括操作機能の実装（Complete All/Clear All）
+- 2025-12-30 要件インデックステーブル更新 - REQ-0032〜REQ-0046を追加（過去に定義されていたが索引に未反映だったもの）
+- 2025-12-30 追加要件定義 (REQ-0047〜REQ-0053) - エラーハンドリング統一、Completed/Archivedページ検索API化、タグ/タスク複製機能、キーボードショートカット、TaskHoverPopup改善、タブ領域ドラッグ機能

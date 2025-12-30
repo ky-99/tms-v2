@@ -218,7 +218,7 @@ export function ArchivedPage() {
                                     <ArchiveIcon />
                                   </div>
                                   <h3 class="font-medium text-foreground truncate">
-                                    {task.title}
+                                    {task.parentTitle ? `@${task.parentTitle}/${task.title}` : task.title}
                                   </h3>
                                 </div>
                                 <Show when={task.description}>

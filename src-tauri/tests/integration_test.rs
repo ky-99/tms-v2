@@ -3,7 +3,7 @@ use diesel::r2d2::{ConnectionManager, Pool};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 use tms_v2_lib::models::tag::{CreateTagRequest, UpdateTagRequest};
-use tms_v2_lib::models::task::{CreateTaskRequest, SearchTasksParams, TaskStatus, UpdateTaskRequest};
+use tms_v2_lib::models::task::{CreateTaskRequest, SearchTasksParams, TaskStatus, UpdateTaskRequestInput};
 use tms_v2_lib::schema::tasks;
 use tms_v2_lib::service::{QueueService, TagService, TaskService};
 
@@ -1552,4 +1552,443 @@ fn test_list_tasks_paginated_total_count_with_filters() {
     .unwrap();
     assert_eq!(result_multi.total, 28, "Draft + Completed + Archived = 28件");
     assert_eq!(result_multi.tasks.len(), 28);
+}
+
+// ========================================
+// Parent Title Enrichment Integration Tests
+// REQ-0023: CompletedPage/ArchivedPageで子タスクに親タスク名を表示
+// ========================================
+
+#[test]
+fn test_list_tasks_paginated_includes_parent_title_for_child() {
+    use tms_v2_lib::models::task::ListTasksPaginatedParams;
+
+    let pool = setup_test_pool();
+    let mut conn = pool.get().expect("Failed to get connection");
+
+    // 親タスク作成
+    let parent = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "統合テスト親タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 子タスク作成
+    let child = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "統合テスト子タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // 子タスクをCompletedに変更
+    diesel::update(tasks::table.find(&child.id))
+        .set(tasks::status.eq("completed"))
+        .execute(&mut conn)
+        .unwrap();
+
+    // list_tasks_paginatedでCompletedタスクを取得
+    let result = TaskService::list_tasks_paginated(
+        &mut conn,
+        ListTasksPaginatedParams {
+            status: Some(vec!["completed".to_string()]),
+            limit: Some(20),
+            offset: Some(0),
+        },
+    )
+    .unwrap();
+
+    // 子タスクが1件取得されることを確認
+    assert_eq!(result.tasks.len(), 1);
+    assert_eq!(result.total, 1);
+
+    let returned_task = &result.tasks[0];
+
+    // parent_titleが正しく設定されていることを確認
+    assert_eq!(returned_task.id, child.id);
+    assert_eq!(returned_task.title, "統合テスト子タスク");
+    assert_eq!(returned_task.parent_id, Some(parent.id.clone()));
+    assert_eq!(returned_task.parent_title, Some("統合テスト親タスク".to_string()));
+}
+
+#[test]
+fn test_list_tasks_paginated_no_parent_title_for_root() {
+    use tms_v2_lib::models::task::ListTasksPaginatedParams;
+
+    let pool = setup_test_pool();
+    let mut conn = pool.get().expect("Failed to get connection");
+
+    // ルートタスク（親なし）を作成
+    let root = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "ルートタスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // ルートタスクをArchivedに変更
+    diesel::update(tasks::table.find(&root.id))
+        .set(tasks::status.eq("archived"))
+        .execute(&mut conn)
+        .unwrap();
+
+    // list_tasks_paginatedでArchivedタスクを取得
+    let result = TaskService::list_tasks_paginated(
+        &mut conn,
+        ListTasksPaginatedParams {
+            status: Some(vec!["archived".to_string()]),
+            limit: Some(20),
+            offset: Some(0),
+        },
+    )
+    .unwrap();
+
+    // ルートタスクが1件取得されることを確認
+    assert_eq!(result.tasks.len(), 1);
+    assert_eq!(result.total, 1);
+
+    let returned_task = &result.tasks[0];
+
+    // ルートタスクはparent_titleがNoneであることを確認
+    assert_eq!(returned_task.id, root.id);
+    assert_eq!(returned_task.title, "ルートタスク");
+    assert_eq!(returned_task.parent_id, None);
+    assert_eq!(returned_task.parent_title, None);
+}
+
+#[test]
+fn test_list_tasks_paginated_batch_parent_title_fetch() {
+    use tms_v2_lib::models::task::ListTasksPaginatedParams;
+
+    let pool = setup_test_pool();
+    let mut conn = pool.get().expect("Failed to get connection");
+
+    // 親タスク1作成
+    let parent1 = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "親タスク1".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 親タスク2作成
+    let parent2 = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "親タスク2".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 親タスク1の子タスク作成
+    let child1 = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "子タスク1".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent1.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // 親タスク2の子タスク作成
+    let child2 = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "子タスク2".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent2.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // ルートタスク作成（親なし）
+    let root = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "ルートタスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 全てのタスクをCompletedに変更
+    for task_id in &[child1.id.clone(), child2.id.clone(), root.id.clone()] {
+        diesel::update(tasks::table.find(task_id))
+            .set(tasks::status.eq("completed"))
+            .execute(&mut conn)
+            .unwrap();
+    }
+
+    // list_tasks_paginatedでCompletedタスクを取得
+    let result = TaskService::list_tasks_paginated(
+        &mut conn,
+        ListTasksPaginatedParams {
+            status: Some(vec!["completed".to_string()]),
+            limit: Some(20),
+            offset: Some(0),
+        },
+    )
+    .unwrap();
+
+    // 3件取得されることを確認
+    assert_eq!(result.tasks.len(), 3);
+    assert_eq!(result.total, 3);
+
+    // 各タスクのparent_titleを確認
+    for task in &result.tasks {
+        if task.id == child1.id {
+            assert_eq!(task.parent_title, Some("親タスク1".to_string()));
+            assert_eq!(task.parent_id, Some(parent1.id.clone()));
+        } else if task.id == child2.id {
+            assert_eq!(task.parent_title, Some("親タスク2".to_string()));
+            assert_eq!(task.parent_id, Some(parent2.id.clone()));
+        } else if task.id == root.id {
+            assert_eq!(task.parent_title, None);
+            assert_eq!(task.parent_id, None);
+        } else {
+            panic!("Unexpected task ID: {}", task.id);
+        }
+    }
+}
+
+#[test]
+fn test_list_tasks_paginated_archived_with_parent_title() {
+    use tms_v2_lib::models::task::ListTasksPaginatedParams;
+
+    let pool = setup_test_pool();
+    let mut conn = pool.get().expect("Failed to get connection");
+
+    // 親タスク作成
+    let parent = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "Archived親タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 子タスク作成
+    let child = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "Archived子タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // 子タスクをArchivedに変更（論理削除）
+    diesel::update(tasks::table.find(&child.id))
+        .set(tasks::status.eq("archived"))
+        .execute(&mut conn)
+        .unwrap();
+
+    // list_tasks_paginatedでArchivedタスクを取得
+    let result = TaskService::list_tasks_paginated(
+        &mut conn,
+        ListTasksPaginatedParams {
+            status: Some(vec!["archived".to_string()]),
+            limit: Some(20),
+            offset: Some(0),
+        },
+    )
+    .unwrap();
+
+    // 子タスクが1件取得されることを確認
+    assert_eq!(result.tasks.len(), 1);
+    assert_eq!(result.total, 1);
+
+    let returned_task = &result.tasks[0];
+
+    // ArchivedPageでもparent_titleが正しく設定されていることを確認
+    assert_eq!(returned_task.id, child.id);
+    assert_eq!(returned_task.title, "Archived子タスク");
+    assert_eq!(returned_task.parent_id, Some(parent.id.clone()));
+    assert_eq!(returned_task.parent_title, Some("Archived親タスク".to_string()));
+}
+
+// ========================================
+// Parent updated_at Update Tests
+// Bug Fix: 子タスクのステータス変更時に親タスクのupdated_atが更新されるか
+// ========================================
+
+#[test]
+fn test_parent_updated_at_is_updated_on_child_status_change() {
+    let pool = setup_test_pool();
+    let mut conn = pool.get().expect("Failed to get connection");
+
+    // 親タスク作成
+    let parent = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "親タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 親タスクの初期updated_atを記録
+    let initial_parent_updated_at = parent.updated_at.clone();
+
+    // 少し待機してタイムスタンプの差を確保
+    std::thread::sleep(std::time::Duration::from_millis(10));
+
+    // 子タスク作成
+    let child = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "子タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // 少し待機
+    std::thread::sleep(std::time::Duration::from_millis(10));
+
+    // 子タスクをActiveに変更（親タスクのステータスも自動的にActiveになる）
+    let update_req = UpdateTaskRequestInput {
+        title: None,
+        description: None,
+        status: Some("active".to_string()),
+        parent_id: None,
+        tags: None,
+    };
+    TaskService::update_task(&mut conn, &child.id, update_req).unwrap();
+
+    // 親タスクを再取得
+    let updated_parent = TaskService::get_task(&mut conn, &parent.id).unwrap();
+
+    // 親タスクのステータスがActiveに変更されていることを確認
+    assert_eq!(updated_parent.status, TaskStatus::Active);
+
+    // 親タスクのupdated_atが更新されていることを確認
+    assert_ne!(
+        updated_parent.updated_at, initial_parent_updated_at,
+        "親タスクのupdated_atが更新されていない"
+    );
+
+    // updated_atが初期値より後であることを確認
+    assert!(
+        updated_parent.updated_at > initial_parent_updated_at,
+        "親タスクのupdated_atが初期値より古い"
+    );
+}
+
+#[test]
+fn test_parent_updated_at_multiple_child_changes() {
+    let pool = setup_test_pool();
+    let mut conn = pool.get().expect("Failed to get connection");
+
+    // 親タスク作成
+    let parent = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "親タスク".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: None,
+        },
+    )
+    .unwrap();
+
+    // 子タスク1作成
+    let child1 = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "子タスク1".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // 子タスク2作成
+    let child2 = TaskService::create_task(
+        &mut conn,
+        CreateTaskRequest {
+            title: "子タスク2".to_string(),
+            description: None,
+            tags: vec![],
+            parent_id: Some(parent.id.clone()),
+        },
+    )
+    .unwrap();
+
+    // 少し待機
+    std::thread::sleep(std::time::Duration::from_millis(10));
+
+    // 子タスク1をActiveに変更
+    let update_req1 = UpdateTaskRequestInput {
+        title: None,
+        description: None,
+        status: Some("active".to_string()),
+        parent_id: None,
+        tags: None,
+    };
+    TaskService::update_task(&mut conn, &child1.id, update_req1).unwrap();
+
+    // 親タスクを取得してupdated_atを記録
+    let parent_after_first = TaskService::get_task(&mut conn, &parent.id).unwrap();
+    let first_updated_at = parent_after_first.updated_at.clone();
+
+    // 少し待機
+    std::thread::sleep(std::time::Duration::from_millis(10));
+
+    // 子タスク2もActiveに変更（親タスクのステータスは変わらないがupdated_atは更新されるべき）
+    let update_req2 = UpdateTaskRequestInput {
+        title: None,
+        description: None,
+        status: Some("active".to_string()),
+        parent_id: None,
+        tags: None,
+    };
+    TaskService::update_task(&mut conn, &child2.id, update_req2).unwrap();
+
+    // 親タスクを再取得
+    let parent_after_second = TaskService::get_task(&mut conn, &parent.id).unwrap();
+
+    // 親タスクのステータスは依然としてActive
+    assert_eq!(parent_after_second.status, TaskStatus::Active);
+
+    // updated_atが更新されていることを確認
+    assert!(
+        parent_after_second.updated_at >= first_updated_at,
+        "2回目の子タスク更新で親タスクのupdated_atが更新されていない"
+    );
 }

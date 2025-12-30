@@ -215,10 +215,35 @@ impl TaskService {
             .offset(offset)
             .load::<Task>(conn)?;
 
-        // 各タスクにタグと子タスクIDを追加
+        // 親タイトルのバッチ取得（パフォーマンス最適化）
+        use std::collections::HashMap;
+        let parent_ids: Vec<String> = tasks
+            .iter()
+            .filter_map(|t| t.parent_id.as_ref())
+            .cloned()
+            .collect();
+
+        let parent_titles: HashMap<String, String> = if !parent_ids.is_empty() {
+            tasks::table
+                .filter(tasks::id.eq_any(parent_ids))
+                .select((tasks::id, tasks::title))
+                .load::<(String, String)>(conn)?
+                .into_iter()
+                .collect()
+        } else {
+            HashMap::new()
+        };
+
+        // 各タスクにタグ・子タスクID・親タイトルを追加
         let enriched_tasks: Result<Vec<TaskResponse>, ServiceError> = tasks
             .into_iter()
-            .map(|task| Self::enrich_task_response(conn, task))
+            .map(|task| {
+                let parent_title = task
+                    .parent_id
+                    .as_ref()
+                    .and_then(|pid| parent_titles.get(pid).cloned());
+                Self::enrich_task_response_with_parent_title(conn, task, parent_title)
+            })
             .collect();
 
         Ok(PaginatedTaskResponse {
@@ -777,22 +802,24 @@ impl TaskService {
         Self::get_task(conn, task_id)
     }
 
-    /// タスクにタグと子タスクIDを追加する共通ヘルパー
+    /// タスクレスポンスをエンリッチ（タグ・子タスクID・親タイトル付与）
     ///
     /// # Arguments
     /// * `conn` - データベース接続
-    /// * `task` - タスクモデル
+    /// * `task` - エンリッチ対象のタスク
+    /// * `parent_title` - 親タスクのタイトル（バッチ取得済みの場合に渡す）
     ///
     /// # Returns
-    /// * `Ok(TaskResponse)` - タグと子タスクIDが付加されたTaskResponse
+    /// * `Ok(TaskResponse)` - エンリッチされたTaskResponse
     /// * `Err(ServiceError)` - データベースエラー
     ///
     /// # Notes
-    /// - list_tasks, search_tasksで共通利用
-    /// - タグと子タスクIDの取得ロジックを一元化
-    fn enrich_task_response(
+    /// - list_tasks_paginatedではバッチ取得したparent_titleを渡す
+    /// - その他のAPIでは個別にDB取得
+    fn enrich_task_response_with_parent_title(
         conn: &mut SqliteConnection,
         task: Task,
+        parent_title: Option<String>,
     ) -> Result<TaskResponse, ServiceError> {
         // タグ名を取得
         let tag_names = task_tags::table
@@ -809,7 +836,31 @@ impl TaskService {
 
         let mut response = task.with_tags(tag_names);
         response.children_ids = children_ids;
+        response.parent_title = parent_title;
         Ok(response)
+    }
+
+    /// タスクレスポンスをエンリッチ（互換性維持用ラッパー）
+    ///
+    /// # Notes
+    /// - list_tasks, search_tasksなど既存APIで使用
+    /// - parent_titleは個別にDB取得
+    fn enrich_task_response(
+        conn: &mut SqliteConnection,
+        task: Task,
+    ) -> Result<TaskResponse, ServiceError> {
+        // 親タスクのタイトルを個別に取得
+        let parent_title = if let Some(ref parent_id) = task.parent_id {
+            tasks::table
+                .filter(tasks::id.eq(parent_id))
+                .select(tasks::title)
+                .first::<String>(conn)
+                .optional()?
+        } else {
+            None
+        };
+
+        Self::enrich_task_response_with_parent_title(conn, task, parent_title)
     }
 
     /// 指定されたタスクが子タスクを持つかどうかを確認
@@ -1008,9 +1059,13 @@ impl TaskService {
             // 3. 親タスクのステータスを計算
             let new_parent_status = Self::calculate_parent_status(child_statuses);
 
-            // 4. 親タスクのステータスを更新
+            // 4. 親タスクのステータスとupdated_atを更新
+            let now = chrono::Utc::now().to_rfc3339();
             diesel::update(tasks::table.filter(tasks::id.eq(&parent_id_value)))
-                .set(tasks::status.eq(new_parent_status.as_str()))
+                .set((
+                    tasks::status.eq(new_parent_status.as_str()),
+                    tasks::updated_at.eq(now),
+                ))
                 .execute(conn)?;
 
             // 5. 再帰的に祖父タスクも更新（BR-016により孫タスク禁止のため、通常は実行されない）
@@ -2933,5 +2988,250 @@ mod tests {
 
         assert_eq!(result_empty.total, 0, "空配列の場合、総件数0");
         assert!(result_empty.tasks.is_empty(), "空配列の場合、結果なし");
+    }
+
+    #[test]
+    fn test_list_tasks_paginated_parent_title_enrichment() {
+        let mut conn = setup_test_db();
+
+        // 親タスクを作成
+        let parent = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Parent Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 子タスクを作成
+        let child = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスクをCompletedに変更
+        diesel::update(tasks::table.find(&child.id))
+            .set(tasks::status.eq("completed"))
+            .execute(&mut conn)
+            .unwrap();
+
+        // list_tasks_paginatedでCompletedタスクを取得
+        let result = TaskService::list_tasks_paginated(
+            &mut conn,
+            ListTasksPaginatedParams {
+                status: Some(vec!["completed".to_string()]),
+                limit: Some(10),
+                offset: Some(0),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result.tasks.len(), 1, "Completedタスクは1件");
+        let returned_child = &result.tasks[0];
+
+        // parent_titleが正しく設定されていることを確認
+        assert_eq!(returned_child.parent_title, Some("Parent Task".to_string()));
+        assert_eq!(returned_child.parent_id, Some(parent.id.clone()));
+    }
+
+    #[test]
+    fn test_list_tasks_paginated_root_task_no_parent_title() {
+        let mut conn = setup_test_db();
+
+        // ルートタスク（親なし）を作成
+        let root = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Root Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // ルートタスクをCompletedに変更
+        diesel::update(tasks::table.find(&root.id))
+            .set(tasks::status.eq("completed"))
+            .execute(&mut conn)
+            .unwrap();
+
+        // list_tasks_paginatedでCompletedタスクを取得
+        let result = TaskService::list_tasks_paginated(
+            &mut conn,
+            ListTasksPaginatedParams {
+                status: Some(vec!["completed".to_string()]),
+                limit: Some(10),
+                offset: Some(0),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result.tasks.len(), 1, "Completedタスクは1件");
+        let returned_root = &result.tasks[0];
+
+        // ルートタスクはparent_titleがNoneであることを確認
+        assert_eq!(returned_root.parent_title, None);
+        assert_eq!(returned_root.parent_id, None);
+    }
+
+    #[test]
+    fn test_list_tasks_paginated_multiple_children_batch_fetch() {
+        let mut conn = setup_test_db();
+
+        // 親タスクを2つ作成
+        let parent1 = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Parent 1".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        let parent2 = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Parent 2".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 各親に子タスクを作成
+        let child1 = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child 1".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent1.id.clone()),
+            },
+        )
+        .unwrap();
+
+        let child2 = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child 2".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent2.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスクをCompletedに変更
+        diesel::update(tasks::table.find(&child1.id))
+            .set(tasks::status.eq("completed"))
+            .execute(&mut conn)
+            .unwrap();
+
+        diesel::update(tasks::table.find(&child2.id))
+            .set(tasks::status.eq("completed"))
+            .execute(&mut conn)
+            .unwrap();
+
+        // list_tasks_paginatedでCompletedタスクを取得（バッチフェッチのテスト）
+        let result = TaskService::list_tasks_paginated(
+            &mut conn,
+            ListTasksPaginatedParams {
+                status: Some(vec!["completed".to_string()]),
+                limit: Some(10),
+                offset: Some(0),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result.tasks.len(), 2, "Completedタスクは2件");
+
+        // 各子タスクが正しい親タイトルを持つことを確認
+        for task in &result.tasks {
+            if task.id == child1.id {
+                assert_eq!(task.parent_title, Some("Parent 1".to_string()));
+            } else if task.id == child2.id {
+                assert_eq!(task.parent_title, Some("Parent 2".to_string()));
+            } else {
+                panic!("Unexpected task ID");
+            }
+        }
+    }
+
+    #[test]
+    fn test_parent_updated_at_changes_when_child_status_changes() {
+        let mut conn = setup_test_db();
+
+        // 親タスク作成
+        let parent = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Parent Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 親タスクの初期updated_atを記録
+        let initial_updated_at = parent.updated_at.clone();
+
+        // 少し待機（タイムスタンプの差を明確にするため）
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+        // 子タスク作成
+        let child = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスクをActiveに変更（親タスクのステータスも自動的にActiveになる）
+        let update_req = UpdateTaskRequestInput {
+            title: None,
+            description: None,
+            status: Some("active".to_string()),
+            parent_id: None,
+            tags: None,
+        };
+        TaskService::update_task(&mut conn, &child.id, update_req).unwrap();
+
+        // 親タスクを再取得
+        let updated_parent = TaskService::get_task(&mut conn, &parent.id).unwrap();
+
+        // 親タスクのステータスがActiveに変更されていることを確認
+        assert_eq!(updated_parent.status, TaskStatus::Active);
+
+        // 親タスクのupdated_atが更新されていることを確認
+        assert_ne!(
+            updated_parent.updated_at, initial_updated_at,
+            "親タスクのupdated_atが更新されていない"
+        );
+
+        // updated_atが初期値より後であることを確認
+        assert!(
+            updated_parent.updated_at > initial_updated_at,
+            "updated_atが初期値より古い: {} <= {}",
+            updated_parent.updated_at,
+            initial_updated_at
+        );
     }
 }

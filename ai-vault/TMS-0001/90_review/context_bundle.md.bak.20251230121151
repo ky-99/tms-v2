@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Contract
-> Updated: 2025-12-30 12:11 (JST)
+> Updated: 2025-12-30 11:16 (JST)
 > Owner: <name>
 
 ---
@@ -131,7 +131,7 @@
 | REQ-0008 | 親子タスクステータス自動同期 | MUST | Draft |
 | REQ-0009 | 親タスクのキュー登録制限 | MUST | Draft |
 | REQ-0010 | タスクプールの表示範囲拡張 | MUST | Draft |
-| REQ-0047 | 統一的なフロントエンドエラーハンドリング | MUST | Planned |
+| REQ-0005 | タスク検索・フィルタ機能 | SHOULD | Draft |
 
 ### 6.2 Acceptance Details (Only for focus REQs)
 - **REQ-0001**
@@ -170,10 +170,10 @@
   - Given: タスクプール画面
   - When: 画面が表示される
   - Then: Draft および Active ステータスのタスクが両方表示される
-- **REQ-0047**
-  - Given: 任意の操作でエラーが発生した
-  - When: エラーハンドリングが実行される
-  - Then: エラーカテゴリ（ネットワーク、バリデーション、サーバー等）に応じたアイコン付きToast通知が3秒間表示され、自動的に消える
+- **REQ-0005**
+  - Given: タスクプール画面にタスクが表示されている
+  - When: ユーザーが検索キーワードを入力またはフィルタを選択
+  - Then: 条件に一致するタスクのみが表示される
 <!-- AUTO:END requirements_snapshot -->
 ---
 
@@ -222,22 +222,16 @@ N/A
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
-| TASK-NEW-055 | ErrorToastコンポーネント実装 | UnDone | P0 | REQ-0047 |
-| TASK-NEW-056 | API呼び出しエラーハンドリング統合 | UnDone | P0 | REQ-0047 |
-| TASK-NEW-057 | search_tasks APIページネーション追加 | UnDone | P1 | REQ-0048 |
-| TASK-NEW-058 | Completed/ArchivedページBackend検索統合 | UnDone | P1 | REQ-0048 |
 
 ### 8.2 Task Progress
-- Total Tasks: 78
+- Total Tasks: 67
 - Done: 66
 - Processing: 0
-- UnDone: 12
-- Progress: 85% (66/78)
+- UnDone: 1
+- Progress: 99% (66/67)
 
 ### 8.3 Next Actions
 1. Start TASK-NEW-009 (カラーパレット適用)
-2. Start TASK-NEW-055 (ErrorToastコンポーネント実装)
-3. Start TASK-NEW-056 (API呼び出しエラーハンドリング統合)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -287,7 +281,7 @@ N/A
 - REQ Coverage: 10 REQs
 - API Coverage: 21/21
 - Event Coverage: N/A
-- Task Completion: 85% (66/78)
+- Task Completion: 99% (66/67)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**
