@@ -1,6 +1,6 @@
 import { DropdownMenu as KobalteDropdownMenu } from "@kobalte/core/dropdown-menu";
 import { For, Show } from "solid-js";
-import { cn } from "../lib/utils";
+import { cn, truncateText } from "../lib/utils";
 import type { Tag } from "../types/tag";
 
 // Plus アイコン
@@ -19,6 +19,21 @@ function PlusIcon() {
   );
 }
 
+// Check アイコン
+function CheckIcon() {
+  return (
+    <svg
+      class="h-4 w-4 text-primary"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
 export interface TagFilterProps {
   availableTags: Tag[];
   selectedTags: string[]; // 選択中のタグ名リスト
@@ -26,10 +41,10 @@ export interface TagFilterProps {
 }
 
 /**
- * タグフィルターコンポーネント
+ * タグフィルターコンポーネント（Kobalte DropdownMenu）
  *
- * - 「+ Tags」ボタンをクリックでドロップダウンメニュー表示
- * - 全タグをチェックボックスリストで表示
+ * - 「+ Tags」ボタンをクリックでメニュー表示
+ * - 全タグをメニューアイテムで表示（Selectスタイル）
  * - 複数選択可能（OR条件）
  * - 選択中のタグ数をボタンに表示
  */
@@ -69,7 +84,7 @@ export function TagFilter(props: TagFilterProps) {
       <KobalteDropdownMenu.Portal>
         <KobalteDropdownMenu.Content
           class={cn(
-            "z-50 min-w-[12rem] max-h-[20rem] overflow-y-auto rounded-md border border-border bg-card p-2 shadow-lg",
+            "z-50 min-w-[12rem] max-h-60 overflow-y-auto rounded-md border border-border bg-card shadow-lg",
             "data-[expanded]:animate-in data-[closed]:animate-out",
             "data-[closed]:fade-out-0 data-[expanded]:fade-in-0",
             "data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95"
@@ -78,39 +93,37 @@ export function TagFilter(props: TagFilterProps) {
           <Show
             when={props.availableTags.length > 0}
             fallback={
-              <div class="px-3 py-2 text-sm text-muted-foreground">
+              <div class="px-3 py-6 text-center text-sm text-muted-foreground">
                 No tags available
               </div>
             }
           >
-            <For each={props.availableTags}>
-              {(tag) => (
-                <label
-                  class="flex items-center gap-2 rounded-sm px-3 py-2 text-sm cursor-pointer hover:bg-secondary transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleTag(tag.name);
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isTagSelected(tag.name)}
-                    onChange={() => toggleTag(tag.name)}
-                    class="h-4 w-4 rounded border-border text-primary focus:ring-1 focus:ring-primary cursor-pointer"
-                  />
-                  <Show when={tag.color}>
-                    <div
-                      class="h-3 w-3 rounded-full flex-shrink-0"
-                      style={{ "background-color": tag.color }}
-                    />
-                  </Show>
-                  <span class="flex-1">{tag.name}</span>
-                  <span class="text-xs text-muted-foreground">
-                    ({tag.usageCount})
-                  </span>
-                </label>
-              )}
-            </For>
+            <div class="p-1">
+              <For each={props.availableTags}>
+                {(tag) => (
+                  <KobalteDropdownMenu.Item
+                    onSelect={() => toggleTag(tag.name)}
+                    closeOnSelect={false}
+                    class={cn(
+                      "relative flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm outline-none cursor-pointer transition-colors text-left",
+                      "hover:bg-secondary data-[highlighted]:bg-secondary",
+                      isTagSelected(tag.name) && "bg-primary/10 text-primary font-medium"
+                    )}
+                  >
+                    <Show when={tag.color}>
+                      <div
+                        class="h-3 w-3 rounded-full flex-shrink-0"
+                        style={{ "background-color": tag.color }}
+                      />
+                    </Show>
+                    <span class="flex-1">{truncateText(tag.name, 30)}</span>
+                    <Show when={isTagSelected(tag.name)}>
+                      <CheckIcon />
+                    </Show>
+                  </KobalteDropdownMenu.Item>
+                )}
+              </For>
+            </div>
           </Show>
         </KobalteDropdownMenu.Content>
       </KobalteDropdownMenu.Portal>

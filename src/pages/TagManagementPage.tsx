@@ -7,8 +7,19 @@ import { TagInput } from "../components/TagInput";
 import { tagsApi } from "../api/tags";
 import type { Tag, CreateTagRequest, UpdateTagRequest } from "../types/tag";
 import { DropdownMenu } from "../components/DropdownMenu";
+import { truncateText } from "../lib/utils";
+import { useSearchShortcut } from "../hooks/useSearchShortcut";
 
 // Icon components
+function SearchIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
 function PlusIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -55,6 +66,8 @@ export function TagManagementPage() {
   const [tags, setTags] = createSignal<Tag[]>([]);
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
+  const [searchQuery, setSearchQuery] = createSignal("");
+  const [searchInputRef, setSearchInputRef] = createSignal<HTMLInputElement | undefined>();
 
   // Create dialog
   const [showCreateDialog, setShowCreateDialog] = createSignal(false);
@@ -84,6 +97,10 @@ export function TagManagementPage() {
       setLoading(false);
     }
   };
+
+  useSearchShortcut({
+    getSearchInputRef: searchInputRef,
+  });
 
   onMount(() => {
     loadTags();
@@ -158,6 +175,13 @@ export function TagManagementPage() {
     }
   };
 
+  // Filter tags by search query
+  const filteredTags = () => {
+    const query = searchQuery().toLowerCase().trim();
+    if (!query) return tags();
+    return tags().filter(tag => tag.name.toLowerCase().includes(query));
+  };
+
   /**
    * タグを複製する
    * - 複製されたタグは `{originalName}_YYYYMMDD_HHmmss` の形式で名前が付けられる
@@ -179,19 +203,28 @@ export function TagManagementPage() {
 
   return (
     <div class="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div class="border-b border-border bg-card px-6 py-4">
-        <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-semibold text-foreground">Tag Management</h1>
-          <Button onClick={() => setShowCreateDialog(true)} class="gap-2">
+      {/* Content */}
+      <div class="flex-1 overflow-y-auto p-6">
+        {/* Search bar and New Tag button */}
+        <div class="flex items-center gap-4 mb-6">
+          <div class="relative flex-1">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <SearchIcon />
+            </div>
+            <Input
+              ref={setSearchInputRef}
+              type="text"
+              placeholder="Search tags..."
+              value={searchQuery()}
+              onInput={(e) => setSearchQuery(e.currentTarget.value)}
+              class="pl-9 bg-background"
+            />
+          </div>
+          <Button onClick={() => setShowCreateDialog(true)} class="gap-2 shrink-0">
             <PlusIcon />
             New Tag
           </Button>
         </div>
-      </div>
-
-      {/* Content */}
-      <div class="flex-1 overflow-y-auto p-6">
         <Show when={loading()}>
           <div class="text-center text-muted-foreground py-8">Loading tags...</div>
         </Show>
@@ -201,7 +234,7 @@ export function TagManagementPage() {
         </Show>
 
         <Show when={!loading() && !error()}>
-          <Show when={tags().length === 0} fallback={
+          <Show when={filteredTags().length === 0} fallback={
             <div class="bg-card border border-border rounded-lg overflow-hidden">
               <table class="w-full">
                 <thead class="bg-secondary/50 border-b border-border">
@@ -213,7 +246,7 @@ export function TagManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={tags()}>
+                  <For each={filteredTags()}>
                     {(tag) => (
                       <tr class="border-b border-border hover:bg-secondary/30 transition-colors">
                         <td class="px-4 py-3">
@@ -223,8 +256,9 @@ export function TagManagementPage() {
                               "background-color": `${tag.color}20`,
                               color: tag.color,
                             }}
+                            title={tag.name}
                           >
-                            {tag.name}
+                            {truncateText(tag.name, 40)}
                           </span>
                         </td>
                         <td class="px-4 py-3">
@@ -270,12 +304,19 @@ export function TagManagementPage() {
             </div>
           }>
             <div class="text-center text-muted-foreground py-12">
-              <p class="text-lg mb-4">No tags yet</p>
-              <p class="text-sm mb-6">Create your first tag to get started</p>
-              <Button onClick={() => setShowCreateDialog(true)} class="gap-2">
-                <PlusIcon />
-                Create Tag
-              </Button>
+              <Show when={searchQuery().trim()} fallback={
+                <>
+                  <p class="text-lg mb-4">No tags yet</p>
+                  <p class="text-sm mb-6">Create your first tag to get started</p>
+                  <Button onClick={() => setShowCreateDialog(true)} class="gap-2">
+                    <PlusIcon />
+                    Create Tag
+                  </Button>
+                </>
+              }>
+                <p class="text-lg mb-4">No tags found</p>
+                <p class="text-sm">No tags match "{searchQuery()}"</p>
+              </Show>
             </div>
           </Show>
         </Show>
@@ -374,7 +415,7 @@ export function TagManagementPage() {
         title="Delete Tag"
         description={
           deletingTag()
-            ? `Are you sure you want to delete "${deletingTag()!.name}"? ${
+            ? `Are you sure you want to delete "${truncateText(deletingTag()!.name, 40)}"? ${
                 (deletingTag()!.usageCount || 0) > 0
                   ? `This tag is currently used by ${deletingTag()!.usageCount} task${deletingTag()!.usageCount === 1 ? "" : "s"}. Deleting it will remove it from all tasks.`
                   : "This action cannot be undone."

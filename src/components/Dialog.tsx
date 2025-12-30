@@ -13,8 +13,8 @@ export function Dialog(props: DialogProps) {
   return (
     <KobalteDialog open={props.open} onOpenChange={props.onOpenChange}>
       <KobalteDialog.Portal>
-        <KobalteDialog.Overlay class="fixed inset-0 z-50 bg-black/80 data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0" />
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <KobalteDialog.Overlay class="fixed inset-0 z-50 bg-black/80 data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 overflow-hidden" style={{ "border-radius": "8px" }} />
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden" style={{ "border-radius": "8px" }}>
           <KobalteDialog.Content class={cn(
             "relative z-50 w-full max-w-lg bg-background rounded-lg border border-border shadow-lg",
             "data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95"

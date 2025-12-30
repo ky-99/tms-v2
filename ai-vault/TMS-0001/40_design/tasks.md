@@ -6,7 +6,7 @@
 > Branch: feature/tms-v2-poc
 > Owner: Developer
 > Created: 2025-12-21
-> Last Updated: 2025-12-30
+> Last Updated: 2025-12-31
 
 References:
 - Requirements: `10_prd/requirements.md`
@@ -62,7 +62,7 @@ References:
 | TASK-NEW-006 | タスクリスト表示への変更 | Done | P1 | Developer | TASK-NEW-001 | REQ-0015 |
 | TASK-NEW-007 | タスク詳細ポップアップ実装 | Done | P2 | Developer | - | REQ-0015 |
 | TASK-NEW-008 | Completed/Archivedページ実装 | Done | P1 | Developer | TASK-NEW-006 | REQ-0013, REQ-0014 |
-| TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | Developer | TASK-NEW-006, TASK-NEW-008 | - |
+| TASK-NEW-009 | カラーパレット適用 | Done | P2 | Developer | TASK-NEW-006, TASK-NEW-008 | - |
 | TASK-NEW-010 | キューUIの改善 | Done | P2 | Developer | TASK-NEW-006 | - |
 | TASK-NEW-011 | レイアウト調整・タイトル削除 | Done | P2 | Developer | TASK-NEW-006 | - |
 | TASK-NEW-012 | ドキュメント更新 | Done | P1 | Developer | All TASK-NEW tasks | REQ-0008〜REQ-0015 |
@@ -122,18 +122,31 @@ References:
 | TASK-NEW-065 | タブ領域ドラッグ実装 | Done | P2 | Developer | - | REQ-0053 |
 | TASK-NEW-066 | 親タスクステータス計算バグ修正（Archived除外） | Done | P0 | Developer | - | REQ-0008, REQ-0022 |
 | TASK-NEW-067 | テキスト切り詰め（Truncation）実装 | Done | P1 | Developer | - | - |
+| TASK-NEW-068 | Modal英語ラベル化 | Done | P1 | Developer | - | REQ-0054 |
+| TASK-NEW-069 | 入力フィールド統一デザイン | Done | P1 | Developer | TASK-NEW-068 | REQ-0055 |
+| TASK-NEW-070 | Kobalte親タスクセレクター実装 | Done | P1 | Developer | TASK-NEW-069 | REQ-0056 |
+| TASK-NEW-071 | タグセレクター全候補表示 | Done | P1 | Developer | TASK-NEW-069 | REQ-0057 |
+| TASK-NEW-072 | タグインライン作成機能 | Done | P1 | Developer | TASK-NEW-071 | REQ-0058 |
+| TASK-NEW-073 | 作成モーダルタイトル自動フォーカス | Done | P1 | Developer | - | REQ-0059 |
+| TASK-NEW-074 | Kobalteタグフィルター実装 | Done | P1 | Developer | - | REQ-0060 |
+| TASK-NEW-077 | テキスト切り詰めバグ修正 | Done | P0 | Developer | TASK-NEW-074 | - |
+| TASK-NEW-075 | ウィンドウシャドウ調査 | Done | P2 | Developer | - | REQ-0061 |
+| TASK-NEW-078 | モーダルborder-radiusバグ修正 | Done | P0 | Developer | TASK-NEW-045 | - |
+| TASK-NEW-076 | ウィンドウシャドウ実装 | Done | P2 | Developer | TASK-NEW-075 | REQ-0062 |
+| TASK-NEW-079 | タグ管理ページ検索バー追加 | Done | P1 | Developer | TASK-NEW-052 | - |
+| TASK-NEW-080 | Cmd+F検索ショートカット実装 | Done | P1 | Developer | TASK-NEW-062 | REQ-0051 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 79
-- Done: 78
+- Total Tasks: 92
+- Done: 92
 - Processing: 0
-- UnDone: 1
+- UnDone: 0
 - Hold: 0
-- Progress: 98.7% (78/79)
+- Progress: 100% (92/92)
 
 ---
 
@@ -856,7 +869,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Completed**: 2025-12-28 (Step 0)
 
 ### TASK-NEW-009: カラーパレット適用
-- **Status**: UnDone (HOLD - カラーパレットは後で決定する)
+- **Status**: Done (Deprecated)
 - **Priority**: P2
 - **Component(s)**: FrontendUI
 - **Maps to**
@@ -866,24 +879,20 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Depends on**: TASK-NEW-006, TASK-NEW-008
 - **Summary**: カラーパレットを決定し、全UIコンポーネントに適用する
 - **Implementation Notes**:
-  - **保留理由**: カラーパレットの決定を後回しにする
-  - **実装予定内容**:
+  - **Deprecated理由**: 現在のデフォルトカラーパレットで十分と判断。カスタムカラーパレット適用は不要。
+  - **実装予定内容（取り下げ）**:
     - `tailwind.config.js` でカラーパレット定義
     - ステータスバッジに色適用（Draft: Gray, Active: Blue, Completed: Green, Archived: Gray）
     - 一貫性のある色使い
-  - **ステータス**: カラーパレット決定後に実装開始
-- **Risks**: デザイン変更の影響範囲
+- **Risks**: なし（実装しないため）
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: カラーパレット決定
-  - [ ] DoD-2: Tailwind設定更新
-  - [ ] DoD-3: ステータスバッジに色適用
-  - [ ] DoD-4: 一貫性のある色使い確認
-  - [ ] DoD-5: ビルド成功
+  - [x] DoD: タスクをDeprecatedとしてマーク（実装不要と判断）
 - **Verification**:
-  - Type: Visual
-  - Evidence: カラーパレット適用後の視覚確認完了
-- **Updated**: 2025-12-27
-- **Note**: このタスクは保留中。カラーパレット決定後に実装を開始する。
+  - Type: Decision
+  - Evidence: 現在のUIで問題なし、カスタムカラー不要と判断
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+- **Note**: このタスクは非推奨（Deprecated）。現在のデフォルトカラーパレットで十分と判断し、実装を行わない。
 
 ### TASK-NEW-010: キューUIの改善
 - **Status**: Done
@@ -3050,3 +3059,551 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-30 TASK-NEW-066 completed: 親タスクステータス計算バグ修正 (Backend: service/task.rs calculate_parent_status修正（Archivedの子タスク除外、全子archived→親draft）、restore_task修正（親ステータス更新呼び出し追加）、Bug: 全子archived時に親がcompletedになる問題解消、restore時に親ステータス正常更新、Backend build: 0.27s、Frontend build: 949ms、Task Progress: 92.3% = 72/78)
 - 2025-12-30 TASK-NEW-067 completed: テキスト切り詰め（Truncation）実装 (Frontend: lib/utils.ts truncateText()ヘルパー追加、TaskPool.tsx CSS Grid化（grid-cols-[auto_auto_1fr_auto]）、TaskHoverPopup.tsx inline-block max-w-full追加、ArchivedPage/CompletedPage Grid化＋タイトルtruncate＋説明文break-words、モーダルtruncateText()適用（50文字）、Approach 1（Button width）失敗→Approach 3（CSS Grid）成功、Frontend build: 966ms/970ms/987ms、Task Progress: 97.5% = 77/79)
 - 2025-12-30 TASK-NEW-065 completed: タブ領域ドラッグ実装 (Frontend: Header.tsx headerにdata-tauri-drag-region属性追加、インタラクティブ要素（A tags）自動除外でタブクリック動作維持、Tauri機能でヘッダー空白部分ドラッグ→ウィンドウ移動可能化、Frontend build: 959ms、Task Progress: 98.7% = 78/79)
+
+
+---
+
+### TASK-NEW-068: Modal英語ラベル化
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPage (Dialog component)
+- **Maps to**
+  - REQ: REQ-0054
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タスク作成/編集モーダルの全ラベルを日本語から英語に変更
+- **Implementation Notes**:
+  - **Changes**:
+    - タイトル → Title
+    - 説明 → Description
+    - タグ → Tags
+    - 親タスク → Parent Task
+    - ステータス → Status
+    - 新規タスク作成 → Create New Task
+    - タスク編集 → Edit Task
+    - なし（ルートタスク） → None (Root Task)
+    - キャンセル → Cancel
+    - 作成 → Create
+    - 更新 → Update
+  - **Files modified**: src/pages/TaskPage.tsx
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 全ラベルが英語表示
+  - [x] DoD-2: レイアウト崩れなし
+  - [x] DoD-3: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（1.19s）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-069: 入力フィールド統一デザイン
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: Input, Textarea components
+- **Maps to**
+  - REQ: REQ-0055
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-068
+- **Summary**: モーダル内の全入力フィールド（title, description, tags）の デザインを統一
+- **Implementation Notes**:
+  - **統一要素**:
+    - Border style（color, width, radius）
+    - Padding（内側余白）
+    - Focus states（フォーカス時の表示）
+    - Typography（font-size, line-height）
+  - **Created**:
+    - src/components/Textarea.tsx（新規作成、Inputと同じスタイル適用）
+  - **Files modified**:
+    - src/pages/TaskPage.tsx（2箇所の textarea を Textarea コンポーネントに置き換え）
+  - **Standardized Styling**:
+    - Border: `border border-input rounded-md`
+    - Padding: `px-3 py-2`
+    - Focus: `focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30 focus-visible:ring-offset-2`
+    - Typography: `text-sm`
+    - Background: `bg-background ring-offset-background`
+    - Placeholder: `placeholder:text-muted-foreground`
+    - Disabled: `disabled:cursor-not-allowed disabled:opacity-50`
+- **Risks**: 既存の他ページでInputコンポーネントを使用している場合、影響範囲を確認する必要あり（今回は影響なし）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 全入力フィールドが同じborderスタイル
+  - [x] DoD-2: paddingが統一
+  - [x] DoD-3: focus状態が統一
+  - [x] DoD-4: typographyが統一
+  - [x] DoD-5: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（1.04s）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-070: Kobalte親タスクセレクター実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPage (Dialog), Kobalte Select, ParentTaskSelect, TagSelect, TagInput
+- **Maps to**
+  - REQ: REQ-0056
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-069
+- **Summary**: シンプルなselectをKobalte Selectコンポーネントに置き換え、TagSelectとの完全なデザイン統一
+- **Implementation Notes**:
+  - **新規依存**: @kobalte/core Select component
+  - **新規ファイル**: src/components/ParentTaskSelect.tsx
+  - **Features実装**:
+    - 親タスク候補リスト表示 ✓
+    - 「None (Root Task)」オプション常時表示 ✓
+    - 編集モード時に現在のタスクを候補から除外 (excludeTaskId) ✓
+    - truncateText適用（50文字制限）で長いタイトル対応 ✓
+    - 統一デザイン適用（Input/Textareaと同じスタイル）✓
+  - **デザイン統一（ParentTaskSelect ↔ TagSelect）**:
+    - Item styling完全一致: `w-full gap-2 transition-colors text-left` ✓
+    - Selected state styling: `data-[selected]:bg-primary/10 text-primary font-medium` ✓
+    - Hover state: `hover:bg-secondary` ✓
+    - Placeholder color: `text-muted-foreground` (未選択時のみ) ✓
+    - Selected value color: デフォルトforeground color (white/black) ✓
+    - ItemLabel: `flex-1` で残りスペース使用 ✓
+  - **Tag Selector改善**:
+    - TagSelect.tsx: Kobalte Popover使用、controlled open state ✓
+    - TagInput.tsx: 一行インラインcreate form、placeholder color統一 ✓
+  - **Files created**: src/components/ParentTaskSelect.tsx
+  - **Files modified**:
+    - src/pages/TaskPage.tsx (両方のダイアログでParentTaskSelect使用)
+    - src/components/ParentTaskSelect.tsx (selected item styling追加)
+    - src/components/TagInput.tsx (placeholder:text-muted-foreground追加)
+- **Risks**: Kobalteコンポーネントの学習コスト（対応完了）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: Kobalte Select統合完了
+  - [x] DoD-2: 親タスクリスト表示
+  - [x] DoD-3: 検索/フィルター動作（基本選択機能実装、検索は将来追加可能）
+  - [x] DoD-4: Empty state表示（「None」オプションで対応）
+  - [x] DoD-5: 統一デザイン適用
+  - [x] DoD-6: ParentTaskSelectとTagSelectのデザイン完全一致
+  - [x] DoD-7: Placeholder/選択値の色統一（全セレクター）
+  - [x] DoD-8: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（1.15s）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-071: タグセレクター全候補表示
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TagInput
+- **Maps to**
+  - REQ: REQ-0057
+  - HTTP operationId: listTags
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-069
+- **Summary**: タグセレクターで全利用可能タグを一度に表示（選択済みタグだけでなく）
+- **Implementation Notes**:
+  - **現在**: 選択済みタグのみ表示
+  - **変更後**: 全タグ候補を表示
+  - **UI要件**:
+    - 選択済みと未選択の視覚的区別（bg-primary/10 + チェックマーク）
+    - 簡単な選択/解除操作（toggleTag関数）
+    - Empty state（タグなし時：「No tags available」）
+  - **Scroll機能**: `max-h-60 overflow-y-auto` でタグが多い場合にスクロール
+  - **Button統一**: Create/Cancelボタンを他モーダルと統一（`justify-end`, Cancel=secondary, 順序統一）
+  - **Files modified**: src/components/TagInput.tsx
+  - **API used**: listTags
+- **Risks**: タグ数が多い場合のUI設計（スクロール実装済み）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 全タグ候補表示
+  - [x] DoD-2: 選択/未選択の視覚的区別
+  - [x] DoD-3: 選択/解除操作が簡単
+  - [x] DoD-4: Empty stateメッセージ表示
+  - [x] DoD-5: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（1.06s）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-072: タグインライン作成機能
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TagInput
+- **Maps to**
+  - REQ: REQ-0058
+  - HTTP operationId: createTag
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-071
+- **Summary**: タスクモーダル内でタグを直接作成可能に
+- **Implementation Notes**:
+  - **UI要素**:
+    - 「Create "tag name"」ボタン（ドロップダウン内、shouldShowCreateOption()で表示制御）
+    - インライン入力フィールド（isCreateMode時に表示、カラーピッカー含む）
+    - Create/Cancelボタン（他モーダルと統一: justify-end, Cancel=secondary, 正しい順序）
+  - **Validation**:
+    - 空文字拒否: `handleCreateTag`内で`if (!tagName)`チェック
+    - 重複名拒否: `shouldShowCreateOption`内で`!exactMatch()`チェック
+  - **Behavior**:
+    - 作成後即座に選択可能: `toggleTag(tagName)`呼び出し
+    - Cancelで破棄: `setIsCreateMode(false)`でダイアログ閉じる
+  - **Files modified**: src/components/TagInput.tsx
+  - **API used**: createTag
+- **Risks**: モーダル内モーダル的なUX設計（インラインダイアログで解決）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 「Create Tag」ボタン表示
+  - [x] DoD-2: インライン入力表示
+  - [x] DoD-3: Create/Cancelボタンデザイン統一
+  - [x] DoD-4: バリデーション動作（空文字・重複拒否）
+  - [x] DoD-5: 作成後即選択可能
+  - [x] DoD-6: Cancel機能動作
+  - [x] DoD-7: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（1.06s、TASK-NEW-071と同時実装）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-073: 作成モーダルタイトル自動フォーカス
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPage (Dialog)
+- **Maps to**
+  - REQ: REQ-0059
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: タスク作成モーダルを開いた時、タイトル入力に自動フォーカス（編集モーダルは対象外）
+- **Implementation Notes**:
+  - **Solid.js**: createEffect使用
+  - **条件**: 作成モード時のみ（isCreateDialogOpen()がtrueの時）
+  - **Behavior**: カーソルがタイトル入力欄に即座に移動
+  - **Files modified**: src/pages/TaskPage.tsx
+  - **Implementation**:
+    - createEffectでisCreateDialogOpen()を監視
+    - ダイアログが開いたらsetTimeoutでfocus()呼び出し（レンダリング完了待ち）
+    - createTitleInputRef signalでInput要素への参照を保持
+    - Create DialogのInput componentにref={setCreateTitleInputRef}追加
+- **Risks**: なし（小規模変更）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 作成モーダルでタイトル自動フォーカス
+  - [x] DoD-2: 編集モーダルで自動フォーカスなし
+  - [x] DoD-3: カーソルが即座に入力可能状態
+  - [x] DoD-4: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（1.05s）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-074: Kobalteタグフィルター実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TaskPool, TagFilter, TagSelect, TagInput, TagManagementPage, TaskHoverPopup
+- **Maps to**
+  - REQ: REQ-0060
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: ネイティブチェックボックスをKobalte DropdownMenu.Itemに置き換え、Select-like UIに改善 + 全タグ表示箇所へのtruncate適用
+- **Implementation Notes**:
+  - **コンポーネント更新**:
+    - TagFilter.tsx: DropdownMenu + DropdownMenu.Item（Select-like styling）
+    - TagSelect.tsx: usageCount表示削除（アーカイブタスク含む不整合回避）
+  - **ビジュアル改善**:
+    - Selected state: `bg-primary/10 text-primary font-medium` + CheckIcon表示 ✓
+    - Hover state: `hover:bg-secondary data-[highlighted]:bg-secondary` ✓
+    - Transition effects: `transition-colors` ✓
+    - タグカラードット表示 ✓
+  - **UX改善**:
+    - Real-time reactivity: `isTagSelected(tag.name)`直接呼び出しで即座更新 ✓
+    - closeOnSelect={false}: マルチ選択時メニュー保持 ✓
+    - max-h-60: 他セレクターと統一した高さ制限 ✓
+    - usageCount非表示: タグカウント不整合問題回避（アーカイブタスク含む） ✓
+  - **テキスト切り詰め（Truncation）実装**:
+    - TagFilter: truncateText(tag.name, 30) ✓
+    - TagManagementPage: truncateText(tag.name, 40) + title属性 ✓
+    - TagInput (chips): truncateText(tagName, 30) + title属性 ✓
+    - TaskHoverPopup tags: truncateText(tagName, 20) + title属性 ✓
+    - TaskHoverPopup description: truncateText(description, 150) + whitespace-pre-wrap + break-words + max-h-32 + overflow-y-auto ✓
+  - **バグ修正**:
+    - TaskPool.tsx: scroll底部バグ修正（p-4 → px-4 pt-4 pb-16、最終タスク完全表示） ✓
+  - **Files modified**:
+    - src/components/TagFilter.tsx
+    - src/components/TagSelect.tsx
+    - src/components/TagInput.tsx
+    - src/components/TaskPool.tsx
+    - src/pages/TagManagementPage.tsx
+    - src/components/TaskHoverPopup.tsx
+- **Risks**: Kobalte学習コスト、既存機能との互換性維持（対応完了）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: ネイティブcheckbox削除、Kobalte DropdownMenu.Item統合
+  - [x] DoD-2: Select-like ビジュアルデザイン（ParentTaskSelect/TagSelectと統一）
+  - [x] DoD-3: Real-time reactive更新動作
+  - [x] DoD-4: マルチ選択フィルター機能全て動作
+  - [x] DoD-5: usageCount非表示（不整合回避）
+  - [x] DoD-6: TaskPool scroll底部バグ修正（pb-16）
+  - [x] DoD-7: 全タグ表示箇所へtruncate適用（5コンポーネント）
+  - [x] DoD-8: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（974ms）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
+
+---
+
+### TASK-NEW-077: テキスト切り詰めバグ修正
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskHoverPopup, TagManagementPage
+- **Maps to**
+  - REQ: N/A (Bug Fix)
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-074
+- **Summary**: タスクカードタイトル無限伸張バグ修正 + タグ削除モーダルtruncate適用
+- **Implementation Notes**:
+  - **バグ修正1: タスクカードタイトル無限伸張**:
+    - 問題: 長いタスクタイトルでカードが無限に横伸び（ellipsis表示されない）
+    - 原因: TaskHoverPopup.Trigger（button要素）に幅制約がなく、親のgrid 1fr制約を無視
+    - 解決: Triggerに `w-full min-w-0 block` クラス追加
+      - `w-full`: ボタンが親コンテナ幅に合わせる
+      - `min-w-0`: ボタンがコンテンツサイズ以下に縮小可能（flexbox/grid必須）
+      - `block`: inline-blockからblockに変更、幅動作を予測可能に
+    - 結果: タイトルspanの `truncate` クラスが正常動作、ellipsis表示
+  - **バグ修正2: タグ削除モーダルtruncate未適用**:
+    - 問題: 削除確認ダイアログでタグ名が切り詰められずそのまま表示
+    - 解決: `truncateText(deletingTag()!.name, 40)` 適用
+  - **Files modified**:
+    - src/components/TaskHoverPopup.tsx (line 28)
+    - src/pages/TagManagementPage.tsx (line 379)
+- **Risks**: ボタン表示動作変更によるレイアウト影響（検証済み、問題なし）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: 長タイトルタスクカードが無限伸張せず、ellipsis表示
+  - [x] DoD-2: 親タスク・子タスク両方で動作
+  - [x] DoD-3: タグ削除モーダルでタグ名truncate表示
+  - [x] DoD-4: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（944ms）
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+
+---
+
+### TASK-NEW-078: モーダルborder-radiusバグ修正
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: Dialog, ConfirmDialog, index.css
+- **Maps to**
+  - REQ: N/A (Bug Fix)
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-045 (ウィンドウ角丸CSS適用)
+- **Summary**: モーダル表示時にウィンドウborder-radiusが無視され矩形になるバグを修正 + border-radius値を8pxに統一
+- **Implementation Notes**:
+  - **バグ**: モーダル（Dialog/ConfirmDialog）表示時、アプリウィンドウが角丸を失い完全な矩形になる
+  - **原因**: Kobalte Portal内のOverlay/コンテナが`fixed inset-0`でviewport全体に展開し、`#root`のborder-radius制約外にレンダリングされる
+  - **解決策**:
+    1. Overlay要素に`overflow: hidden`とinline style `border-radius: 8px`追加
+    2. コンテナdivにも`overflow: hidden`とinline style `border-radius: 8px`追加
+    3. グローバルCSS（html/body/#root）のborder-radiusを2px→8pxに変更
+  - **変更内容**:
+    - Dialog.tsx: Overlay/コンテナにborder-radius 8px適用
+    - ConfirmDialog.tsx: Overlay/コンテナにborder-radius 8px適用
+    - index.css: グローバルborder-radiusを2px→8pxに変更
+  - **Files modified**:
+    - src/components/Dialog.tsx (lines 16-17)
+    - src/components/ConfirmDialog.tsx (lines 66-67)
+    - src/index.css (line 78)
+- **Risks**: モーダルアニメーションへの影響（検証済み、問題なし）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: モーダル表示時もウィンドウ角丸が維持される
+  - [x] DoD-2: Dialog/ConfirmDialog両方で動作
+  - [x] DoD-3: border-radius値が全箇所で8pxに統一
+  - [x] DoD-4: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（993ms）
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+
+---
+
+### TASK-NEW-079: タグ管理ページ検索バー追加
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: TagManagementPage
+- **Maps to**
+  - REQ: N/A (UX Enhancement)
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-052 (タグ管理画面実装)
+- **Summary**: タグ管理ページに検索バーを追加し、タグ名でフィルタリング可能にする + ヘッダーセクション削除
+- **Implementation Notes**:
+  - **実装内容**:
+    - ヘッダーセクション（タイトル + 背景色）を削除
+    - 検索バーとNew Tagボタンをコンテンツエリアに配置
+    - リアルタイム検索フィルタリング実装（タグ名で部分一致）
+    - 検索結果0件時の適切なメッセージ表示
+    - TaskPoolの検索バーと統一されたデザイン（`bg-background`）
+  - **UI変更**:
+    - ヘッダー削除（`border-b border-border bg-card`セクション削除）
+    - 検索バー: `flex-1 bg-background`（TaskPoolと同一スタイル）
+    - 検索バーとボタンを`mb-6`で下部マージン確保
+  - **機能**:
+    - `searchQuery` signal追加
+    - `filteredTags()` computed: タグ名で小文字部分一致フィルタリング
+    - 空文字時: 全タグ表示
+    - 検索結果0件時: "No tags found" / "No tags match '{query}'" 表示
+  - **Files modified**:
+    - src/pages/TagManagementPage.tsx
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: ヘッダーセクション削除
+  - [x] DoD-2: 検索バー追加（TaskPoolと統一デザイン）
+  - [x] DoD-3: リアルタイムフィルタリング動作
+  - [x] DoD-4: 検索結果0件時の適切なメッセージ
+  - [x] DoD-5: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（970ms）
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+
+---
+
+### TASK-NEW-075: ウィンドウシャドウ調査
+- **Status**: Done
+- **Priority**: P2
+- **Component(s)**: tauri.conf.json, global CSS
+- **Maps to**
+  - REQ: REQ-0061
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: Tauriウィンドウシャドウ機能の調査とドキュメント作成
+- **Implementation Notes**:
+  - **調査項目**:
+    1. Tauri v2でのウィンドウシャドウ有効化方法 ✓
+    2. border-radiusとの互換性 ✓
+    3. プラットフォーム固有動作（macOS/Windows/Linux） ✓
+    4. 実装アプローチ ✓
+  - **成果物**: `ai-vault/TMS-0001/40_design/window-shadows-research.md` (650+ lines)
+  - **主要な発見**:
+    - Tauri v2でネイティブshadowサポート（`shadow: true/false`設定）
+    - **重大な互換性問題**: 透明ウィンドウでshadowとborder-radiusの両立は不可能
+    - macOS: 透明ウィンドウではshadow常に無効
+    - Windows: shadow有効化で1pxホワイトボーダー表示（デザイン破壊）
+    - Linux: shadow未サポート
+  - **推奨事項**:
+    - ✅ 現在の設定を維持（`shadow: false` + CSS `border-radius`）
+    - ⚠️ shadow有効化は非推奨（プラットフォーム不整合、border-radius競合）
+    - 📝 GitHub Issue #9287監視（将来的な修正可能性）
+  - **Resources**:
+    - Tauri v2公式ドキュメント
+    - GitHubイシュー/ディスカッション（#9287, #3481, #12285など）
+    - プラットフォーム固有Window API
+- **Risks**: シャドウが未サポートまたはborder-radius非互換の可能性 → **確認済み（非互換）**
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: ドキュメント作成完了（650+ lines）
+  - [x] DoD-2: 4つの調査項目全てカバー
+  - [x] DoD-3: 代替アプローチ（非サポート時）記載（Approach A-D + CSS shadow）
+  - [x] DoD-4: 実装推奨事項記載（現在設定維持を推奨）
+- **Verification**:
+  - Type: Research Documentation
+  - Evidence: ✓ window-shadows-research.md作成完了
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+
+---
+
+### TASK-NEW-076: ウィンドウシャドウ実装
+- **Status**: Done (Deprecated - No Implementation)
+- **Priority**: P2
+- **Component(s)**: tauri.conf.json, global CSS
+- **Maps to**
+  - REQ: REQ-0062
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-075
+- **Summary**: 調査結果に基づきウィンドウシャドウを実装
+- **Implementation Notes**:
+  - **Deprecated理由**: TASK-NEW-075調査結果により、実装を行わないと決定
+  - **調査結果（TASK-NEW-075）**:
+    - 透明ウィンドウとshadowとborder-radiusの両立は不可能
+    - macOS: 透明ウィンドウではshadow常に無効
+    - Windows: shadow有効化で1pxホワイトボーダー表示（デザイン破壊）
+    - 現在の設定（`shadow: false` + CSS `border-radius`）が最適と判明
+  - **決定事項**: 現在の設定を維持、shadow実装は行わない
+  - **Files to modify（実装せず）**:
+    - src-tauri/tauri.conf.json
+    - src/index.css（グローバルスタイル）
+- **Risks**: なし（実装しないため）
+- **Definition of Done (DoD)**:
+  - [x] DoD: TASK-NEW-075調査完了、実装不要と判断
+  - [x] DoD: タスクをDeprecatedとしてマーク
+- **Verification**:
+  - Type: Research-based Decision
+  - Evidence: TASK-NEW-075調査ドキュメント（650+ lines）により実装不要と結論
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+- **Note**: このタスクは非推奨（Deprecated）。TASK-NEW-075の調査により、shadow実装はborder-radiusと非互換のため実装を行わない。現在の設定（shadow無効 + CSS border-radius 8px）を維持する。
+
+---
+
+### TASK-NEW-080: Cmd+F検索ショートカット実装
+- **Status**: Done
+- **Priority**: P1
+- **Component(s)**: CompletedPage, ArchivedPage, TagManagementPage, useSearchShortcut hook
+- **Maps to**
+  - REQ: REQ-0051 (Keyboard Shortcuts)
+  - HTTP operationId: N/A
+  - Event messageId: N/A
+- **Depends on**: TASK-NEW-062 (キーボードショートカット基盤実装)
+- **Summary**: Cmd/Ctrl+Fキーボードショートカットを検索バーを持つ全ページに実装
+- **Implementation Notes**:
+  - **実装内容**:
+    1. 新規フック `useSearchShortcut` 作成（簡易版のキーボードショートカット）
+    2. CompletedPage, ArchivedPage, TagManagementPageに適用
+    3. Cmd/Ctrl+Fで各ページの検索バーにフォーカス
+  - **Hook設計**:
+    - `useSearchShortcut.ts`: シンプルな検索フォーカス専用フック
+    - `getSearchInputRef`のみを受け取る（他のタスクアクションは不要）
+    - 既存の`useKeyboardShortcuts`はTaskPage専用として維持
+  - **適用ページ**:
+    - CompletedPage: 完了タスク検索
+    - ArchivedPage: アーカイブタスク検索
+    - TagManagementPage: タグ検索
+  - **Files modified**:
+    - src/hooks/useSearchShortcut.ts (新規作成)
+    - src/pages/CompletedPage.tsx
+    - src/pages/ArchivedPage.tsx
+    - src/pages/TagManagementPage.tsx
+- **Risks**: なし
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: useSearchShortcutフック作成
+  - [x] DoD-2: CompletedPageでCmd+F動作
+  - [x] DoD-3: ArchivedPageでCmd+F動作
+  - [x] DoD-4: TagManagementPageでCmd+F動作
+  - [x] DoD-5: 入力フィールドフォーカス中はショートカット無効
+  - [x] DoD-6: フロントエンドビルド成功
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Frontend build成功（953ms）
+- **Updated**: 2025-12-31
+- **Completed**: 2025-12-31
+
+---
+
+- 2025-12-30 Added 9 new tasks (TASK-NEW-068 to TASK-NEW-076) for UI Enhancement Phase 4 (REQ-0054 to REQ-0062): Modal英語ラベル化、入力フィールド統一、Kobalte親タスクセレクター、タグセレクター改善（全候補表示・インライン作成）、作成モーダル自動フォーカス、Kobalteタグフィルター、ウィンドウシャドウ調査・実装、Task Progress: 88.6% = 78/88

@@ -1,4 +1,4 @@
-import { createSignal, onMount } from "solid-js";
+import { createSignal, createEffect, onMount } from "solid-js";
 import { taskStore, taskActions } from "../stores/taskStore";
 import { queueStore, queueActions } from "../stores/queueStore";
 import { tagsApi } from "../api/tags";
@@ -13,8 +13,10 @@ import { TaskPool } from "../components/TaskPool";
 import { QueuePanel } from "../components/QueuePanel";
 import { Dialog } from "../components/Dialog";
 import { Input } from "../components/Input";
+import { Textarea } from "../components/Textarea";
 import { Button } from "../components/Button";
 import { TagInput } from "../components/TagInput";
+import { ParentTaskSelect } from "../components/ParentTaskSelect";
 import { For } from "solid-js";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { taskSelectionStore, taskSelectionActions } from "../stores/taskSelectionStore";
@@ -30,10 +32,22 @@ export function TaskPage() {
   const [availableTags, setAvailableTags] = createSignal<Tag[]>([]);
 
   const [searchInputRef, setSearchInputRef] = createSignal<HTMLInputElement | undefined>();
+  const [createTitleInputRef, setCreateTitleInputRef] = createSignal<HTMLInputElement | undefined>();
 
   const isAnyDialogOpen = () => {
     return isCreateDialogOpen() || editingTask() !== null;
   };
+
+  // Auto-focus title input when create dialog opens
+  createEffect(() => {
+    if (isCreateDialogOpen()) {
+      const inputElement = createTitleInputRef();
+      if (inputElement) {
+        // Use setTimeout to ensure dialog is fully rendered
+        setTimeout(() => inputElement.focus(), 0);
+      }
+    }
+  });
 
   onMount(async () => {
     taskActions.loadHierarchy();
@@ -192,51 +206,37 @@ export function TaskPage() {
       <Dialog
         open={isCreateDialogOpen()}
         onOpenChange={setIsCreateDialogOpen}
-        title="新規タスク作成"
+        title="Create New Task"
       >
         <form onSubmit={handleCreate} class="space-y-4">
           <Input
-            label="タイトル"
+            label="Title"
             value={formData().title}
             onInput={(e) =>
               setFormData({ ...formData(), title: e.currentTarget.value })
             }
+            ref={setCreateTitleInputRef}
             required
           />
+          <ParentTaskSelect
+            label="Parent Task"
+            value={formData().parentId}
+            onChange={(value) => setFormData({ ...formData(), parentId: value })}
+            tasks={flattenHierarchy(taskStore.hierarchy)}
+          />
+          <Textarea
+            label="Description"
+            rows={4}
+            value={formData().description}
+            onInput={(e) =>
+              setFormData({
+                ...formData(),
+                description: e.currentTarget.value,
+              })
+            }
+          />
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium">親タスク</label>
-            <select
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              value={formData().parentId || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData(),
-                  parentId: e.currentTarget.value || undefined,
-                })
-              }
-            >
-              <option value="">なし（ルートタスク）</option>
-              <For each={flattenHierarchy(taskStore.hierarchy)}>
-                {(task) => <option value={task.id}>{task.title}</option>}
-              </For>
-            </select>
-          </div>
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium">説明</label>
-            <textarea
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              rows={4}
-              value={formData().description}
-              onInput={(e) =>
-                setFormData({
-                  ...formData(),
-                  description: e.currentTarget.value,
-                })
-              }
-            />
-          </div>
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium">タグ</label>
+            <label class="text-sm font-medium">Tags</label>
             <TagInput
               selectedTags={formData().tags || []}
               onTagsChange={(tags) => setFormData({ ...formData(), tags })}
@@ -251,9 +251,9 @@ export function TaskPage() {
               variant="secondary"
               onClick={() => setIsCreateDialogOpen(false)}
             >
-              キャンセル
+              Cancel
             </Button>
-            <Button type="submit">作成</Button>
+            <Button type="submit">Create</Button>
           </div>
         </form>
       </Dialog>
@@ -262,55 +262,37 @@ export function TaskPage() {
       <Dialog
         open={editingTask() !== null}
         onOpenChange={(open) => !open && setEditingTask(null)}
-        title="タスク編集"
+        title="Edit Task"
       >
         <form onSubmit={handleUpdate} class="space-y-4">
           <Input
-            label="タイトル"
+            label="Title"
             value={formData().title}
             onInput={(e) =>
               setFormData({ ...formData(), title: e.currentTarget.value })
             }
             required
           />
+          <ParentTaskSelect
+            label="Parent Task"
+            value={formData().parentId}
+            onChange={(value) => setFormData({ ...formData(), parentId: value })}
+            tasks={flattenHierarchy(taskStore.hierarchy)}
+            excludeTaskId={editingTask()?.id}
+          />
+          <Textarea
+            label="Description"
+            rows={4}
+            value={formData().description}
+            onInput={(e) =>
+              setFormData({
+                ...formData(),
+                description: e.currentTarget.value,
+              })
+            }
+          />
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium">親タスク</label>
-            <select
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              value={formData().parentId || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData(),
-                  parentId: e.currentTarget.value || undefined,
-                })
-              }
-            >
-              <option value="">なし（ルートタスク）</option>
-              <For
-                each={flattenHierarchy(taskStore.hierarchy).filter(
-                  (task) => task.id !== editingTask()?.id
-                )}
-              >
-                {(task) => <option value={task.id}>{task.title}</option>}
-              </For>
-            </select>
-          </div>
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium">説明</label>
-            <textarea
-              class="px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              rows={4}
-              value={formData().description}
-              onInput={(e) =>
-                setFormData({
-                  ...formData(),
-                  description: e.currentTarget.value,
-                })
-              }
-            />
-          </div>
-          <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-medium">タグ</label>
+            <label class="text-sm font-medium">Tags</label>
             <TagInput
               selectedTags={formData().tags || []}
               onTagsChange={(tags) => setFormData({ ...formData(), tags })}
@@ -325,9 +307,9 @@ export function TaskPage() {
               variant="secondary"
               onClick={() => setEditingTask(null)}
             >
-              キャンセル
+              Cancel
             </Button>
-            <Button type="submit">更新</Button>
+            <Button type="submit">Update</Button>
           </div>
         </form>
       </Dialog>

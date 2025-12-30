@@ -5,6 +5,7 @@ import { Button } from "../components/Button";
 import Pagination from "../components/Pagination";
 import { tasksApi } from "../api/tasks";
 import type { Task, PaginatedTaskResponse } from "../types/task";
+import { useSearchShortcut } from "../hooks/useSearchShortcut";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -38,6 +39,7 @@ export function CompletedPage() {
   const [loading, setLoading] = createSignal(true);
   const [currentPage, setCurrentPage] = createSignal(1);
   const [totalItems, setTotalItems] = createSignal(0);
+  const [searchInputRef, setSearchInputRef] = createSignal<HTMLInputElement | undefined>();
 
   const totalPages = createMemo(() =>
     Math.ceil(totalItems() / ITEMS_PER_PAGE)
@@ -94,6 +96,10 @@ export function CompletedPage() {
     }
   };
 
+  useSearchShortcut({
+    getSearchInputRef: searchInputRef,
+  });
+
   onMount(async () => {
     await loadCompletedTasks(1);
   });
@@ -144,6 +150,7 @@ export function CompletedPage() {
                 <SearchIcon />
               </div>
               <Input
+                ref={setSearchInputRef}
                 type="text"
                 placeholder="Search completed tasks..."
                 value={searchQuery()}

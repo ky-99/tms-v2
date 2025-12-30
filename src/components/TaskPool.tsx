@@ -306,7 +306,7 @@ export function TaskPool(props: TaskPoolProps) {
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-4">
+      <div class="flex-1 overflow-y-auto px-4 pt-4 pb-16">
         <div class="space-y-2">
           <For each={filteredTasks()}>
             {(task) => (

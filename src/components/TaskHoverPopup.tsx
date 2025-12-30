@@ -1,6 +1,6 @@
 import { Popover as KobaltePopover } from "@kobalte/core/popover";
 import { JSX, Show, For } from "solid-js";
-import { cn } from "../lib/utils";
+import { cn, truncateText } from "../lib/utils";
 import type { Task } from "../types/task";
 import type { Tag } from "../types/tag";
 
@@ -42,8 +42,8 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
           {/* Description */}
           <div class="mb-2">
             <p class="text-xs font-medium text-muted-foreground mb-1">Description:</p>
-            <p class="text-sm text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
-              {props.task.description || "No description"}
+            <p class="text-sm text-foreground whitespace-pre-wrap break-words max-h-32 overflow-y-auto" title={props.task.description || "No description"}>
+              {props.task.description ? truncateText(props.task.description, 150) : "No description"}
             </p>
           </div>
 
@@ -62,8 +62,9 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
                           "background-color": color ? `${color}20` : "#e5e7eb",
                           color: color || "#374151",
                         }}
+                        title={tagName}
                       >
-                        {tagName}
+                        {truncateText(tagName, 20)}
                       </span>
                     );
                   }}

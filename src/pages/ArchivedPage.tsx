@@ -8,6 +8,7 @@ import Pagination from "../components/Pagination";
 import { tasksApi } from "../api/tasks";
 import type { Task, PaginatedTaskResponse } from "../types/task";
 import { truncateText } from "../lib/utils";
+import { useSearchShortcut } from "../hooks/useSearchShortcut";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -61,6 +62,7 @@ export function ArchivedPage() {
   const [totalItems, setTotalItems] = createSignal(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = createSignal(false);
   const [taskToDelete, setTaskToDelete] = createSignal<Task | null>(null);
+  const [searchInputRef, setSearchInputRef] = createSignal<HTMLInputElement | undefined>();
 
   const totalPages = createMemo(() =>
     Math.ceil(totalItems() / ITEMS_PER_PAGE)
@@ -116,6 +118,10 @@ export function ArchivedPage() {
       handleSearch();
     }
   };
+
+  useSearchShortcut({
+    getSearchInputRef: searchInputRef,
+  });
 
   onMount(async () => {
     await loadArchivedTasks(1);
@@ -195,6 +201,7 @@ export function ArchivedPage() {
                 <SearchIcon />
               </div>
               <Input
+                ref={setSearchInputRef}
                 type="text"
                 placeholder="Search archived tasks..."
                 value={searchQuery()}

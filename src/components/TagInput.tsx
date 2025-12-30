@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
-import { cn } from "../lib/utils";
+import { cn, truncateText } from "../lib/utils";
 import { Button } from "./Button";
-import { Input } from "./Input";
+import { TagSelect } from "./TagSelect";
 import type { Tag } from "../types/tag";
 
 interface TagInputProps {
@@ -12,19 +12,11 @@ interface TagInputProps {
   placeholder?: string;
 }
 
-// Icon components
+// Icon component for removing tags
 function XIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14M12 5v14" />
     </svg>
   );
 }
@@ -37,90 +29,43 @@ function PlusIcon() {
  * - インライン新規タグ作成（名前+Ark UIカラーピッカー）
  */
 export function TagInput(props: TagInputProps) {
-  const [inputValue, setInputValue] = createSignal("");
-  const [isAutocompleteOpen, setIsAutocompleteOpen] = createSignal(false);
   const [isCreateMode, setIsCreateMode] = createSignal(false);
+  const [newTagName, setNewTagName] = createSignal("");
   const [selectedColor, setSelectedColor] = createSignal("#3b82f6");
   const [isCreating, setIsCreating] = createSignal(false);
 
-  // Filter available tags based on input and exclude already selected tags
-  const filteredSuggestions = () => {
-    const input = inputValue().toLowerCase().trim();
-    if (!input) return [];
-
-    return props.availableTags.filter(
-      (tag) =>
-        tag.name.toLowerCase().includes(input) &&
-        !props.selectedTags.includes(tag.name)
-    );
-  };
-
-  // Check if input matches an existing tag exactly
-  const exactMatch = () => {
-    const input = inputValue().trim();
-    return props.availableTags.find(
-      (tag) => tag.name.toLowerCase() === input.toLowerCase()
-    );
-  };
-
-  // Check if we should show "Create new tag" option
-  const shouldShowCreateOption = () => {
-    const input = inputValue().trim();
-    return (
-      input.length > 0 &&
-      !exactMatch() &&
-      !props.selectedTags.some((t) => t.toLowerCase() === input.toLowerCase())
-    );
-  };
-
-  // Add tag by name
-  const addTag = (tagName: string) => {
-    if (!props.selectedTags.includes(tagName)) {
+  // Toggle tag selection
+  const toggleTag = (tagName: string) => {
+    if (props.selectedTags.includes(tagName)) {
+      // Remove tag
+      props.onTagsChange(props.selectedTags.filter((t) => t !== tagName));
+    } else {
+      // Add tag
       props.onTagsChange([...props.selectedTags, tagName]);
     }
-    setInputValue("");
-    setIsAutocompleteOpen(false);
-    setIsCreateMode(false);
   };
 
-  // Remove tag by name
+  // Remove tag by name (for chip removal)
   const removeTag = (tagName: string) => {
     props.onTagsChange(props.selectedTags.filter((t) => t !== tagName));
   };
 
-  // Handle input change
-  const handleInputChange = (value: string) => {
-    setInputValue(value);
-    setIsAutocompleteOpen(value.length > 0);
-    setIsCreateMode(false);
-  };
-
-  // Handle Enter key
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const match = exactMatch();
-      if (match) {
-        addTag(match.name);
-      } else if (shouldShowCreateOption()) {
-        setIsCreateMode(true);
-      }
-    } else if (e.key === "Escape") {
-      setInputValue("");
-      setIsAutocompleteOpen(false);
-      setIsCreateMode(false);
-    }
+  // Open create mode
+  const handleOpenCreateMode = () => {
+    setIsCreateMode(true);
+    setNewTagName("");
   };
 
   // Create new tag
   const handleCreateTag = async () => {
-    const tagName = inputValue().trim();
+    const tagName = newTagName().trim();
     if (!tagName || !props.onCreateTag) return;
 
     setIsCreating(true);
     try {
       await props.onCreateTag(tagName, selectedColor());
-      addTag(tagName);
+      toggleTag(tagName);
+      setNewTagName("");
       setSelectedColor("#3b82f6"); // Reset to default blue
     } catch (error) {
       console.error("Failed to create tag:", error);
@@ -150,8 +95,9 @@ export function TagInput(props: TagInputProps) {
                     "background-color": color ? `${color}20` : "#e5e7eb",
                     color: color || "#374151",
                   }}
+                  title={tagName}
                 >
-                  <span>{tagName}</span>
+                  <span>{truncateText(tagName, 30)}</span>
                   <button
                     type="button"
                     onClick={() => removeTag(tagName)}
@@ -167,96 +113,54 @@ export function TagInput(props: TagInputProps) {
         </div>
       </Show>
 
-      {/* Input field with autocomplete */}
-      <div class="relative">
-        <Input
-          type="text"
-          placeholder={props.placeholder || "Add tags..."}
-          value={inputValue()}
-          onInput={(e) => handleInputChange(e.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-          class="w-full"
-        />
+      {/* Tag selector using Kobalte */}
+      <TagSelect
+        selectedTags={props.selectedTags}
+        availableTags={props.availableTags}
+        onToggleTag={toggleTag}
+        onOpenCreateMode={props.onCreateTag ? handleOpenCreateMode : undefined}
+        placeholder={props.placeholder}
+      />
 
-        {/* Autocomplete dropdown */}
-        <Show when={isAutocompleteOpen() && (filteredSuggestions().length > 0 || shouldShowCreateOption())}>
-          <div class="absolute z-50 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
-            <div class="max-h-60 overflow-y-auto p-1">
-              {/* Existing tag suggestions */}
-              <For each={filteredSuggestions()}>
-                {(tag) => (
-                  <button
-                    type="button"
-                    onClick={() => addTag(tag.name)}
-                    class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-secondary transition-colors text-left"
-                  >
-                    <Show when={tag.color}>
-                      <div
-                        class="h-3 w-3 rounded-full flex-shrink-0"
-                        style={{ "background-color": tag.color }}
-                      />
-                    </Show>
-                    <span>{tag.name}</span>
-                    <span class="ml-auto text-xs text-muted-foreground">({tag.usageCount})</span>
-                  </button>
-                )}
-              </For>
-
-              {/* Create new tag option */}
-              <Show when={shouldShowCreateOption()}>
-                <button
-                  type="button"
-                  onClick={() => setIsCreateMode(true)}
-                  class="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm hover:bg-secondary transition-colors text-left border-t border-border"
-                >
-                  <PlusIcon />
-                  <span>Create "{inputValue().trim()}"</span>
-                </button>
-              </Show>
-            </div>
-          </div>
-        </Show>
-      </div>
-
-      {/* Create tag dialog (inline) */}
+      {/* Create tag form - one line inline layout */}
       <Show when={isCreateMode()}>
-        <div class="rounded-md border border-border bg-card p-4 space-y-4">
-          <div>
-            <p class="text-sm font-medium mb-3">Create new tag: "{inputValue().trim()}"</p>
-            <label class="block text-sm font-medium text-foreground mb-2">Color</label>
-            <div class="flex items-center gap-3">
-              <input
-                type="color"
-                value={selectedColor()}
-                onInput={(e) => setSelectedColor(e.currentTarget.value)}
-                class="h-10 w-20 cursor-pointer rounded border border-input bg-background"
-              />
-              <span class="text-sm text-muted-foreground">{selectedColor()}</span>
-            </div>
-          </div>
-
-          <div class="flex gap-2">
-            <Button
-              type="button"
-              onClick={handleCreateTag}
-              disabled={isCreating()}
-              class="flex-1"
-            >
-              {isCreating() ? "Creating..." : "Create"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsCreateMode(false);
-                setInputValue("");
-                setIsAutocompleteOpen(false);
-              }}
-              class="flex-1"
-            >
-              Cancel
-            </Button>
-          </div>
+        <div class="flex items-center gap-2 p-2 rounded-md border border-border bg-card/50">
+          <input
+            type="text"
+            value={newTagName()}
+            onInput={(e) => setNewTagName(e.currentTarget.value)}
+            placeholder="Tag name..."
+            class="flex-1 px-2 py-1 border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring text-sm placeholder:text-muted-foreground"
+          />
+          <input
+            type="color"
+            value={selectedColor()}
+            onInput={(e) => setSelectedColor(e.currentTarget.value)}
+            class="h-8 w-12 cursor-pointer rounded border border-input bg-background"
+            title="Pick color"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setIsCreateMode(false);
+              setNewTagName("");
+            }}
+            class="px-2 py-1 rounded-md border border-input bg-background hover:bg-secondary transition-colors"
+            title="Cancel"
+          >
+            <XIcon />
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateTag}
+            disabled={isCreating() || !newTagName().trim()}
+            class="px-2 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isCreating() ? "Creating..." : "Create"}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
         </div>
       </Show>
     </div>

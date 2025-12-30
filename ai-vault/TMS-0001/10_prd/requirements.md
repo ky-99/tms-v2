@@ -72,8 +72,8 @@
 | REQ-0039 | search_tasks API軽量化 | SHOULD | Done | Backend | REQ-0005 |
 | REQ-0040 | タグ管理画面 | SHOULD | Done | UI | REQ-0029 |
 | REQ-0041 | Completedページ子タスク表示改善 | COULD | Done | UI | REQ-0013 |
-| REQ-0042 | 作成/編集モーダルUI改善（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0002 |
-| REQ-0043 | タグフィルターUI改善（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0029 |
+| REQ-0042 | 作成/編集モーダルUI改善（未実装、デザイン要件待ち） | COULD | Deprecated | UI | REQ-0002 |
+| REQ-0043 | タグフィルターUI改善（未実装、デザイン要件待ち） | COULD | Deprecated | UI | REQ-0029 |
 | REQ-0044 | タグ作成画面改良（未実装、デザイン要件待ち） | COULD | Deferred | UI | REQ-0040 |
 | REQ-0045 | タググルーピング機能（未実装、デザイン要件待ち） | WONT | Deferred | UI/Backend | REQ-0029 |
 | REQ-0046 | アーカイブボタン表示変更 | SHOULD | Done | UI | REQ-0016 |
@@ -84,6 +84,15 @@
 | REQ-0051 | キーボードショートカット機能 | SHOULD | Planned | UI | - |
 | REQ-0052 | TaskHoverPopup説明文表示制限 | SHOULD | Planned | UI | REQ-0015 |
 | REQ-0053 | タブ領域ドラッグ可能化 | COULD | Planned | UI/Platform | - |
+| REQ-0054 | Modal Labels English Localization | SHOULD | Draft | UI | REQ-0002 |
+| REQ-0055 | Standardized Input Design | SHOULD | Draft | UI | REQ-0054 |
+| REQ-0056 | Kobalte Parent Selector | SHOULD | Draft | UI | REQ-0003, REQ-0055 |
+| REQ-0057 | Tag Selector - Show All Candidates | SHOULD | Draft | UI | REQ-0029, REQ-0055 |
+| REQ-0058 | Tag Selector - Inline Tag Creation | SHOULD | Draft | UI | REQ-0057 |
+| REQ-0059 | Auto-focus Title on Create Modal | SHOULD | Draft | UI | REQ-0002 |
+| REQ-0060 | Kobalte Tag Filter Component | SHOULD | Draft | UI | REQ-0030 |
+| REQ-0061 | Window Shadows Research | COULD | Draft | UI/Platform | REQ-0035 |
+| REQ-0062 | Window Border Radius with Shadows | COULD | Draft | UI/Platform | REQ-0061 |
 
 **Priority**: MUST / SHOULD / COULD / WONT
 **Status**: Draft / Approved / Implementing / Done / Hold / Deprecated / Deferred / Planned
@@ -967,7 +976,7 @@
 
 ### REQ-0042: 作成/編集モーダルUI改善（未実装、デザイン要件待ち）
 - **Priority**: COULD
-- **Status**: Deferred
+- **Status**: Deprecated
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: タスク作成/編集ダイアログを開く
@@ -988,7 +997,7 @@
 
 ### REQ-0043: タグフィルターUI改善（未実装、デザイン要件待ち）
 - **Priority**: COULD
-- **Status**: Deferred
+- **Status**: Deprecated
 - **Area**: UI
 - **Actor**: User
 - **Preconditions**: タグフィルターを使用
@@ -1234,6 +1243,199 @@
 
 ---
 
+### REQ-0054: Modal Labels English Localization
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Task create/edit modal is displayed
+- **Trigger**: User opens task creation or edit modal
+- **Acceptance (the only one)**:
+  - **Given**: Task create/edit modal is open
+  - **When**: User views the modal
+  - **Then**: All labels (title, description, tags, parent, status) are displayed in English instead of Japanese
+- **Negative/Boundary**: N/A
+- **Depends on**: REQ-0002
+- **Notes**: Current implementation has Japanese labels. Need to change to English for consistency.
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskPage (Dialog component)
+  - Task: TBD
+
+---
+
+### REQ-0055: Standardized Input Design
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Task create/edit modal is displayed
+- **Trigger**: User opens task creation or edit modal
+- **Acceptance (the only one)**:
+  - **Given**: Task create/edit modal is open
+  - **When**: User views input fields (title, description, tags)
+  - **Then**: All input fields have consistent design (border, padding, focus states, typography)
+- **Negative/Boundary**: N/A
+- **Depends on**: REQ-0054
+- **Notes**: Ensure visual consistency across all form inputs
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: Input, Textarea components
+  - Task: TBD
+
+---
+
+### REQ-0056: Kobalte Parent Selector
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Task create/edit modal is displayed
+- **Trigger**: User clicks parent task selector
+- **Acceptance (the only one)**:
+  - **Given**: Task create/edit modal is open
+  - **When**: User clicks parent task selector
+  - **Then**: Kobalte Select component displays list of available parent tasks with search/filter capability
+- **Negative/Boundary**: Empty state when no parent tasks available
+- **Depends on**: REQ-0003, REQ-0055
+- **Notes**: Replace current simple select with Kobalte Select for better UX
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskPage (Dialog component), Kobalte Select
+  - Task: TBD
+
+---
+
+### REQ-0057: Tag Selector - Show All Candidates
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Task create/edit modal is displayed
+- **Trigger**: User views or interacts with tag selector
+- **Acceptance (the only one)**:
+  - **Given**: Task create/edit modal is open
+  - **When**: User views tag selector
+  - **Then**: All available tags are displayed at once (not just selected tags), allowing user to see and select from complete tag list
+- **Negative/Boundary**: Display message when no tags exist
+- **Depends on**: REQ-0029, REQ-0055
+- **Notes**: Current implementation only shows selected tags. Should show all available tags for easy selection.
+- **Trace Hooks (optional)**:
+  - API: listTags
+  - Component: TagInput
+  - Task: TBD
+
+---
+
+### REQ-0058: Tag Selector - Inline Tag Creation
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: Task create/edit modal with tag selector is displayed
+- **Trigger**: User wants to create new tag within task modal
+- **Acceptance (the only one)**:
+  - **Given**: Task create/edit modal is open with tag selector visible
+  - **When**: User clicks create tag button and enters new tag name
+  - **Then**: New tag is created inline without leaving modal, and create/cancel buttons match other modal button design
+- **Negative/Boundary**:
+  - Validation: tag name cannot be empty or duplicate
+  - Cancel button discards new tag creation
+- **Depends on**: REQ-0057
+- **Notes**: Allows quick tag creation without navigating to tags management page
+- **Trace Hooks (optional)**:
+  - API: createTag
+  - Component: TagInput
+  - Task: TBD
+
+---
+
+### REQ-0059: Auto-focus Title on Create Modal
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: User opens task creation modal
+- **Trigger**: Task creation modal opens
+- **Acceptance (the only one)**:
+  - **Given**: User clicks "New Task" or similar creation button
+  - **When**: Create modal opens
+  - **Then**: Title input field is automatically focused (cursor ready for input). Update modal should NOT auto-focus.
+- **Negative/Boundary**: Only applies to create modal, not edit modal
+- **Depends on**: REQ-0002
+- **Notes**: Improves UX by eliminating extra click for most common action
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskPage (Dialog component)
+  - Task: TBD
+
+---
+
+### REQ-0060: Kobalte Tag Filter Component
+- **Priority**: SHOULD
+- **Status**: Draft
+- **Area**: UI
+- **Actor**: User
+- **Preconditions**: User is on task pool page
+- **Trigger**: User clicks tag filter UI
+- **Acceptance (the only one)**:
+  - **Given**: Task pool page is displayed
+  - **When**: User interacts with tag filter
+  - **Then**: Kobalte-based component (e.g., Popover, Checkbox group) replaces current simple checkbox design with better visual design and UX
+- **Negative/Boundary**: Design should be cleaner and more intuitive than current checkbox list
+- **Depends on**: REQ-0030
+- **Notes**: Current simple checkbox design is not good. Replace with Kobalte components for modern UI.
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: TaskPool, TagFilter
+  - Task: TBD
+
+---
+
+### REQ-0061: Window Shadows Research
+- **Priority**: COULD
+- **Status**: Draft
+- **Area**: UI/Platform
+- **Actor**: Developer
+- **Preconditions**: None
+- **Trigger**: Investigation task initiated
+- **Acceptance (the only one)**:
+  - **Given**: Current window has global CSS border-radius applied
+  - **When**: Research is conducted on Tauri window shadows capabilities
+  - **Then**: Documentation is produced covering: (1) How to enable window shadows in Tauri, (2) Compatibility with border-radius, (3) Platform-specific behaviors (macOS/Windows/Linux), (4) Implementation approach
+- **Negative/Boundary**: If window shadows not supported or compatible, document alternative approaches
+- **Depends on**: REQ-0035
+- **Notes**: Need to research if window-shadows can work with border-radius for better visual appearance
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: tauri.conf.json, global CSS
+  - Task: TBD
+
+---
+
+### REQ-0062: Window Border Radius with Shadows
+- **Priority**: COULD
+- **Status**: Draft
+- **Area**: UI/Platform
+- **Actor**: User
+- **Preconditions**: Window shadows research completed (REQ-0061)
+- **Trigger**: Application window is displayed
+- **Acceptance (the only one)**:
+  - **Given**: Application window is displayed
+  - **When**: User views the window
+  - **Then**: Window has both border-radius and shadows applied (if supported), creating modern, elevated appearance
+- **Negative/Boundary**:
+  - Platform-specific behavior may vary
+  - If shadows not supported, maintain border-radius only
+- **Depends on**: REQ-0061
+- **Notes**: Implementation based on research findings from REQ-0061
+- **Trace Hooks (optional)**:
+  - API: N/A
+  - Component: tauri.conf.json, global CSS
+  - Task: TBD
+
+---
+
 ## 4. Requirement Split / Merge Log
 > 粒度調整の履歴を残す（後工程での参照ズレを防ぐ）
 
@@ -1254,3 +1456,4 @@
 - 2025-12-29 REQ-0038実装完了 - キュー一括操作機能の実装（Complete All/Clear All）
 - 2025-12-30 要件インデックステーブル更新 - REQ-0032〜REQ-0046を追加（過去に定義されていたが索引に未反映だったもの）
 - 2025-12-30 追加要件定義 (REQ-0047〜REQ-0053) - エラーハンドリング統一、Completed/Archivedページ検索API化、タグ/タスク複製機能、キーボードショートカット、TaskHoverPopup改善、タブ領域ドラッグ機能
+- 2025-12-30 追加要件定義 (REQ-0054〜REQ-0062) - Modal/Tag UI改善第4弾：英語ラベル化、入力フィールド統一、Kobalte Parent Selector、タグセレクター改善（全候補表示・インライン作成）、タイトル自動フォーカス、Kobalteタグフィルター、ウィンドウシャドウ研究・実装
