@@ -88,65 +88,53 @@ export function Header() {
 
   return (
     <header class="border-b border-border bg-background">
-      <nav class="flex h-12 items-end px-4">
-        <A href="/" class="group">
+      <nav class="flex h-12 items-center px-4 gap-2 relative">
+        <A href="/" class="relative z-10">
           <div
-            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
+            class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
               pathname() === "/"
-                ? "bg-card text-primary border-t-2 border-t-primary"
-                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
+                ? "text-foreground bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <ListTodoIcon />
             <span class="text-sm font-medium">Tasks</span>
-            <Show when={pathname() === "/"}>
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
-            </Show>
           </div>
         </A>
-        <A href="/tags" class="group -ml-2">
+        <A href="/tags" class="relative z-10">
           <div
-            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
+            class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
               pathname() === "/tags"
-                ? "bg-card text-primary border-t-2 border-t-primary"
-                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
+                ? "text-foreground bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <TagIcon />
             <span class="text-sm font-medium">Tags</span>
-            <Show when={pathname() === "/tags"}>
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
-            </Show>
           </div>
         </A>
-        <A href="/completed" class="group -ml-2">
+        <A href="/completed" class="relative z-10">
           <div
-            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
+            class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
               pathname() === "/completed"
-                ? "bg-card text-primary border-t-2 border-t-primary"
-                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
+                ? "text-foreground bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <CheckCircle2Icon />
             <span class="text-sm font-medium">Completed</span>
-            <Show when={pathname() === "/completed"}>
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
-            </Show>
           </div>
         </A>
-        <A href="/archive" class="group -ml-2">
+        <A href="/archive" class="relative z-10">
           <div
-            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
+            class={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
               pathname() === "/archive"
-                ? "bg-card text-primary border-t-2 border-t-primary"
-                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
+                ? "text-foreground bg-primary/10"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <ArchiveIcon />
             <span class="text-sm font-medium">Archive</span>
-            <Show when={pathname() === "/archive"}>
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
-            </Show>
           </div>
         </A>
         {/* Drag region for empty header space */}
