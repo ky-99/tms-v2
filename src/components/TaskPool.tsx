@@ -18,7 +18,7 @@ interface TaskPoolProps {
   selectedTaskId: string | null;
   queueTaskIds: Set<string>;
   availableTags: Tag[];
-  searchInputRef?: HTMLInputElement;
+  onSearchInputRef?: (el: HTMLInputElement) => void;
 }
 
 // Icon components
@@ -253,7 +253,7 @@ export function TaskPool(props: TaskPoolProps) {
               <SearchIcon />
             </div>
             <Input
-              ref={props.searchInputRef}
+              ref={props.onSearchInputRef}
               type="text"
               placeholder="Search tasks..."
               value={searchQuery()}
@@ -320,12 +320,13 @@ export function TaskPool(props: TaskPoolProps) {
                     props.onTaskSelect(task);
                   }}
                   class={cn(
-                    "group flex items-center gap-3 rounded-lg bg-card p-3 transition-colors select-none",
+                    "group grid grid-cols-[auto_auto_1fr_auto] gap-3 items-center rounded-lg p-3 transition-colors select-none border outline-none",
                     task.status === "completed" && "opacity-60",
-                    props.selectedTaskId === task.id && "ring-2 ring-primary",
-                    props.queueTaskIds.has(task.id)
-                      ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
-                      : "hover:bg-secondary/50",
+                    props.selectedTaskId === task.id
+                      ? "bg-blue-500/10 border-blue-500/20"
+                      : props.queueTaskIds.has(task.id)
+                        ? "bg-primary/10 border-primary/20 hover:bg-primary/5"
+                        : "bg-card border-transparent hover:bg-secondary/50",
                     task.children && task.children.length > 0 && "cursor-pointer"
                   )}
                 >
@@ -344,18 +345,18 @@ export function TaskPool(props: TaskPoolProps) {
                     <ProgressCircle progress={calculateProgress(task)} />
                   </Show>
 
-                  <TaskHoverPopup task={task} availableTags={props.availableTags}>
-                    <span
-                      class={cn(
-                        "text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate block max-w-full",
-                        task.status === "completed" && "line-through"
-                      )}
-                    >
-                      {task.title}
-                    </span>
-                  </TaskHoverPopup>
-
-                  <div class="flex-1"></div>
+                  <div class="min-w-0 overflow-hidden">
+                    <TaskHoverPopup task={task} availableTags={props.availableTags}>
+                      <span
+                        class={cn(
+                          "block text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors truncate",
+                          task.status === "completed" && "line-through"
+                        )}
+                      >
+                        {task.title}
+                      </span>
+                    </TaskHoverPopup>
+                  </div>
 
                   <div class="flex h-8 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <Show when={task.status === "draft"}>
@@ -406,27 +407,28 @@ export function TaskPool(props: TaskPoolProps) {
                         <div
                           onClick={() => props.onTaskSelect(child)}
                           class={cn(
-                            "group flex items-center gap-3 rounded-lg bg-card p-2.5 transition-colors cursor-pointer",
+                            "group grid grid-cols-[auto_1fr_auto] gap-3 items-center rounded-lg p-2.5 transition-colors cursor-pointer border outline-none",
                             child.status === "completed" && "opacity-60",
-                            props.selectedTaskId === child.id && "ring-2 ring-primary",
-                            props.queueTaskIds.has(child.id)
-                              ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
-                              : "hover:bg-secondary/50"
+                            props.selectedTaskId === child.id
+                              ? "bg-blue-500/10 border-blue-500/20"
+                              : props.queueTaskIds.has(child.id)
+                                ? "bg-primary/10 border-primary/20 hover:bg-primary/5"
+                                : "bg-card border-transparent hover:bg-secondary/50"
                           )}
                         >
                           {getStatusIcon(child.status)}
-                          <TaskHoverPopup task={child} availableTags={props.availableTags}>
-                            <span
-                              class={cn(
-                                "text-sm text-foreground cursor-pointer hover:text-primary transition-colors truncate block max-w-full",
-                                child.status === "completed" && "line-through"
-                              )}
-                            >
-                              {child.title}
-                            </span>
-                          </TaskHoverPopup>
-
-                          <div class="flex-1"></div>
+                          <div class="min-w-0 overflow-hidden">
+                            <TaskHoverPopup task={child} availableTags={props.availableTags}>
+                              <span
+                                class={cn(
+                                  "block text-sm text-foreground cursor-pointer hover:text-primary transition-colors truncate",
+                                  child.status === "completed" && "line-through"
+                                )}
+                              >
+                                {child.title}
+                              </span>
+                            </TaskHoverPopup>
+                          </div>
 
                           <div class="flex h-8 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <Show when={child.status === "draft"}>

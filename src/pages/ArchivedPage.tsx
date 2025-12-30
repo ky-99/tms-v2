@@ -7,6 +7,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import Pagination from "../components/Pagination";
 import { tasksApi } from "../api/tasks";
 import type { Task, PaginatedTaskResponse } from "../types/task";
+import { truncateText } from "../lib/utils";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -241,18 +242,18 @@ export function ArchivedPage() {
                           <div class="absolute -left-[27px] top-2 h-3 w-3 rounded-full border-2 border-background bg-muted-foreground" />
 
                           <Card class="border-border bg-card p-4 transition-colors hover:bg-secondary/30">
-                            <div class="flex items-start justify-between gap-4">
-                              <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                  <div class="text-muted-foreground">
+                            <div class="grid grid-cols-[1fr_auto] gap-4 items-start">
+                              <div class="min-w-0">
+                                <div class="flex items-center gap-2 min-w-0">
+                                  <div class="text-muted-foreground shrink-0">
                                     <ArchiveIcon />
                                   </div>
-                                  <h3 class="font-medium text-foreground truncate">
+                                  <h3 class="font-medium text-foreground truncate min-w-0">
                                     {task.parentTitle ? `@${task.parentTitle}/${task.title}` : task.title}
                                   </h3>
                                 </div>
                                 <Show when={task.description}>
-                                  <p class="mt-1 text-sm text-muted-foreground">
+                                  <p class="mt-1 text-sm text-muted-foreground break-words">
                                     {task.description}
                                   </p>
                                 </Show>
@@ -304,7 +305,7 @@ export function ArchivedPage() {
           open={deleteDialogOpen()}
           onOpenChange={setDeleteDialogOpen}
           title="Permanently Delete Task"
-          description={`This action cannot be undone. To confirm, please type the task title: "${taskToDelete()?.title || ''}"`}
+          description={`This action cannot be undone. To confirm, please type the task title: "${truncateText(taskToDelete()?.title || '', 50)}"`}
           confirmText="Delete Permanently"
           cancelText="Cancel"
           variant="destructive"

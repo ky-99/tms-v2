@@ -54,6 +54,14 @@ export interface CreateTaskRequest {
 }
 
 /**
+ * タスク複製リクエスト
+ */
+export interface DuplicateTaskRequest {
+  taskId: string;
+  newTitle?: string;
+}
+
+/**
  * タスク更新リクエスト
  */
 export interface UpdateTaskRequest {

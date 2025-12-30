@@ -25,7 +25,7 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
   return (
     <KobaltePopover placement="top">
       <KobaltePopover.Trigger
-        class="outline-none focus:outline-none"
+        class="outline-none focus:outline-none inline-block max-w-full"
         onClick={(e: MouseEvent) => e.stopPropagation()}
       >
         {props.children}
@@ -42,7 +42,7 @@ export function TaskHoverPopup(props: TaskHoverPopupProps) {
           {/* Description */}
           <div class="mb-2">
             <p class="text-xs font-medium text-muted-foreground mb-1">Description:</p>
-            <p class="text-sm text-foreground whitespace-pre-wrap">
+            <p class="text-sm text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
               {props.task.description || "No description"}
             </p>
           </div>

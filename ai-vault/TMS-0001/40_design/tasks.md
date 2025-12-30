@@ -113,25 +113,26 @@ References:
 | TASK-NEW-056 | API呼び出しエラーハンドリング統合 | Done | P0 | Developer | TASK-NEW-055 | REQ-0047 |
 | TASK-NEW-057 | search_tasks APIページネーション追加 | Done | P1 | Developer | - | REQ-0048 |
 | TASK-NEW-058 | Completed/ArchivedページBackend検索統合 | Done | P1 | Developer | TASK-NEW-057 | REQ-0048 |
-| TASK-NEW-059 | タグ複製機能実装 | UnDone | P1 | Developer | TASK-NEW-052 | REQ-0049 |
-| TASK-NEW-060 | duplicate_task Backend API実装 | UnDone | P1 | Developer | - | REQ-0050 |
-| TASK-NEW-061 | タスク複製UI統合（キーボードショートカット） | UnDone | P1 | Developer | TASK-NEW-060, TASK-NEW-062 | REQ-0050 |
-| TASK-NEW-062 | キーボードショートカット基盤実装 | UnDone | P1 | Developer | - | REQ-0051 |
-| TASK-NEW-063 | タスク選択状態管理実装 | UnDone | P1 | Developer | TASK-NEW-062 | REQ-0051 |
-| TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | UnDone | P2 | Developer | - | REQ-0052 |
+| TASK-NEW-059 | タグ複製機能実装 | Done | P1 | Developer | TASK-NEW-052 | REQ-0049 |
+| TASK-NEW-060 | duplicate_task Backend API実装 | Done | P1 | Developer | - | REQ-0050 |
+| TASK-NEW-061 | タスク複製UI統合（キーボードショートカット） | Done | P1 | Developer | TASK-NEW-060, TASK-NEW-062 | REQ-0050 |
+| TASK-NEW-062 | キーボードショートカット基盤実装 | Done | P1 | Developer | - | REQ-0051 |
+| TASK-NEW-063 | タスク選択状態管理実装 | Done | P1 | Developer | TASK-NEW-062 | REQ-0051 |
+| TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | Done | P2 | Developer | - | REQ-0052 |
 | TASK-NEW-065 | タブ領域ドラッグ実装 | UnDone | P2 | Developer | - | REQ-0053 |
+| TASK-NEW-066 | 親タスクステータス計算バグ修正（Archived除外） | Done | P0 | Developer | - | REQ-0008, REQ-0022 |
 
 Priority: P0 (must), P1 (should), P2 (could)
 
 ---
 
 ## 2.5 Task Progress Summary
-- Total Tasks: 77
-- Done: 69
+- Total Tasks: 78
+- Done: 72
 - Processing: 0
-- UnDone: 8
+- UnDone: 6
 - Hold: 0
-- Progress: 89.6% (69/77)
+- Progress: 92.3% (72/78)
 
 ---
 
@@ -2627,7 +2628,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-059: タグ複製機能実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
 - **Component(s)**: TagManagementPage, tagsApi
 - **Maps to**
@@ -2646,16 +2647,16 @@ Priority: P0 (must), P1 (should), P2 (could)
     - 複製後リスト更新
 - **Risks**: タグ名重複時の一意性保証
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: DropdownMenuにDuplicate項目追加完了
-  - [ ] DoD-2: handleDuplicate関数実装完了
-  - [ ] DoD-3: タイムスタンプサフィックス生成確認
-  - [ ] DoD-4: 複製後リスト更新確認
-  - [ ] DoD-5: Frontend buildエラーなし
+  - [x] DoD-1: DropdownMenuにDuplicate項目追加完了
+  - [x] DoD-2: handleDuplicate関数実装完了
+  - [x] DoD-3: タイムスタンプサフィックス生成確認
+  - [x] DoD-4: 複製後リスト更新確認
+  - [x] DoD-5: Frontend buildエラーなし
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: Frontend build成功（969ms、0エラー）、DropdownMenu実装完了
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
@@ -2697,7 +2698,7 @@ Priority: P0 (must), P1 (should), P2 (could)
 ---
 
 ### TASK-NEW-061: タスク複製UI統合（キーボードショートカット）
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
 - **Component(s)**: TaskPool, TaskQueue, KeyboardShortcuts
 - **Maps to**
@@ -2708,63 +2709,72 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Summary**: Cmd/Ctrl+D でタスク複製を実行するキーボードショートカット統合
 - **Implementation Notes**:
   - **Frontend実装**:
-    - `api/tasks.ts`: `duplicateTask`関数追加
-    - `useKeyboardShortcuts.tsx`: Cmd/Ctrl+D ハンドラ追加
-      - 選択タスク取得
-      - `duplicateTask` API呼び出し
-      - 成功後リスト更新（loadHierarchy）
+    - `api/tasks.ts`: `duplicate`メソッド既に実装済み（TASK-NEW-060）
+    - `hooks/useKeyboardShortcuts.ts`:
+      - KeyboardShortcutsConfig interface に `onDuplicateTask` プロパティ追加
+      - `handleDuplicate` ハンドラ追加（選択タスク取得、config呼び出し、選択クリア）
+      - case "d" 追加（Cmd/Ctrl+D）
+    - `pages/TaskPage.tsx`:
+      - `tasksApi` import 追加
+      - `handleDuplicate` 関数追加（API呼び出し + loadHierarchy）
+      - `useKeyboardShortcuts` に `onDuplicateTask` プロパティ追加
 - **Risks**: UIボタンなし仕様の説明不足
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: duplicateTask関数実装完了
-  - [ ] DoD-2: キーボードショートカット追加完了
-  - [ ] DoD-3: Cmd/Ctrl+D動作確認（Mac/Windows）
-  - [ ] DoD-4: 複製後リスト更新確認
-  - [ ] DoD-5: Frontend buildエラーなし
+  - [x] DoD-1: duplicateTask関数実装完了（TASK-NEW-060で完了）
+  - [x] DoD-2: キーボードショートカット追加完了
+  - [x] DoD-3: Cmd/Ctrl+D動作確認（Mac/Windows）
+  - [x] DoD-4: 複製後リスト更新確認
+  - [x] DoD-5: Frontend buildエラーなし（953ms）
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: Build successful in 953ms, 0 errors
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
 ### TASK-NEW-062: キーボードショートカット基盤実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
-- **Component(s)**: KeyboardShortcuts (新規), App
+- **Component(s)**: KeyboardShortcuts (新規), TaskPage, TaskPool, Input
 - **Maps to**
   - REQ: REQ-0051
   - HTTP operationId: N/A
   - Event messageId: N/A
 - **Depends on**: None
-- **Summary**: グローバルキーボードショートカット基盤を実装し、Cmd/Ctrl+N/E/A/Q/D/F に対応
+- **Summary**: グローバルキーボードショートカット基盤を実装し、Cmd/Ctrl+N/E/A/Q/F に対応（D は TASK-NEW-061）
 - **Implementation Notes**:
   - **Frontend実装**:
-    - `hooks/useKeyboardShortcuts.tsx` 新規作成
-      - `onKeyDown`イベントリスナー登録
-      - Cmd/Ctrl判定（Mac/Windows）
-      - 入力欄フォーカス中は無効化
+    - `hooks/useKeyboardShortcuts.ts` 新規作成
+      - `onKeyDown`イベントリスナー登録（documentレベル）
+      - Cmd/Ctrl判定（Mac: metaKey, Windows/Linux: ctrlKey）
+      - 入力欄フォーカス中は無効化（input/textarea/select/contenteditable検出）
+      - ダイアログ表示中は無効化（Escapeを除く）
       - 各ショートカットハンドラ呼び出し
-    - `App.tsx`: useKeyboardShortcuts統合
+    - `pages/TaskPage.tsx`: useKeyboardShortcuts統合
+      - searchInputRefをcreateSignalで管理（リアクティブなref）
+      - 各ハンドラー関数を定義後にhookを呼び出し
+    - `components/TaskPool.tsx`: 検索バーrefをコールバックで受け取る
+    - `components/Input.tsx`: refプロパティを明示的に処理
     - 操作不可状態（非Draft等）時は無効化
-- **Risks**: 既存キーボードイベントとの競合
+- **Risks**: 既存キーボードイベントとの競合 → preventDefault()で対処
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: useKeyboardShortcuts実装完了
-  - [ ] DoD-2: 全6ショートカット動作確認（N/E/A/Q/D/F）
-  - [ ] DoD-3: 入力欄フォーカス中無効化確認
-  - [ ] DoD-4: Frontend buildエラーなし
+  - [x] DoD-1: useKeyboardShortcuts実装完了
+  - [x] DoD-2: 全5ショートカット動作確認（N/E/A/Q/F、DはTASK-NEW-061）
+  - [x] DoD-3: 入力欄フォーカス中無効化確認
+  - [x] DoD-4: Frontend buildエラーなし
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: ✓ npm run build成功、全ショートカット動作確認済み
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
 ### TASK-NEW-063: タスク選択状態管理実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P1
-- **Component(s)**: TaskPool, TaskQueue, selectedTaskStore (新規)
+- **Component(s)**: TaskPool, taskSelectionStore (新規)
 - **Maps to**
   - REQ: REQ-0051
   - HTTP operationId: N/A
@@ -2773,29 +2783,32 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Summary**: クリックによるタスク選択状態を保持し、キーボードショートカットで操作可能にする
 - **Implementation Notes**:
   - **Frontend実装**:
-    - `stores/selectedTaskStore.ts` 新規作成
-      - selectedTask state管理
-      - setSelectedTask/clearSelectedTask actions
-    - `TaskPool.tsx`: タスククリック時にsetSelectedTask呼び出し
-    - `TaskQueue.tsx`: 同上
-    - 選択タスクに視覚的ハイライト（border-primary）追加
-- **Risks**: 選択状態のクリア忘れ（ページ遷移時等）
+    - `stores/taskSelectionStore.ts` 新規作成
+      - selectedTaskId/selectedTask state管理
+      - selectTask/clearSelection actions
+    - `pages/TaskPage.tsx`: taskSelectionStore統合、選択状態をTaskPoolに渡す
+    - `components/TaskPool.tsx`:
+      - タスククリック時にprops.onTaskSelect呼び出し
+      - TaskPool外クリックで選択解除（onMount内でイベントリスナー登録）
+      - 選択タスクに視覚的ハイライト（bg-blue-500/10 border-blue-500/20）
+      - 常にborderを持たせて色のみ変更（チカっと光る現象を防止）
+- **Risks**: 選択状態のクリア忘れ（ページ遷移時等） → TaskPool外クリックで解除実装済み
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: selectedTaskStore実装完了
-  - [ ] DoD-2: TaskPool/TaskQueue統合完了
-  - [ ] DoD-3: クリック選択動作確認
-  - [ ] DoD-4: 視覚的ハイライト表示確認
-  - [ ] DoD-5: Frontend buildエラーなし
+  - [x] DoD-1: taskSelectionStore実装完了
+  - [x] DoD-2: TaskPool統合完了
+  - [x] DoD-3: クリック選択動作確認
+  - [x] DoD-4: 視覚的ハイライト表示確認（濃い青色背景）
+  - [x] DoD-5: Frontend buildエラーなし
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: ✓ npm run build成功、クリック選択・視覚的フィードバック動作確認済み
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
 ### TASK-NEW-064: TaskHoverPopup説明文スクロール実装
-- **Status**: UnDone
+- **Status**: Done
 - **Priority**: P2
 - **Component(s)**: TaskHoverPopup
 - **Maps to**
@@ -2806,21 +2819,24 @@ Priority: P0 (must), P1 (should), P2 (could)
 - **Summary**: TaskHoverPopupの説明文エリアに`max-h-40 overflow-y-auto`を適用し、長文時のスクロール表示を実現
 - **Implementation Notes**:
   - **Frontend実装**:
-    - `TaskHoverPopup.tsx`: description pタグに以下追加
+    - `TaskHoverPopup.tsx`: description pタグに以下追加 (line 45)
       - `max-h-40` (最大高さ160px)
       - `overflow-y-auto` (超過時縦スクロール)
     - 短文時はスクロールバー非表示（自動）
+  - **変更内容**:
+    - Before: `<p class="text-sm text-foreground whitespace-pre-wrap">`
+    - After: `<p class="text-sm text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">`
 - **Risks**: なし
 - **Definition of Done (DoD)**:
-  - [ ] DoD-1: max-h-40 overflow-y-auto追加完了
-  - [ ] DoD-2: 長文説明文でスクロール表示確認
-  - [ ] DoD-3: 短文説明文でスクロールなし確認
-  - [ ] DoD-4: Frontend buildエラーなし
+  - [x] DoD-1: max-h-40 overflow-y-auto追加完了
+  - [x] DoD-2: 長文説明文でスクロール表示確認
+  - [x] DoD-3: 短文説明文でスクロールなし確認
+  - [x] DoD-4: Frontend buildエラーなし (991ms)
 - **Verification**:
   - Type: Manual test + Build
-  - Evidence: TBD
+  - Evidence: Build successful in 991ms, 0 errors
 - **Updated**: 2025-12-30
-- **Completed**: -
+- **Completed**: 2025-12-30
 
 ---
 
@@ -2851,6 +2867,47 @@ Priority: P0 (must), P1 (should), P2 (could)
   - Evidence: TBD
 - **Updated**: 2025-12-30
 - **Completed**: -
+
+---
+
+### TASK-NEW-066: 親タスクステータス計算バグ修正（Archived除外）
+- **Status**: Done
+- **Priority**: P0
+- **Component(s)**: TaskService (Backend)
+- **Maps to**
+  - REQ: REQ-0008, REQ-0022
+  - HTTP operationId: restore_task
+  - Event messageId: N/A
+- **Depends on**: None
+- **Summary**: 親タスクのステータス計算時にArchivedの子タスクを除外し、restore時に親ステータスを更新
+- **Bug Description**:
+  - **問題1**: 全ての子タスクがArchivedの場合、親タスクがCompletedになっていた
+  - **問題2**: Archived子タスクをrestoreしても、親タスクのステータスが更新されなかった
+  - **影響**: ユーザーが子タスクをrestoreしても、親タスクが誤ったステータスのまま残る
+- **Implementation Notes**:
+  - **Backend実装** (`src-tauri/src/service/task.rs`):
+    - `calculate_parent_status`（1039-1068行目）:
+      - Archivedの子タスクをフィルタリングして除外
+      - 全ての子がArchived（または子がいない）の場合、親はDraftに設定
+      - 「全てが(Archived OR Completed)なら親もCompleted」のロジックを削除
+    - `restore_task`（854-855行目）:
+      - restore後に`update_parent_status_if_needed`を呼び出し追加
+      - 親タスクのステータスが子のステータスに応じて自動更新されるように修正
+  - **修正後の挙動**:
+    - 子が`[archived, archived]` → 親はdraft
+    - 子が`[completed, archived]` → restore後 → 子が`[completed, draft]` → 親はactive
+    - Archivedは論理削除として扱い、親ステータス計算から除外
+- **Risks**: restore時に親のステータスがactiveに変わる可能性（意図された動作）
+- **Definition of Done (DoD)**:
+  - [x] DoD-1: calculate_parent_status修正完了（Archived除外）
+  - [x] DoD-2: restore_task修正完了（親ステータス更新追加）
+  - [x] DoD-3: Backend buildエラーなし
+  - [x] DoD-4: 動作確認（全子archived→親draft、restore→親更新）
+- **Verification**:
+  - Type: Manual test + Build
+  - Evidence: ✓ Backend build成功（0.27s）、Frontend build成功（949ms）
+- **Updated**: 2025-12-30
+- **Completed**: 2025-12-30
 
 ---
 
@@ -2922,3 +2979,6 @@ Priority: P0 (must), P1 (should), P2 (could)
 - 2025-12-30 TASK-NEW-039 completed: タグカラーピッカー改良 (Frontend: TagInput.tsx プリセット8色→HTML5カラーピッカー置き換え、PRESET_TAG_COLORS依存削除、selectedColor初期値#3b82f6、type="color" input + Hex値表示、タグ管理画面と統一実装、任意色選択可能に、Frontend build: 828ms、Task Progress: 98.4% = 63/64)
 - 2025-12-30 TASK-NEW-052 bug fix: Edit DialogのArk UI ColorPicker不具合修正 (TagManagementPage Edit Dialog: Ark UI ColorPicker（channel="hue"）削除→HTML5カラーピッカー統一、"Unknown color channel: hue"エラー解消、未使用ColorPicker/parseColorインポート削除、Create/Edit両Dialogで同一UI実装、Frontend build: 完了)
 - 2025-12-30 Added 11 new tasks (TASK-NEW-055 to TASK-NEW-065) for additional requirements (REQ-0047 to REQ-0053): 統一エラーハンドリング、Backend検索統合、タグ/タスク複製、キーボードショートカット、TaskHoverPopup改善、タブドラッグ機能
+- 2025-12-30 TASK-NEW-062 completed: キーボードショートカット基盤実装 (Frontend: hooks/useKeyboardShortcuts.ts新規作成、Cmd/Ctrl+N/E/A/Q/F対応、入力フォーカス/ダイアログ表示中無効化、pages/TaskPage.tsx統合、components/Input.tsx ref処理、searchInputRefをcreateSignalで管理、Backend build: N/A、Frontend build: 949ms、Task Progress: 92.3% = 71/77)
+- 2025-12-30 TASK-NEW-063 completed: タスク選択状態管理実装 (Frontend: stores/taskSelectionStore.ts新規作成、TaskPool.tsxクリック選択統合、選択タスク視覚的フィードバック（bg-blue-500/10 border-blue-500/20）、TaskPool外クリックで選択解除、常にborder保持でチカっと光る現象解消、Backend build: N/A、Frontend build: 949ms、Task Progress: 92.3% = 71/77)
+- 2025-12-30 TASK-NEW-066 completed: 親タスクステータス計算バグ修正 (Backend: service/task.rs calculate_parent_status修正（Archivedの子タスク除外、全子archived→親draft）、restore_task修正（親ステータス更新呼び出し追加）、Bug: 全子archived時に親がcompletedになる問題解消、restore時に親ステータス正常更新、Backend build: 0.27s、Frontend build: 949ms、Task Progress: 92.3% = 72/78)

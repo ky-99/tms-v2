@@ -105,6 +105,76 @@ impl TaskService {
         Ok(created_task.with_tags(tag_names))
     }
 
+    /// タスクを複製する（親タスクの場合は全ての子タスクも再帰的に複製）
+    ///
+    /// # Arguments
+    /// * `conn` - データベース接続
+    /// * `source_task_id` - 複製元タスクID
+    /// * `new_title` - 新しいタイトル（省略時は自動生成）
+    ///
+    /// # Returns
+    /// 複製された親タスク（子タスク情報を含む）
+    ///
+    /// # Errors
+    /// - タスクが見つからない場合
+    /// - 子タスクの複製に失敗した場合
+    pub fn duplicate_task(
+        conn: &mut SqliteConnection,
+        source_task_id: &str,
+        new_title: Option<String>,
+    ) -> Result<TaskResponse, ServiceError> {
+        // Step 1: 複製元タスクを取得
+        let source_task = Self::get_task(conn, source_task_id)?;
+
+        // Step 2: 複製元の子タスクを取得
+        let source_children = if !source_task.children_ids.is_empty() {
+            source_task
+                .children_ids
+                .iter()
+                .map(|child_id| Self::get_task(conn, child_id))
+                .collect::<Result<Vec<_>, _>>()?
+        } else {
+            Vec::new()
+        };
+
+        // Step 3: タイムスタンプ生成
+        let timestamp = Self::generate_timestamp_suffix();
+
+        // Step 4: 親タスク複製用のリクエスト作成
+        let parent_title = new_title.unwrap_or_else(|| {
+            format!("{}_{}", source_task.title, timestamp)
+        });
+
+        let parent_req = CreateTaskRequest {
+            title: parent_title,
+            description: source_task.description.clone(),
+            tags: source_task.tags.clone(),
+            parent_id: None, // 新しい親タスクは親を持たない
+        };
+
+        // Step 5: 親タスクを作成（create_taskを再利用）
+        let new_parent = Self::create_task(conn, parent_req)?;
+
+        // Step 6: 子タスクを再帰的に複製
+        if !source_children.is_empty() {
+            for child in source_children {
+                let child_title = format!("{}_{}", child.title, timestamp);
+                let child_req = CreateTaskRequest {
+                    title: child_title,
+                    description: child.description.clone(),
+                    tags: child.tags.clone(),
+                    parent_id: Some(new_parent.id.clone()), // 新しい親タスクにリンク
+                };
+
+                // 子タスクを作成（create_taskを再利用）
+                Self::create_task(conn, child_req)?;
+            }
+        }
+
+        // Step 7: 更新された親タスクを再取得（新しい children_ids を含む）
+        Self::get_task(conn, &new_parent.id)
+    }
+
     /// 全タスクを取得（簡易版 - Draft + Active）
     /// タスク一覧を取得（ステータスフィルタ対応）
     ///
@@ -738,9 +808,10 @@ impl TaskService {
             return Err(ServiceError::TaskNotDraft(task_id.to_string()));
         }
 
-        // 子タスクが存在するか確認
+        // 子タスクが存在するか確認（アーカイブ済みを除く）
         let has_children = tasks::table
             .filter(tasks::parent_id.eq(task_id))
+            .filter(tasks::status.ne("archived"))
             .select(tasks::id)
             .first::<String>(conn)
             .optional()?
@@ -851,6 +922,9 @@ impl TaskService {
             ))
             .execute(conn)?;
 
+        // 親タスクのステータスを更新（REQ-0008）
+        Self::update_parent_status_if_needed(conn, task_id)?;
+
         // 更新されたタスクを取得して返却
         Self::get_task(conn, task_id)
     }
@@ -923,19 +997,24 @@ impl TaskService {
     /// * `task_id` - タスクID
     ///
     /// # Returns
-    /// * `Ok(true)` - 子タスクが存在する
-    /// * `Ok(false)` - 子タスクが存在しない
+    /// * `Ok(true)` - 子タスクが存在する（アーカイブ済みを除く）
+    /// * `Ok(false)` - 子タスクが存在しない、または全てアーカイブ済み
     /// * `Err(ServiceError)` - データベースエラー
     ///
     /// # Usage
     /// - キュー登録制限（親タスクはキューに追加不可）
     /// - 親子ステータス自動同期（子タスクの有無確認）
+    ///
+    /// # Note
+    /// アーカイブ済み子タスクはソフト削除されたものとみなし、カウントしない。
+    /// これにより、全ての子タスクをアーカイブした親タスクは「子なし」として扱われる。
     pub fn has_children(
         conn: &mut SqliteConnection,
         task_id: &str,
     ) -> Result<bool, ServiceError> {
         let count = tasks::table
             .filter(tasks::parent_id.eq(task_id))
+            .filter(tasks::status.ne("archived"))
             .count()
             .get_result::<i64>(conn)?;
 
@@ -1032,36 +1111,37 @@ impl TaskService {
     ///
     /// # Business Rules (BR-013)
     /// - 全子が Draft → 親も Draft
+    /// - Archivedの子タスクは除外（論理削除として扱う）
+    /// - 全ての子がArchived または子がいない → 親は Draft
     /// - 1つでも Active → 親も Active
     /// - 全子が Completed → 親も Completed
-    /// - 全子が (Archived OR Completed) → 親も Completed
+    /// - 全子が Draft → 親も Draft
     /// - 混在状態（Draft + Completed など）→ Active とみなす
     fn calculate_parent_status(child_statuses: Vec<TaskStatus>) -> TaskStatus {
-        if child_statuses.is_empty() {
-            // 子タスクがない場合は Draft（通常は呼び出し側で処理）
+        // Archivedの子タスクを除外（論理削除として扱う）
+        let active_children: Vec<_> = child_statuses
+            .into_iter()
+            .filter(|s| !matches!(s, TaskStatus::Archived))
+            .collect();
+
+        if active_children.is_empty() {
+            // 子タスクがない、または全てがArchivedの場合はDraft
             return TaskStatus::Draft;
         }
 
         // 1つでもActiveがあれば親もActive
-        if child_statuses.iter().any(|s| matches!(s, TaskStatus::Active)) {
+        if active_children.iter().any(|s| matches!(s, TaskStatus::Active)) {
             return TaskStatus::Active;
         }
 
         // 全てがCompletedなら親もCompleted
-        if child_statuses.iter().all(|s| matches!(s, TaskStatus::Completed)) {
+        if active_children.iter().all(|s| matches!(s, TaskStatus::Completed)) {
             return TaskStatus::Completed;
         }
 
         // 全てがDraftなら親もDraft
-        if child_statuses.iter().all(|s| matches!(s, TaskStatus::Draft)) {
+        if active_children.iter().all(|s| matches!(s, TaskStatus::Draft)) {
             return TaskStatus::Draft;
-        }
-
-        // 全てが(Archived OR Completed)なら親もCompleted
-        if child_statuses.iter().all(|s| {
-            matches!(s, TaskStatus::Completed | TaskStatus::Archived)
-        }) {
-            return TaskStatus::Completed;
         }
 
         // 混在状態（Draft + Completed など）→ Activeとみなす
@@ -1126,6 +1206,13 @@ impl TaskService {
         }
 
         Ok(())
+    }
+
+    /// タイムスタンプサフィックスを生成 (YYYYMMDD_HHmmss 形式)
+    /// 例: "20251230_153045"
+    fn generate_timestamp_suffix() -> String {
+        use chrono::Local;
+        Local::now().format("%Y%m%d_%H%M%S").to_string()
     }
 }
 
@@ -3501,6 +3588,129 @@ mod tests {
             "updated_atが初期値より古い: {} <= {}",
             updated_parent.updated_at,
             initial_updated_at
+        );
+    }
+
+    #[test]
+    fn test_has_children_excludes_archived() {
+        let conn = &mut setup_test_db();
+
+        // 親タスク作成
+        let parent = TaskService::create_task(
+            conn,
+            CreateTaskRequest {
+                title: "Parent Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 子タスク1: Draft
+        let child1 = TaskService::create_task(
+            conn,
+            CreateTaskRequest {
+                title: "Child 1".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスク2: Draft
+        let child2 = TaskService::create_task(
+            conn,
+            CreateTaskRequest {
+                title: "Child 2".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 親タスクは子を持つ
+        assert!(
+            TaskService::has_children(conn, &parent.id).unwrap(),
+            "親タスクは子を持つべき"
+        );
+
+        // 子タスク1をアーカイブ
+        TaskService::delete_task(conn, &child1.id).unwrap();
+
+        // まだ1つのDraft子タスクが残っているので true
+        assert!(
+            TaskService::has_children(conn, &parent.id).unwrap(),
+            "1つのDraft子タスクが残っているので true"
+        );
+
+        // 子タスク2もアーカイブ
+        TaskService::delete_task(conn, &child2.id).unwrap();
+
+        // 全ての子タスクがアーカイブされたので false
+        assert!(
+            !TaskService::has_children(conn, &parent.id).unwrap(),
+            "全ての子タスクがアーカイブされたので false"
+        );
+    }
+
+    #[test]
+    fn test_can_delete_parent_with_only_archived_children() {
+        let conn = &mut setup_test_db();
+
+        // 親タスク作成（Draft）
+        let parent = TaskService::create_task(
+            conn,
+            CreateTaskRequest {
+                title: "Parent Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 子タスク作成（Draft）
+        let child = TaskService::create_task(
+            conn,
+            CreateTaskRequest {
+                title: "Child Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスクが存在するので親タスクは削除できない
+        let result = TaskService::delete_task(conn, &parent.id);
+        assert!(
+            result.is_err(),
+            "子タスクが存在する場合、親タスクは削除できないべき"
+        );
+        assert!(
+            matches!(result.unwrap_err(), ServiceError::TaskHasChildren(_)),
+            "TaskHasChildrenエラーが返されるべき"
+        );
+
+        // 子タスクをアーカイブ
+        TaskService::delete_task(conn, &child.id).unwrap();
+
+        // 子タスクが全てアーカイブされたので親タスクを削除できる
+        let result = TaskService::delete_task(conn, &parent.id);
+        assert!(
+            result.is_ok(),
+            "全ての子タスクがアーカイブされた場合、親タスクは削除できるべき"
+        );
+
+        // 親タスクがアーカイブされていることを確認
+        let parent_after = TaskService::get_task(conn, &parent.id).unwrap();
+        assert_eq!(
+            parent_after.status,
+            TaskStatus::Archived,
+            "親タスクがアーカイブされているべき"
         );
     }
 }

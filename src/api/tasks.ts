@@ -4,6 +4,7 @@ import type {
   Task,
   TaskHierarchy,
   CreateTaskRequest,
+  DuplicateTaskRequest,
   UpdateTaskRequest,
   PaginatedTaskResponse,
 } from "../types/task";
@@ -19,6 +20,16 @@ export const tasksApi = {
     return await withErrorHandling(
       () => invokeWithTimeout<Task>("create_task", { req: request }),
       "タスクの作成に失敗しました"
+    );
+  },
+
+  /**
+   * タスクを複製
+   */
+  async duplicate(request: DuplicateTaskRequest): Promise<Task> {
+    return await withErrorHandling(
+      () => invokeWithTimeout<Task>("duplicate_task", { req: request }),
+      "タスクの複製に失敗しました"
     );
   },
 

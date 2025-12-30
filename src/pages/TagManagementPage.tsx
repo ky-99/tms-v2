@@ -6,6 +6,7 @@ import { Input } from "../components/Input";
 import { TagInput } from "../components/TagInput";
 import { tagsApi } from "../api/tags";
 import type { Tag, CreateTagRequest, UpdateTagRequest } from "../types/tag";
+import { DropdownMenu } from "../components/DropdownMenu";
 
 // Icon components
 function PlusIcon() {
@@ -32,6 +33,22 @@ function Trash2Icon() {
       <line x1="14" y1="11" x2="14" y2="17" />
     </svg>
   );
+}
+
+/**
+ * タイムスタンプサフィックスを生成 (YYYYMMDD_HHmmss 形式)
+ * 例: "20251230_153045"
+ */
+function generateTimestampSuffix(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  return `${year}${month}${day}_${hours}${minutes}${seconds}`;
 }
 
 export function TagManagementPage() {
@@ -141,6 +158,25 @@ export function TagManagementPage() {
     }
   };
 
+  /**
+   * タグを複製する
+   * - 複製されたタグは `{originalName}_YYYYMMDD_HHmmss` の形式で名前が付けられる
+   * - 色とメタデータは元のタグと同じ
+   */
+  const handleDuplicate = async (tag: Tag) => {
+    try {
+      const timestamp = generateTimestampSuffix();
+      const request: CreateTagRequest = {
+        name: `${tag.name}_${timestamp}`,
+        color: tag.color,
+      };
+      await tagsApi.create(request);
+      await loadTags(); // リストを再読み込み
+    } catch (err) {
+      alert(`Failed to duplicate tag: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   return (
     <div class="flex flex-col h-full bg-background">
       {/* Header */}
@@ -204,23 +240,26 @@ export function TagManagementPage() {
                           {tag.usageCount || 0} task{tag.usageCount === 1 ? "" : "s"}
                         </td>
                         <td class="px-4 py-3">
-                          <div class="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              onClick={() => handleEditClick(tag)}
-                              class="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                              title="Edit Tag"
-                            >
-                              <PencilIcon />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => handleDeleteClick(tag)}
-                              class="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-secondary"
-                              title="Delete Tag"
-                            >
-                              <Trash2Icon />
-                            </Button>
+                          <div class="flex justify-end">
+                            <DropdownMenu
+                              items={[
+                                {
+                                  label: "Edit",
+                                  onClick: () => handleEditClick(tag),
+                                  variant: "default"
+                                },
+                                {
+                                  label: "Duplicate",
+                                  onClick: () => handleDuplicate(tag),
+                                  variant: "default"
+                                },
+                                {
+                                  label: "Delete",
+                                  onClick: () => handleDeleteClick(tag),
+                                  variant: "destructive"
+                                }
+                              ]}
+                            />
                           </div>
                         </td>
                       </tr>

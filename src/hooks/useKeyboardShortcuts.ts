@@ -7,8 +7,9 @@ interface KeyboardShortcutsConfig {
   onEditTask: (task: TaskHierarchy) => void;
   onArchiveTask: (task: TaskHierarchy) => void;
   onAddToQueue: (task: TaskHierarchy) => void;
+  onDuplicateTask: (task: TaskHierarchy) => void;
   isDialogOpen: () => boolean;
-  searchInputRef: HTMLInputElement | undefined;
+  getSearchInputRef: () => HTMLInputElement | undefined;
 }
 
 export function useKeyboardShortcuts(config: KeyboardShortcutsConfig) {
@@ -48,6 +49,11 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig) {
         case "q":
           event.preventDefault();
           handleAddToQueue();
+          break;
+
+        case "d":
+          event.preventDefault();
+          handleDuplicate();
           break;
 
         case "f":
@@ -102,9 +108,18 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig) {
     taskSelectionActions.clearSelection();
   };
 
+  const handleDuplicate = () => {
+    const selectedTask = taskSelectionStore.selectedTask;
+    if (!selectedTask) return;
+
+    config.onDuplicateTask(selectedTask);
+    taskSelectionActions.clearSelection();
+  };
+
   const focusSearchBar = () => {
-    if (config.searchInputRef) {
-      config.searchInputRef.focus();
+    const searchInputRef = config.getSearchInputRef();
+    if (searchInputRef) {
+      searchInputRef.focus();
     }
   };
 

@@ -74,13 +74,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Utility
             greet,
-            // Task Management (11 commands)
+            // Task Management (12 commands)
             // - CRUD operations for tasks
             // - Search and filter functionality (including lightweight ID-only search)
             // - Hierarchical task retrieval
             // - Physical deletion and restore for archived tasks
             // - Pagination support for list operations
+            // - Task duplication with recursive child handling
             commands::task::create_task,
+            commands::task::duplicate_task,
             commands::task::get_task,
             commands::task::update_task,
             commands::task::delete_task,

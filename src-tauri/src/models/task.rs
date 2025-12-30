@@ -156,6 +156,17 @@ pub struct CreateTaskRequest {
     pub parent_id: Option<String>,
 }
 
+/// タスク複製リクエスト（API受信用）
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DuplicateTaskRequest {
+    /// 複製元タスクID
+    pub task_id: String,
+    /// 新しいタイトル（省略時は "{original}_YYYYMMDD_HHmmss"）
+    #[serde(default)]
+    pub new_title: Option<String>,
+}
+
 /// タスク更新リクエスト（API受信用）
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]

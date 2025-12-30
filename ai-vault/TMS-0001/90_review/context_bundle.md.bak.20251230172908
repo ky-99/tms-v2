@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Contract
-> Updated: 2025-12-30 18:23 (JST)
+> Updated: 2025-12-30 15:27 (JST)
 > Owner: <name>
 
 ---
@@ -131,7 +131,7 @@
 | REQ-0008 | 親子タスクステータス自動同期 | MUST | Draft |
 | REQ-0009 | 親タスクのキュー登録制限 | MUST | Draft |
 | REQ-0010 | タスクプールの表示範囲拡張 | MUST | Draft |
-| REQ-0005 | タスク検索・フィルタ機能 | SHOULD | Draft |
+| REQ-0047 | 統一的なフロントエンドエラーハンドリング | MUST | Planned |
 
 ### 6.2 Acceptance Details (Only for focus REQs)
 - **REQ-0001**
@@ -170,10 +170,10 @@
   - Given: タスクプール画面
   - When: 画面が表示される
   - Then: Draft および Active ステータスのタスクが両方表示される
-- **REQ-0005**
-  - Given: タスクプール画面にタスクが表示されている
-  - When: ユーザーが検索キーワードを入力またはフィルタを選択
-  - Then: 条件に一致するタスクのみが表示される
+- **REQ-0047**
+  - Given: 任意の操作でエラーが発生した
+  - When: エラーハンドリングが実行される
+  - Then: エラーカテゴリ（ネットワーク、バリデーション、サーバー等）に応じたアイコン付きToast通知が3秒間表示され、自動的に消える
 <!-- AUTO:END requirements_snapshot -->
 ---
 
@@ -222,20 +222,22 @@ N/A
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
+| TASK-NEW-059 | タグ複製機能実装 | UnDone | P1 | REQ-0049 |
+| TASK-NEW-060 | duplicate_task Backend API実装 | UnDone | P1 | REQ-0050 |
+| TASK-NEW-061 | タスク複製UI統合（キーボードショートカット） | UnDone | P1 | REQ-0050 |
 | TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | UnDone | P2 | REQ-0052 |
-| TASK-NEW-065 | タブ領域ドラッグ実装 | UnDone | P2 | REQ-0053 |
 
 ### 8.2 Task Progress
-- Total Tasks: 79
-- Done: 76
+- Total Tasks: 77
+- Done: 71
 - Processing: 0
-- UnDone: 3
-- Progress: 96% (76/79)
+- UnDone: 6
+- Progress: 92% (71/77)
 
 ### 8.3 Next Actions
-1. Start TASK-NEW-009 (カラーパレット適用)
-2. Start TASK-NEW-064 (TaskHoverPopup説明文スクロール実装)
-3. Start TASK-NEW-065 (タブ領域ドラッグ実装)
+1. Start TASK-NEW-059 (タグ複製機能実装)
+2. Start TASK-NEW-060 (duplicate_task Backend API実装)
+3. Start TASK-NEW-061 (タスク複製UI統合（キーボードショートカット）)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -285,7 +287,7 @@ N/A
 - REQ Coverage: 10 REQs
 - API Coverage: 21/21
 - Event Coverage: N/A
-- Task Completion: 96% (76/79)
+- Task Completion: 92% (71/77)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**

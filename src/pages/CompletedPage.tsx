@@ -191,31 +191,29 @@ export function CompletedPage() {
                           <div class="absolute -left-[27px] top-2 h-3 w-3 rounded-full border-2 border-background bg-primary" />
 
                           <Card class="border-border bg-card p-4 transition-colors hover:bg-secondary/30">
-                            <div class="flex items-start justify-between gap-4">
-                              <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                  <div class="text-primary">
-                                    <CheckCircle2Icon />
-                                  </div>
-                                  <h3 class="font-medium text-foreground truncate">
-                                    {task.parentTitle ? `@${task.parentTitle}/${task.title}` : task.title}
-                                  </h3>
+                            <div class="min-w-0">
+                              <div class="flex items-center gap-2 min-w-0">
+                                <div class="text-primary shrink-0">
+                                  <CheckCircle2Icon />
                                 </div>
-                                <Show when={task.description}>
-                                  <p class="mt-1 text-sm text-muted-foreground">
-                                    {task.description}
-                                  </p>
-                                </Show>
-                                <time class="mt-2 block text-xs text-muted-foreground">
-                                  {new Date(task.updatedAt).toLocaleTimeString(
-                                    "en-US",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    }
-                                  )}
-                                </time>
+                                <h3 class="font-medium text-foreground truncate min-w-0">
+                                  {task.parentTitle ? `@${task.parentTitle}/${task.title}` : task.title}
+                                </h3>
                               </div>
+                              <Show when={task.description}>
+                                <p class="mt-1 text-sm text-muted-foreground break-words">
+                                  {task.description}
+                                </p>
+                              </Show>
+                              <time class="mt-2 block text-xs text-muted-foreground">
+                                {new Date(task.updatedAt).toLocaleTimeString(
+                                  "en-US",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
+                              </time>
                             </div>
                           </Card>
                         </div>

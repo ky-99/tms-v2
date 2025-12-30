@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Contract
-> Updated: 2025-12-30 18:23 (JST)
+> Updated: 2025-12-30 17:29 (JST)
 > Owner: <name>
 
 ---
@@ -222,20 +222,22 @@ N/A
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
+| TASK-NEW-059 | タグ複製機能実装 | UnDone | P1 | REQ-0049 |
+| TASK-NEW-060 | duplicate_task Backend API実装 | UnDone | P1 | REQ-0050 |
+| TASK-NEW-061 | タスク複製UI統合（キーボードショートカット） | UnDone | P1 | REQ-0050 |
 | TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | UnDone | P2 | REQ-0052 |
-| TASK-NEW-065 | タブ領域ドラッグ実装 | UnDone | P2 | REQ-0053 |
 
 ### 8.2 Task Progress
 - Total Tasks: 79
-- Done: 76
+- Done: 73
 - Processing: 0
-- UnDone: 3
-- Progress: 96% (76/79)
+- UnDone: 6
+- Progress: 92% (73/79)
 
 ### 8.3 Next Actions
 1. Start TASK-NEW-009 (カラーパレット適用)
-2. Start TASK-NEW-064 (TaskHoverPopup説明文スクロール実装)
-3. Start TASK-NEW-065 (タブ領域ドラッグ実装)
+2. Start TASK-NEW-059 (タグ複製機能実装)
+3. Start TASK-NEW-060 (duplicate_task Backend API実装)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
@@ -285,7 +287,7 @@ N/A
 - REQ Coverage: 10 REQs
 - API Coverage: 21/21
 - Event Coverage: N/A
-- Task Completion: 96% (76/79)
+- Task Completion: 92% (73/79)
 
 ### 9.4 Overall Status
 **✅ Ready for next phase**

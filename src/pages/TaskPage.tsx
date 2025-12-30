@@ -2,6 +2,7 @@ import { createSignal, onMount } from "solid-js";
 import { taskStore, taskActions } from "../stores/taskStore";
 import { queueStore, queueActions } from "../stores/queueStore";
 import { tagsApi } from "../api/tags";
+import { tasksApi } from "../api/tasks";
 import type {
   CreateTaskRequest,
   UpdateTaskRequest,
@@ -28,7 +29,7 @@ export function TaskPage() {
   });
   const [availableTags, setAvailableTags] = createSignal<Tag[]>([]);
 
-  let searchInputRef: HTMLInputElement | undefined;
+  const [searchInputRef, setSearchInputRef] = createSignal<HTMLInputElement | undefined>();
 
   const isAnyDialogOpen = () => {
     return isCreateDialogOpen() || editingTask() !== null;
@@ -115,6 +116,22 @@ export function TaskPage() {
     }
   };
 
+  /**
+   * タスクを複製する
+   * - Cmd/Ctrl+D から呼び出される
+   * - 親タスクの場合、全ての子タスクも再帰的に複製される
+   */
+  const handleDuplicate = async (task: TaskHierarchy) => {
+    try {
+      await tasksApi.duplicate({ taskId: task.id });
+      // タスク階層を再読み込み
+      await taskActions.loadHierarchy();
+    } catch (error) {
+      console.error("Failed to duplicate task:", error);
+      // エラーはwithErrorHandlingで処理されるため、ここでは何もしない
+    }
+  };
+
   const handleEdit = (task: TaskHierarchy) => {
     setEditingTask(task);
     setFormData({
@@ -130,8 +147,9 @@ export function TaskPage() {
     onEditTask: handleEdit,
     onArchiveTask: handleDelete,
     onAddToQueue: handleMoveToQueue,
+    onDuplicateTask: handleDuplicate,
     isDialogOpen: isAnyDialogOpen,
-    searchInputRef,
+    getSearchInputRef: searchInputRef,
   });
 
   const flattenHierarchy = (hierarchy: TaskHierarchy[]): TaskHierarchy[] => {
@@ -164,7 +182,7 @@ export function TaskPage() {
         selectedTaskId={taskSelectionStore.selectedTaskId}
         queueTaskIds={queueTaskIds()}
         availableTags={availableTags()}
-        searchInputRef={searchInputRef}
+        onSearchInputRef={setSearchInputRef}
       />
 
       {/* Queue Panel */}

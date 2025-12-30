@@ -799,4 +799,123 @@ mod tests {
         // ステータスがcompletedに変更されていることを確認
         assert_eq!(updated_task.status, TaskStatus::Completed);
     }
+
+    #[test]
+    fn test_can_queue_parent_with_only_archived_children() {
+        let mut conn = setup_test_db();
+
+        // 親タスク作成（Draft）
+        let parent = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Parent Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 子タスク作成（Draft）
+        let child = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスクが存在するので親タスクをキューに追加できない
+        let result = QueueService::add_to_queue(&mut conn, parent.id.clone());
+        assert!(
+            result.is_err(),
+            "子タスクが存在する場合、親タスクはキューに追加できないべき"
+        );
+        assert!(
+            matches!(result.unwrap_err(), ServiceError::TaskHasChildren(_)),
+            "TaskHasChildrenエラーが返されるべき"
+        );
+
+        // 子タスクをアーカイブ
+        TaskService::delete_task(&mut conn, &child.id).unwrap();
+
+        // 子タスクが全てアーカイブされたので親タスクをキューに追加できる
+        let result = QueueService::add_to_queue(&mut conn, parent.id.clone());
+        assert!(
+            result.is_ok(),
+            "全ての子タスクがアーカイブされた場合、親タスクはキューに追加できるべき"
+        );
+
+        // キューに追加されていることを確認
+        let queue_entry = result.unwrap();
+        assert_eq!(queue_entry.task_id, parent.id);
+    }
+
+    #[test]
+    fn test_cannot_queue_parent_with_active_children() {
+        let mut conn = setup_test_db();
+
+        // 親タスク作成（Draft）
+        let parent = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Parent Task".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: None,
+            },
+        )
+        .unwrap();
+
+        // 子タスク1作成（Draft）
+        let child1 = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child 1".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスク2作成（Draft）
+        let child2 = TaskService::create_task(
+            &mut conn,
+            CreateTaskRequest {
+                title: "Child 2".to_string(),
+                description: None,
+                tags: vec![],
+                parent_id: Some(parent.id.clone()),
+            },
+        )
+        .unwrap();
+
+        // 子タスク1をアーカイブ
+        TaskService::delete_task(&mut conn, &child1.id).unwrap();
+
+        // まだ1つのDraft子タスクが残っているので親タスクをキューに追加できない
+        let result = QueueService::add_to_queue(&mut conn, parent.id.clone());
+        assert!(
+            result.is_err(),
+            "1つでもアクティブな子タスクが存在する場合、親タスクはキューに追加できないべき"
+        );
+        assert!(
+            matches!(result.unwrap_err(), ServiceError::TaskHasChildren(_)),
+            "TaskHasChildrenエラーが返されるべき"
+        );
+
+        // 子タスク2もアーカイブ
+        TaskService::delete_task(&mut conn, &child2.id).unwrap();
+
+        // 全ての子タスクがアーカイブされたので親タスクをキューに追加できる
+        let result = QueueService::add_to_queue(&mut conn, parent.id.clone());
+        assert!(
+            result.is_ok(),
+            "全ての子タスクがアーカイブされた場合、親タスクはキューに追加できるべき"
+        );
+    }
 }

@@ -3,8 +3,8 @@ use diesel::r2d2::{ConnectionManager, Pool};
 use tauri::State;
 
 use crate::models::task::{
-    CreateTaskRequest, ListTasksPaginatedParams, PaginatedTaskResponse, SearchTasksParams,
-    TaskHierarchyResponse, TaskResponse, UpdateTaskRequestInput,
+    CreateTaskRequest, DuplicateTaskRequest, ListTasksPaginatedParams, PaginatedTaskResponse,
+    SearchTasksParams, TaskHierarchyResponse, TaskResponse, UpdateTaskRequestInput,
 };
 use crate::service::TaskService;
 
@@ -19,6 +19,27 @@ pub fn create_task(
 ) -> Result<TaskResponse, String> {
     let mut conn = pool.get().map_err(|e| format!("データベース接続エラー: {}", e))?;
     TaskService::create_task(&mut conn, req).map_err(|e| e.to_string())
+}
+
+/// タスクを複製する
+///
+/// 親タスクの場合、全ての子タスクも再帰的に複製される。
+/// 複製されたタスクは以下の特性を持つ：
+/// - タイトルに `_YYYYMMDD_HHmmss` サフィックスが追加される
+/// - ステータスは Draft に設定される
+/// - 説明、タグは元のタスクと同じ
+/// - 親子関係は新しいタスクで再現される
+#[tauri::command]
+pub fn duplicate_task(
+    pool: State<DbPool>,
+    req: DuplicateTaskRequest,
+) -> Result<TaskResponse, String> {
+    let mut conn = pool
+        .get()
+        .map_err(|e| format!("データベース接続エラー: {}", e))?;
+
+    TaskService::duplicate_task(&mut conn, &req.task_id, req.new_title)
+        .map_err(|e| e.to_string())
 }
 
 /// タスクを取得
