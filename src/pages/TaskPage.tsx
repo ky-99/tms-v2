@@ -15,6 +15,8 @@ import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import { TagInput } from "../components/TagInput";
 import { For } from "solid-js";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { taskSelectionStore, taskSelectionActions } from "../stores/taskSelectionStore";
 
 export function TaskPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = createSignal(false);
@@ -25,6 +27,12 @@ export function TaskPage() {
     tags: [],
   });
   const [availableTags, setAvailableTags] = createSignal<Tag[]>([]);
+
+  let searchInputRef: HTMLInputElement | undefined;
+
+  const isAnyDialogOpen = () => {
+    return isCreateDialogOpen() || editingTask() !== null;
+  };
 
   onMount(async () => {
     taskActions.loadHierarchy();
@@ -117,6 +125,15 @@ export function TaskPage() {
     });
   };
 
+  useKeyboardShortcuts({
+    onCreateTask: () => setIsCreateDialogOpen(true),
+    onEditTask: handleEdit,
+    onArchiveTask: handleDelete,
+    onAddToQueue: handleMoveToQueue,
+    isDialogOpen: isAnyDialogOpen,
+    searchInputRef,
+  });
+
   const flattenHierarchy = (hierarchy: TaskHierarchy[]): TaskHierarchy[] => {
     if (!hierarchy || hierarchy.length === 0) {
       return [];
@@ -143,8 +160,11 @@ export function TaskPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onCreateTask={() => setIsCreateDialogOpen(true)}
+        onTaskSelect={(task) => taskSelectionActions.selectTask(task)}
+        selectedTaskId={taskSelectionStore.selectedTaskId}
         queueTaskIds={queueTaskIds()}
         availableTags={availableTags()}
+        searchInputRef={searchInputRef}
       />
 
       {/* Queue Panel */}

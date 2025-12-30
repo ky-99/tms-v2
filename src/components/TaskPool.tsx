@@ -1,4 +1,4 @@
-import { createSignal, For, Show, createEffect } from "solid-js";
+import { createSignal, For, Show, createEffect, onMount, onCleanup } from "solid-js";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { TaskHoverPopup } from "./TaskHoverPopup";
@@ -14,8 +14,11 @@ interface TaskPoolProps {
   onEdit: (task: TaskHierarchy) => void;
   onDelete: (task: TaskHierarchy) => void;
   onCreateTask: () => void;
+  onTaskSelect: (task: TaskHierarchy | null) => void;
+  selectedTaskId: string | null;
   queueTaskIds: Set<string>;
   availableTags: Tag[];
+  searchInputRef?: HTMLInputElement;
 }
 
 // Icon components
@@ -228,8 +231,21 @@ export function TaskPool(props: TaskPoolProps) {
     return Math.round((completedChildren / task.children.length) * 100);
   };
 
+  onMount(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.task-pool-container')) {
+        props.onTaskSelect(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    onCleanup(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
+  });
+
   return (
-    <div class="flex flex-1 flex-col border-r border-border">
+    <div class="task-pool-container flex flex-1 flex-col border-r border-border">
       <div class="border-b border-border bg-card px-4 py-3 space-y-3">
         <div class="flex items-center gap-2">
           <div class="relative flex-1">
@@ -237,6 +253,7 @@ export function TaskPool(props: TaskPoolProps) {
               <SearchIcon />
             </div>
             <Input
+              ref={props.searchInputRef}
               type="text"
               placeholder="Search tasks..."
               value={searchQuery()}
@@ -300,10 +317,12 @@ export function TaskPool(props: TaskPoolProps) {
                       e.stopPropagation();
                       toggleExpand(task.id);
                     }
+                    props.onTaskSelect(task);
                   }}
                   class={cn(
                     "group flex items-center gap-3 rounded-lg bg-card p-3 transition-colors select-none",
                     task.status === "completed" && "opacity-60",
+                    props.selectedTaskId === task.id && "ring-2 ring-primary",
                     props.queueTaskIds.has(task.id)
                       ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
                       : "hover:bg-secondary/50",
@@ -385,9 +404,11 @@ export function TaskPool(props: TaskPoolProps) {
                     <For each={task.children}>
                       {(child) => (
                         <div
+                          onClick={() => props.onTaskSelect(child)}
                           class={cn(
-                            "group flex items-center gap-3 rounded-lg bg-card p-2.5 transition-colors",
+                            "group flex items-center gap-3 rounded-lg bg-card p-2.5 transition-colors cursor-pointer",
                             child.status === "completed" && "opacity-60",
+                            props.selectedTaskId === child.id && "ring-2 ring-primary",
                             props.queueTaskIds.has(child.id)
                               ? "bg-primary/10 border border-primary/20 hover:bg-primary/5"
                               : "hover:bg-secondary/50"

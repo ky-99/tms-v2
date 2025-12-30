@@ -4,10 +4,11 @@ import { cn } from "../lib/utils";
 interface InputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  ref?: HTMLInputElement | ((el: HTMLInputElement) => void);
 }
 
 export function Input(props: InputProps) {
-  const [local, others] = splitProps(props, ["label", "error", "class"]);
+  const [local, others] = splitProps(props, ["label", "error", "class", "ref"]);
 
   return (
     <div class="flex flex-col gap-1.5">
@@ -17,6 +18,7 @@ export function Input(props: InputProps) {
         </label>
       )}
       <input
+        ref={local.ref}
         class={cn(
           "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           local.error && "border-destructive focus-visible:ring-destructive/30",
