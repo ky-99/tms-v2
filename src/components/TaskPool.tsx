@@ -317,7 +317,12 @@ export function TaskPool(props: TaskPoolProps) {
                       e.stopPropagation();
                       toggleExpand(task.id);
                     }
-                    props.onTaskSelect(task);
+                    // Toggle selection: deselect if already selected
+                    if (props.selectedTaskId === task.id) {
+                      props.onTaskSelect(null);
+                    } else {
+                      props.onTaskSelect(task);
+                    }
                   }}
                   class={cn(
                     "group grid grid-cols-[auto_auto_1fr_auto] gap-3 items-center rounded-lg p-3 transition-colors select-none border outline-none",
@@ -405,7 +410,14 @@ export function TaskPool(props: TaskPoolProps) {
                     <For each={task.children}>
                       {(child) => (
                         <div
-                          onClick={() => props.onTaskSelect(child)}
+                          onClick={() => {
+                            // Toggle selection: deselect if already selected
+                            if (props.selectedTaskId === child.id) {
+                              props.onTaskSelect(null);
+                            } else {
+                              props.onTaskSelect(child);
+                            }
+                          }}
                           class={cn(
                             "group grid grid-cols-[auto_1fr_auto] gap-3 items-center rounded-lg p-2.5 transition-colors cursor-pointer border outline-none",
                             child.status === "completed" && "opacity-60",

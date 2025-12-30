@@ -104,6 +104,21 @@ export function Header() {
             </Show>
           </div>
         </A>
+        <A href="/tags" class="group -ml-2">
+          <div
+            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
+              pathname() === "/tags"
+                ? "bg-card text-primary border-t-2 border-t-primary"
+                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
+            }`}
+          >
+            <TagIcon />
+            <span class="text-sm font-medium">Tags</span>
+            <Show when={pathname() === "/tags"}>
+              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
+            </Show>
+          </div>
+        </A>
         <A href="/completed" class="group -ml-2">
           <div
             class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
@@ -134,21 +149,8 @@ export function Header() {
             </Show>
           </div>
         </A>
-        <A href="/tags" class="group -ml-2">
-          <div
-            class={`flex items-center gap-2 px-4 pb-2 pt-3 rounded-t-lg transition-colors relative ${
-              pathname() === "/tags"
-                ? "bg-card text-primary border-t-2 border-t-primary"
-                : "bg-background/50 text-muted-foreground hover:bg-card/50 hover:text-foreground"
-            }`}
-          >
-            <TagIcon />
-            <span class="text-sm font-medium">Tags</span>
-            <Show when={pathname() === "/tags"}>
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-card" />
-            </Show>
-          </div>
-        </A>
+        {/* Drag region for empty header space */}
+        <div class="flex-1 self-stretch" data-tauri-drag-region />
       </nav>
     </header>
   );

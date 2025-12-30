@@ -5,7 +5,7 @@
 > Ticket: <TICKET-ID>  
 > Branch: <branch-name>  
 > Phase: Contract
-> Updated: 2025-12-30 18:23 (JST)
+> Updated: 2025-12-30 20:15 (JST)
 > Owner: <name>
 
 ---
@@ -221,21 +221,22 @@ N/A
 ### 8.1 Current Phase Tasks (from tasks.md)
 | TASK-ID | Title | Status | Priority | Maps to |
 |---|---|---|---|---|
+| TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | Done | P2 | REQ-0052 |
+| TASK-NEW-065 | タブ領域ドラッグ実装 | Done | P2 | REQ-0053 |
+| TASK-NEW-066 | 親タスクステータス計算バグ修正（Archived除外） | Done | P0 | REQ-0008, REQ-0022 |
+| TASK-NEW-067 | テキスト切り詰め（Truncation）実装 | Done | P1 | N/A |
 | TASK-NEW-009 | カラーパレット適用 | UnDone | P2 | N/A |
-| TASK-NEW-064 | TaskHoverPopup説明文スクロール実装 | UnDone | P2 | REQ-0052 |
-| TASK-NEW-065 | タブ領域ドラッグ実装 | UnDone | P2 | REQ-0053 |
 
 ### 8.2 Task Progress
 - Total Tasks: 79
-- Done: 76
+- Done: 78
 - Processing: 0
-- UnDone: 3
-- Progress: 96% (76/79)
+- UnDone: 1
+- Progress: 98.7% (78/79)
 
 ### 8.3 Next Actions
-1. Start TASK-NEW-009 (カラーパレット適用)
-2. Start TASK-NEW-064 (TaskHoverPopup説明文スクロール実装)
-3. Start TASK-NEW-065 (タブ領域ドラッグ実装)
+1. Start TASK-NEW-009 (カラーパレット適用) - ON HOLD pending design decision
+2. **All P0/P1 tasks completed!** Only 1 P2 task remaining (on hold)
 <!-- AUTO:END tasking_snapshot -->
 
 ---
