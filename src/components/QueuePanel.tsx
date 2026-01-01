@@ -1,5 +1,6 @@
 import { For, onMount, Show, createMemo, createSignal } from "solid-js";
 import { queueStore, queueActions } from "../stores/queueStore";
+import { taskActions } from "../stores/taskStore";
 import { Button } from "./Button";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { cn } from "../lib/utils";
@@ -11,53 +12,8 @@ import {
   closestCenter,
 } from "@thisbeyond/solid-dnd";
 import type { DragEvent } from "@thisbeyond/solid-dnd";
-
-// Icon components
-function CheckIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-function CircleIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10" />
-    </svg>
-  );
-}
-
-function AlertCircleIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v4m0 4h.01" />
-    </svg>
-  );
-}
-
-function GripVerticalIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="9" cy="5" r="1" fill="currentColor" />
-      <circle cx="9" cy="12" r="1" fill="currentColor" />
-      <circle cx="9" cy="19" r="1" fill="currentColor" />
-      <circle cx="15" cy="5" r="1" fill="currentColor" />
-      <circle cx="15" cy="12" r="1" fill="currentColor" />
-      <circle cx="15" cy="19" r="1" fill="currentColor" />
-    </svg>
-  );
-}
+import { CheckIcon, XIcon, CircleIcon, AlertCircleIcon } from "./icons";
+import { GripVerticalIcon } from "./icons/GripVerticalIcon";
 
 interface SortableTaskProps {
   entry: { taskId: string; taskTitle: string };
@@ -160,6 +116,7 @@ export function QueuePanel() {
   const handleReturnToDraft = async (taskId: string) => {
     try {
       await queueActions.returnToDraft(taskId);
+      await taskActions.loadHierarchy();
     } catch (error) {
       console.error("Failed to return to draft:", error);
     }
@@ -168,6 +125,7 @@ export function QueuePanel() {
   const handleMarkAsCompleted = async (taskId: string) => {
     try {
       await queueActions.markAsCompleted(taskId);
+      await taskActions.loadHierarchy();
     } catch (error) {
       console.error("Failed to mark as completed:", error);
     }
@@ -190,6 +148,7 @@ export function QueuePanel() {
       } else {
         await queueActions.clearQueue();
       }
+      await taskActions.loadHierarchy();
     } catch (error) {
       console.error("Failed to execute action:", error);
     }

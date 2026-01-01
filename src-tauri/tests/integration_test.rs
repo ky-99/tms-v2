@@ -1434,7 +1434,7 @@ fn test_list_tasks_paginated_paging_behavior() {
 
 #[test]
 fn test_list_tasks_paginated_total_count_with_filters() {
-    use tms_v2_lib::models::task::{ListTasksPaginatedParams, UpdateTaskRequest};
+    use tms_v2_lib::models::task::ListTasksPaginatedParams;
 
     let pool = setup_test_pool();
     let mut conn = pool.get().expect("Failed to get connection");

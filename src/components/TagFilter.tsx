@@ -2,37 +2,7 @@ import { DropdownMenu as KobalteDropdownMenu } from "@kobalte/core/dropdown-menu
 import { For, Show } from "solid-js";
 import { cn, truncateText } from "../lib/utils";
 import type { Tag } from "../types/tag";
-
-// Plus アイコン
-function PlusIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M5 12h14M12 5v14" />
-    </svg>
-  );
-}
-
-// Check アイコン
-function CheckIcon() {
-  return (
-    <svg
-      class="h-4 w-4 text-primary"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
+import { PlusIcon, CheckIcon } from "./icons";
 
 export interface TagFilterProps {
   availableTags: Tag[];

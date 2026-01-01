@@ -6,27 +6,9 @@ import Pagination from "../components/Pagination";
 import { tasksApi } from "../api/tasks";
 import type { Task, PaginatedTaskResponse } from "../types/task";
 import { useSearchShortcut } from "../hooks/useSearchShortcut";
+import { CheckCircle2Icon, SearchIcon } from "../components/icons";
 
 const ITEMS_PER_PAGE = 20;
-
-// Icon components
-function CheckCircle2Icon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
 
 interface DateGroup {
   date: string;

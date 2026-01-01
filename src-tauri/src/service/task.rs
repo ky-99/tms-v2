@@ -334,6 +334,8 @@ impl TaskService {
     pub fn get_hierarchy(
         conn: &mut SqliteConnection,
     ) -> Result<Vec<TaskHierarchyResponse>, ServiceError> {
+        use std::collections::HashMap;
+
         // Step 1: Draft + Active なルートタスク（親なし）を取得
         let root_tasks = tasks::table
             .filter(tasks::parent_id.is_null())
@@ -341,39 +343,73 @@ impl TaskService {
             .order(tasks::created_at.desc())
             .load::<Task>(conn)?;
 
-        // Step 2: 各ルートタスクに対して子タスクを取得し、階層構造を構築
+        if root_tasks.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let root_ids: Vec<String> = root_tasks.iter().map(|t| t.id.clone()).collect();
+
+        // Step 2: 全ての子タスクを一度に取得（1クエリ）
+        let child_tasks = tasks::table
+            .filter(tasks::parent_id.eq_any(&root_ids))
+            .filter(
+                tasks::status
+                    .eq("draft")
+                    .or(tasks::status.eq("active"))
+                    .or(tasks::status.eq("completed")),
+            )
+            .order(tasks::created_at.desc())
+            .load::<Task>(conn)?;
+
+        // Step 3: 全タスクIDを収集
+        let all_task_ids: Vec<String> = root_tasks
+            .iter()
+            .chain(child_tasks.iter())
+            .map(|t| t.id.clone())
+            .collect();
+
+        // Step 4: 全タスクのタグを一度に取得（1クエリ）
+        let tags_map: HashMap<String, Vec<String>> = task_tags::table
+            .inner_join(tags::table)
+            .filter(task_tags::task_id.eq_any(&all_task_ids))
+            .select((task_tags::task_id, tags::name))
+            .load::<(String, String)>(conn)?
+            .into_iter()
+            .fold(HashMap::new(), |mut map, (task_id, tag_name)| {
+                map.entry(task_id).or_insert_with(Vec::new).push(tag_name);
+                map
+            });
+
+        // Step 5: 子タスクを親IDでグループ化
+        let mut children_by_parent: HashMap<String, Vec<Task>> = HashMap::new();
+        for child in child_tasks {
+            if let Some(parent_id) = &child.parent_id {
+                children_by_parent
+                    .entry(parent_id.clone())
+                    .or_insert_with(Vec::new)
+                    .push(child);
+            }
+        }
+
+        // Step 6: 階層構造を構築（メモリ内処理）
         let hierarchy: Result<Vec<TaskHierarchyResponse>, ServiceError> = root_tasks
             .into_iter()
             .map(|parent_task| {
-                // 親タスクのタグを取得
-                let parent_tags = task_tags::table
-                    .inner_join(tags::table)
-                    .filter(task_tags::task_id.eq(&parent_task.id))
-                    .select(tags::name)
-                    .load::<String>(conn)?;
+                // 親タスクのタグを取得（HashMap から）
+                let parent_tags = tags_map.get(&parent_task.id).cloned().unwrap_or_default();
 
-                // 子タスクを取得（Draft, Active, Completed のみ）
-                let child_tasks = tasks::table
-                    .filter(tasks::parent_id.eq(&parent_task.id))
-                    .filter(
-                        tasks::status
-                            .eq("draft")
-                            .or(tasks::status.eq("active"))
-                            .or(tasks::status.eq("completed")),
-                    )
-                    .order(tasks::created_at.desc())
-                    .load::<Task>(conn)?;
+                // 子タスクを取得（HashMap から）
+                let child_tasks = children_by_parent
+                    .get(&parent_task.id)
+                    .cloned()
+                    .unwrap_or_default();
 
                 // 子タスクを TaskHierarchyResponse に変換
                 let children: Result<Vec<TaskHierarchyResponse>, ServiceError> = child_tasks
                     .into_iter()
                     .map(|child_task| {
-                        // 子タスクのタグを取得
-                        let child_tags = task_tags::table
-                            .inner_join(tags::table)
-                            .filter(task_tags::task_id.eq(&child_task.id))
-                            .select(tags::name)
-                            .load::<String>(conn)?;
+                        // 子タスクのタグを取得（HashMap から）
+                        let child_tags = tags_map.get(&child_task.id).cloned().unwrap_or_default();
 
                         Ok(TaskHierarchyResponse {
                             id: child_task.id,
@@ -2959,7 +2995,7 @@ mod tests {
         };
 
         // Draftタスクを作成
-        let draft_task = TaskService::create_task(
+        let _draft_task = TaskService::create_task(
             &mut conn,
             CreateTaskRequest {
                 title: "Draft Task".to_string(),

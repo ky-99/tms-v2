@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onMount } from "solid-js";
+import { createSignal, createEffect, createMemo, onMount } from "solid-js";
 import { taskStore, taskActions } from "../stores/taskStore";
 import { queueStore, queueActions } from "../stores/queueStore";
 import { tagsApi } from "../api/tags";
@@ -67,7 +67,8 @@ export function TaskPage() {
   const handleCreateTag = async (name: string, color: string): Promise<Tag> => {
     try {
       const newTag = await tagsApi.create({ name, color });
-      await loadTags(); // Reload tags to update the list
+      // Add new tag to local list instead of reloading all tags
+      setAvailableTags([...availableTags(), newTag]);
       return newTag;
     } catch (error) {
       console.error("Failed to create tag:", error);
@@ -75,9 +76,9 @@ export function TaskPage() {
     }
   };
 
-  const queueTaskIds = () => {
+  const queueTaskIds = createMemo(() => {
     return new Set(queueStore.queue.map((entry) => entry.taskId));
-  };
+  });
 
   const handleCreate = async (e: Event) => {
     e.preventDefault();
@@ -156,8 +157,18 @@ export function TaskPage() {
     });
   };
 
+  const handleOpenCreateDialog = () => {
+    setFormData({ title: "", description: "", tags: [] });
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditingTask(null);
+    setFormData({ title: "", description: "", tags: [] });
+  };
+
   useKeyboardShortcuts({
-    onCreateTask: () => setIsCreateDialogOpen(true),
+    onCreateTask: handleOpenCreateDialog,
     onEditTask: handleEdit,
     onArchiveTask: handleDelete,
     onAddToQueue: handleMoveToQueue,
@@ -166,7 +177,8 @@ export function TaskPage() {
     getSearchInputRef: searchInputRef,
   });
 
-  const flattenHierarchy = (hierarchy: TaskHierarchy[]): TaskHierarchy[] => {
+  const flattenedTasks = createMemo(() => {
+    const hierarchy = taskStore.hierarchy;
     if (!hierarchy || hierarchy.length === 0) {
       return [];
     }
@@ -181,7 +193,7 @@ export function TaskPage() {
     };
     flatten(hierarchy);
     return result;
-  };
+  });
 
   return (
     <div class="flex h-screen">
@@ -191,7 +203,7 @@ export function TaskPage() {
         onMoveToQueue={handleMoveToQueue}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onCreateTask={() => setIsCreateDialogOpen(true)}
+        onCreateTask={handleOpenCreateDialog}
         onTaskSelect={(task) => taskSelectionActions.selectTask(task)}
         selectedTaskId={taskSelectionStore.selectedTaskId}
         queueTaskIds={queueTaskIds()}
@@ -222,7 +234,7 @@ export function TaskPage() {
             label="Parent Task"
             value={formData().parentId}
             onChange={(value) => setFormData({ ...formData(), parentId: value })}
-            tasks={flattenHierarchy(taskStore.hierarchy)}
+            tasks={flattenedTasks()}
           />
           <Textarea
             label="Description"
@@ -253,7 +265,7 @@ export function TaskPage() {
             >
               Cancel
             </Button>
-            <Button type="submit">Create</Button>
+            <Button type="submit" disabled={!formData().title.trim()}>Create</Button>
           </div>
         </form>
       </Dialog>
@@ -261,7 +273,7 @@ export function TaskPage() {
       {/* Edit Dialog */}
       <Dialog
         open={editingTask() !== null}
-        onOpenChange={(open) => !open && setEditingTask(null)}
+        onOpenChange={(open) => !open && handleCloseEditDialog()}
         title="Edit Task"
       >
         <form onSubmit={handleUpdate} class="space-y-4">
@@ -277,7 +289,7 @@ export function TaskPage() {
             label="Parent Task"
             value={formData().parentId}
             onChange={(value) => setFormData({ ...formData(), parentId: value })}
-            tasks={flattenHierarchy(taskStore.hierarchy)}
+            tasks={flattenedTasks()}
             excludeTaskId={editingTask()?.id}
           />
           <Textarea
@@ -305,11 +317,11 @@ export function TaskPage() {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setEditingTask(null)}
+              onClick={handleCloseEditDialog}
             >
               Cancel
             </Button>
-            <Button type="submit">Update</Button>
+            <Button type="submit" disabled={!formData().title.trim()}>Update</Button>
           </div>
         </form>
       </Dialog>

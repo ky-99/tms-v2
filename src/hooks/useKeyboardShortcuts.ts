@@ -47,8 +47,11 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig) {
           break;
 
         case "q":
-          event.preventDefault();
-          handleAddToQueue();
+          // Only prevent default if there's a task to add to queue
+          // Otherwise allow OS to handle Cmd+Q (quit app)
+          if (handleAddToQueue()) {
+            event.preventDefault();
+          }
           break;
 
         case "d":
@@ -99,13 +102,14 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig) {
     taskSelectionActions.clearSelection();
   };
 
-  const handleAddToQueue = () => {
+  const handleAddToQueue = (): boolean => {
     const selectedTask = taskSelectionStore.selectedTask;
-    if (!selectedTask) return;
-    if (selectedTask.children && selectedTask.children.length > 0) return;
+    if (!selectedTask) return false;
+    if (selectedTask.children && selectedTask.children.length > 0) return false;
 
     config.onAddToQueue(selectedTask);
     taskSelectionActions.clearSelection();
+    return true;
   };
 
   const handleDuplicate = () => {

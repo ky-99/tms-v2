@@ -9,42 +9,7 @@ import type { Tag, CreateTagRequest, UpdateTagRequest } from "../types/tag";
 import { DropdownMenu } from "../components/DropdownMenu";
 import { truncateText } from "../lib/utils";
 import { useSearchShortcut } from "../hooks/useSearchShortcut";
-
-// Icon components
-function SearchIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14M12 5v14" />
-    </svg>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    </svg>
-  );
-}
-
-function Trash2Icon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
-    </svg>
-  );
-}
+import { SearchIcon, PlusIcon, PencilIcon, Trash2Icon } from "../components/icons";
 
 /**
  * タイムスタンプサフィックスを生成 (YYYYMMDD_HHmmss 形式)

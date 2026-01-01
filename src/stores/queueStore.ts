@@ -1,7 +1,6 @@
 import { createStore } from "solid-js/store";
 import type { QueueEntryWithTask } from "../types/queue";
 import { queueApi } from "../api/queue";
-import { taskActions } from "./taskStore";
 
 interface QueueStore {
   queue: QueueEntryWithTask[];
@@ -67,8 +66,7 @@ export const queueActions = {
       await queueApi.returnToDraft(taskId);
       // キューを再読み込み
       await queueActions.loadQueue();
-      // タスクプールも再読み込み（draftタスクとして表示されるように）
-      await taskActions.loadHierarchy();
+      // Note: 呼び出し側でloadHierarchy()を実行すること
     } catch (error) {
       setQueueStore(
         "error",
@@ -90,8 +88,7 @@ export const queueActions = {
       await queueApi.markAsCompleted(taskId);
       // キューを再読み込み
       await queueActions.loadQueue();
-      // タスクプールも再読み込み（整合性のため）
-      await taskActions.loadHierarchy();
+      // Note: 呼び出し側でloadHierarchy()を実行すること
     } catch (error) {
       setQueueStore(
         "error",
@@ -113,8 +110,7 @@ export const queueActions = {
       await queueApi.clearQueue();
       // キューを再読み込み
       await queueActions.loadQueue();
-      // タスクプールも再読み込み（draftタスクとして表示されるように）
-      await taskActions.loadHierarchy();
+      // Note: 呼び出し側でloadHierarchy()を実行すること
     } catch (error) {
       setQueueStore(
         "error",
@@ -136,8 +132,7 @@ export const queueActions = {
       await queueApi.completeAll();
       // キューを再読み込み（空になるはず）
       await queueActions.loadQueue();
-      // タスクプールも再読み込み（完了タスクが移動したため）
-      await taskActions.loadHierarchy();
+      // Note: 呼び出し側でloadHierarchy()を実行すること
     } catch (error) {
       setQueueStore(
         "error",

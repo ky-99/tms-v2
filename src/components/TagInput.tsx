@@ -3,6 +3,7 @@ import { cn, truncateText } from "../lib/utils";
 import { Button } from "./Button";
 import { TagSelect } from "./TagSelect";
 import type { Tag } from "../types/tag";
+import { XIcon } from "./icons";
 
 interface TagInputProps {
   selectedTags: string[]; // Array of tag names
@@ -10,15 +11,6 @@ interface TagInputProps {
   availableTags: Tag[];
   onCreateTag?: (name: string, color: string) => Promise<Tag>;
   placeholder?: string;
-}
-
-// Icon component for removing tags
-function XIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
 }
 
 /**

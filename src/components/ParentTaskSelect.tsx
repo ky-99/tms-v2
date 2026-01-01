@@ -2,6 +2,7 @@ import { Select as KobalteSelect } from "@kobalte/core/select";
 import { createSignal, For, Show } from "solid-js";
 import { cn, truncateText } from "../lib/utils";
 import type { TaskHierarchy } from "../types/task";
+import { ChevronDownIcon, CheckIcon } from "./icons";
 
 interface ParentTaskSelectProps {
   value: string | undefined;
@@ -11,37 +12,6 @@ interface ParentTaskSelectProps {
   label?: string;
 }
 
-// Icon components
-function ChevronDownIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
 export function ParentTaskSelect(props: ParentTaskSelectProps) {
   const [searchValue, setSearchValue] = createSignal("");
 
@@ -49,6 +19,9 @@ export function ParentTaskSelect(props: ParentTaskSelectProps) {
   const filteredTasks = () => {
     const search = searchValue().toLowerCase().trim();
     let tasks = props.tasks;
+
+    // Only show root tasks (tasks without parents)
+    tasks = tasks.filter((task) => !task.parentId);
 
     // Exclude current task if editing
     if (props.excludeTaskId) {
@@ -103,13 +76,14 @@ export function ParentTaskSelect(props: ParentTaskSelectProps) {
           class={cn(
             "flex items-center justify-between w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/30 focus-visible:ring-offset-2",
-            "disabled:cursor-not-allowed disabled:opacity-50"
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            "[&_[data-placeholder-shown]]:text-muted-foreground"
           )}
         >
           <KobalteSelect.Value<string>>
             {(state) => (
-              <span class={cn("flex-1 text-left", state.selectedOption() === "" ? "text-muted-foreground" : "")}>
-                {state.selectedOption() === "" ? "Select parent task..." : displayValue()}
+              <span class="flex-1 text-left">
+                {!state.selectedOption() ? "Select parent task..." : displayValue()}
               </span>
             )}
           </KobalteSelect.Value>

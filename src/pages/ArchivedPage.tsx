@@ -9,45 +9,10 @@ import { tasksApi } from "../api/tasks";
 import type { Task, PaginatedTaskResponse } from "../types/task";
 import { truncateText } from "../lib/utils";
 import { useSearchShortcut } from "../hooks/useSearchShortcut";
+import { ArchiveIcon, SearchIcon, Trash2Icon } from "../components/icons";
+import { RotateCcwIcon } from "../components/icons/RotateCcwIcon";
 
 const ITEMS_PER_PAGE = 20;
-
-// Icon components
-function ArchiveIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <rect x="2" y="4" width="20" height="5" rx="1" />
-      <path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" />
-      <path d="M10 13h4" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-
-function RotateCcwIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-
-function Trash2Icon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    </svg>
-  );
-}
 
 interface DateGroup {
   date: string;

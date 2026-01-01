@@ -1,3 +1,6 @@
+// Suppress warnings from macro expansions in external crates
+#![allow(unexpected_cfgs)]
+
 // モジュール宣言
 pub mod commands;
 pub mod db;
@@ -6,10 +9,15 @@ pub mod models;
 pub mod schema;
 pub mod service;
 
+#[cfg(target_os = "macos")]
+#[macro_use]
+extern crate objc;
+
 use diesel::r2d2::{ConnectionManager, Pool, CustomizeConnection};
 use diesel::SqliteConnection;
 use std::path::PathBuf;
 use tauri::Manager;
+use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
 /// データベース接続プール型
 pub type DbPool = Pool<ConnectionManager<SqliteConnection>>;
@@ -53,6 +61,7 @@ fn greet(name: &str) -> String {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[allow(unexpected_cfgs)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -68,6 +77,60 @@ pub fn run() {
 
             // アプリケーションステートに接続プールを登録
             app.manage(pool);
+
+            // Create main window with transparent title bar
+            let mut window_builder = WebviewWindowBuilder::new(
+                app,
+                "main",
+                WebviewUrl::default()
+            )
+            .title("TasQue")
+            .inner_size(880.0, 660.0)
+            .min_inner_size(800.0, 600.0)
+            .resizable(true)
+            .transparent(true)
+            .hidden_title(true);
+
+            #[cfg(target_os = "macos")]
+            {
+                window_builder = window_builder.title_bar_style(TitleBarStyle::Overlay);
+            }
+
+            let window = window_builder.build()?;
+
+            #[cfg(target_os = "macos")]
+            {
+                #[allow(deprecated)]
+                use cocoa::appkit::{NSWindow, NSWindowButton, NSColor};
+                #[allow(deprecated)]
+                use cocoa::base::{id, nil, YES};
+
+                #[allow(deprecated, unexpected_cfgs)]
+                unsafe {
+                    let ns_window = window.ns_window().unwrap() as id;
+
+                    // Set transparent background
+                    ns_window.setBackgroundColor_(NSColor::clearColor(nil));
+
+                    // Hide window buttons (close, minimize, maximize)
+                    let close_button = ns_window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
+                    let miniaturize_button = ns_window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
+                    let zoom_button = ns_window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
+
+                    if !close_button.is_null() {
+                        let _: () = msg_send![close_button, setHidden: YES];
+                    }
+                    if !miniaturize_button.is_null() {
+                        let _: () = msg_send![miniaturize_button, setHidden: YES];
+                    }
+                    if !zoom_button.is_null() {
+                        let _: () = msg_send![zoom_button, setHidden: YES];
+                    }
+
+                    // Make title bar shorter
+                    ns_window.setTitlebarAppearsTransparent_(YES);
+                }
+            }
 
             Ok(())
         })

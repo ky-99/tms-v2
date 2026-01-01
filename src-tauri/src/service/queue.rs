@@ -215,26 +215,39 @@ impl QueueService {
 
         let completed_count = task_ids.len();
 
+        if completed_count == 0 {
+            return Ok(0);
+        }
+
         // トランザクション内で処理
         conn.transaction::<(), ServiceError, _>(|conn| {
             let now = Utc::now().to_rfc3339();
 
-            // 各タスクをcompletedステータスに更新
-            for task_id in &task_ids {
-                diesel::update(tasks::table.find(task_id))
-                    .set((
-                        tasks::status.eq(TaskStatus::Completed.as_str()),
-                        tasks::updated_at.eq(&now),
-                    ))
-                    .execute(conn)?;
-            }
+            // 全タスクをcompletedステータスに一括更新（1クエリ）
+            diesel::update(tasks::table.filter(tasks::id.eq_any(&task_ids)))
+                .set((
+                    tasks::status.eq(TaskStatus::Completed.as_str()),
+                    tasks::updated_at.eq(&now),
+                ))
+                .execute(conn)?;
 
             // キュー全体を削除
             diesel::delete(task_queue::table).execute(conn)?;
 
-            // 親ステータスを更新
-            for task_id in &task_ids {
-                TaskService::update_parent_status_if_needed(conn, task_id)?;
+            // 親ステータスを一括更新（親IDでグループ化して更新）
+            use std::collections::HashSet;
+            let parent_ids: Vec<String> = tasks::table
+                .filter(tasks::id.eq_any(&task_ids))
+                .select(tasks::parent_id)
+                .load::<Option<String>>(conn)?
+                .into_iter()
+                .filter_map(|id| id)
+                .collect::<HashSet<_>>()
+                .into_iter()
+                .collect();
+
+            for parent_id in parent_ids {
+                TaskService::update_parent_status_if_needed(conn, &parent_id)?;
             }
 
             Ok(())
@@ -263,31 +276,56 @@ impl QueueService {
             .select(task_queue::task_id)
             .load::<String>(conn)?;
 
+        if task_ids.is_empty() {
+            return Ok(());
+        }
+
         // トランザクション内で処理
         conn.transaction::<(), ServiceError, _>(|conn| {
-            // 各タスクのステータスを更新
-            for task_id in &task_ids {
-                let current_task = tasks::table
-                    .find(task_id)
-                    .first::<crate::models::task::Task>(conn)?;
+            // 全タスクを一度に取得（1クエリ）
+            let tasks_to_update = tasks::table
+                .filter(tasks::id.eq_any(&task_ids))
+                .load::<crate::models::task::Task>(conn)?;
 
-                let new_status = match current_task.status.as_str() {
-                    "draft" => TaskStatus::Archived.as_str(),
-                    "completed" => TaskStatus::Completed.as_str(),
-                    _ => TaskStatus::Draft.as_str(),
-                };
+            // ステータスごとにタスクIDをグループ化
+            let mut to_archive: Vec<String> = Vec::new();
+            let mut to_draft: Vec<String> = Vec::new();
+            let mut parent_ids_set = std::collections::HashSet::new();
 
-                diesel::update(tasks::table.find(task_id))
-                    .set(tasks::status.eq(new_status))
+            for task in tasks_to_update {
+                // 親IDを収集
+                if let Some(parent_id) = &task.parent_id {
+                    parent_ids_set.insert(parent_id.clone());
+                }
+
+                // ステータスごとに分類
+                match task.status.as_str() {
+                    "draft" => to_archive.push(task.id),
+                    "completed" => {}, // 変更なし
+                    _ => to_draft.push(task.id),
+                }
+            }
+
+            // Draft → Archived へ一括更新
+            if !to_archive.is_empty() {
+                diesel::update(tasks::table.filter(tasks::id.eq_any(&to_archive)))
+                    .set(tasks::status.eq(TaskStatus::Archived.as_str()))
+                    .execute(conn)?;
+            }
+
+            // その他 → Draft へ一括更新
+            if !to_draft.is_empty() {
+                diesel::update(tasks::table.filter(tasks::id.eq_any(&to_draft)))
+                    .set(tasks::status.eq(TaskStatus::Draft.as_str()))
                     .execute(conn)?;
             }
 
             // キュー全体を削除
             diesel::delete(task_queue::table).execute(conn)?;
 
-            // 【新規追加】親ステータスを更新（重複は update_parent_status_if_needed 内で処理される）
-            for task_id in &task_ids {
-                TaskService::update_parent_status_if_needed(conn, task_id)?;
+            // 親ステータスを一括更新
+            for parent_id in parent_ids_set {
+                TaskService::update_parent_status_if_needed(conn, &parent_id)?;
             }
 
             Ok(())
@@ -411,25 +449,35 @@ impl QueueService {
             )));
         }
 
-        // 全タスクIDがキューに存在するか確認
-        for task_id in &task_ids {
-            let exists = task_queue::table
-                .find(task_id)
-                .first::<QueueEntry>(conn)
-                .optional()?;
+        // 全タスクIDがキューに存在するか確認（バッチ取得で最適化）
+        let existing_task_ids: std::collections::HashSet<String> = task_queue::table
+            .select(task_queue::task_id)
+            .load::<String>(conn)?
+            .into_iter()
+            .collect();
 
-            if exists.is_none() {
+        for task_id in &task_ids {
+            if !existing_task_ids.contains(task_id) {
                 return Err(ServiceError::QueueEntryNotFound(task_id.clone()));
             }
         }
 
-        // トランザクション内で一括更新
+        // トランザクション内で一括更新（削除→再挿入パターン）
         conn.transaction::<_, ServiceError, _>(|conn| {
-            for (index, task_id) in task_ids.iter().enumerate() {
-                diesel::update(task_queue::table.find(task_id))
-                    .set(task_queue::position.eq(index as i32))
-                    .execute(conn)?;
-            }
+            // 全エントリを削除
+            diesel::delete(task_queue::table).execute(conn)?;
+
+            // 新しい順序で再挿入（バッチ操作）
+            let new_entries: Vec<NewQueueEntry> = task_ids
+                .iter()
+                .enumerate()
+                .map(|(index, task_id)| NewQueueEntry::new(task_id.clone(), index as i32))
+                .collect();
+
+            diesel::insert_into(task_queue::table)
+                .values(&new_entries)
+                .execute(conn)?;
+
             Ok(())
         })?;
 

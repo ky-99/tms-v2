@@ -1,4 +1,4 @@
-import { createSignal, For, Show, createEffect, onMount, onCleanup } from "solid-js";
+import { createSignal, For, Show, createEffect, createMemo, onMount, onCleanup } from "solid-js";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { TaskHoverPopup } from "./TaskHoverPopup";
@@ -7,6 +7,17 @@ import { cn } from "../lib/utils";
 import type { TaskHierarchy } from "../types/task";
 import type { Tag } from "../types/tag";
 import { tasksApi } from "../api/tasks";
+import {
+  SearchIcon,
+  XIcon,
+  PlusIcon,
+  ChevronDownIcon,
+  CheckCircle2Icon,
+  PencilIcon,
+  ArchiveIcon,
+} from "./icons";
+import { ChevronRightIcon } from "./icons/ChevronRightIcon";
+import { ArrowRightIcon } from "./icons/ArrowRightIcon";
 
 interface TaskPoolProps {
   tasks: TaskHierarchy[];
@@ -21,87 +32,11 @@ interface TaskPoolProps {
   onSearchInputRef?: (el: HTMLInputElement) => void;
 }
 
-// Icon components
-function SearchIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14M12 5v14" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function ChevronRightIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
-
+// Local icon component with props
 function CircleIcon(props: { filled?: boolean }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill={props.filled ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="10" />
-    </svg>
-  );
-}
-
-function CheckCircle2Icon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14m-7-7 7 7-7 7" />
-    </svg>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    </svg>
-  );
-}
-
-function ArchiveIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <rect x="2" y="4" width="20" height="5" rx="1" />
-      <path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" />
-      <path d="M10 13h4" />
     </svg>
   );
 }
@@ -147,6 +82,7 @@ export function TaskPool(props: TaskPoolProps) {
   const [activeFilters, setActiveFilters] = createSignal<Set<string>>(new Set());
   const [selectedTags, setSelectedTags] = createSignal<string[]>([]);
   const [tagFilteredTaskIds, setTagFilteredTaskIds] = createSignal<Set<string> | null>(null);
+  const [sortOrder, setSortOrder] = createSignal<"newest" | "oldest">("newest");
 
   const toggleExpand = (taskId: string) => {
     const newExpanded = new Set(expandedTasks());
@@ -169,38 +105,61 @@ export function TaskPool(props: TaskPoolProps) {
   };
 
   // タグフィルターが選択されたら search_task_ids API を呼ぶ（軽量版）
+  let requestId = 0; // Track latest request to ignore outdated responses
+
   createEffect(() => {
     const tags = selectedTags();
+
     if (tags.length === 0) {
       setTagFilteredTaskIds(null);
       return;
     }
 
+    // Increment request ID to invalidate previous requests
+    const currentRequestId = ++requestId;
+
     // search_task_ids APIを呼んでタグでフィルタリング
     tasksApi.searchIds(tags).then((taskIds) => {
-      setTagFilteredTaskIds(new Set(taskIds));
+      // Only update if this is still the latest request
+      if (currentRequestId === requestId) {
+        setTagFilteredTaskIds(new Set(taskIds));
+      }
     }).catch((error) => {
-      console.error("Tag filter search failed:", error);
-      setTagFilteredTaskIds(null);
+      // Only log error if this is still the latest request
+      if (currentRequestId === requestId) {
+        console.error("Tag filter search failed:", error);
+        setTagFilteredTaskIds(null);
+      }
     });
   });
 
-  const filteredTasks = () => {
-    return props.tasks.filter((task) => {
+  const filteredTasks = createMemo(() => {
+    const query = searchQuery().toLowerCase(); // Compute once
+    const filters = activeFilters();
+    const tagIds = tagFilteredTaskIds();
+    const sort = sortOrder();
+
+    const filtered = props.tasks.filter((task) => {
       const matchesSearch =
-        task.title.toLowerCase().includes(searchQuery().toLowerCase()) ||
-        task.children?.some((child) => child.title.toLowerCase().includes(searchQuery().toLowerCase()));
-      const matchesFilter = activeFilters().size === 0 || activeFilters().has(task.status);
+        task.title.toLowerCase().includes(query) ||
+        task.children?.some((child) => child.title.toLowerCase().includes(query));
+      const matchesFilter = filters.size === 0 || filters.has(task.status);
 
       // タグフィルター: 親タスクまたは子タスクがマッチすればOK
-      const tagIds = tagFilteredTaskIds();
       const matchesTags = tagIds === null ||
         tagIds.has(task.id) ||
         task.children?.some((child) => tagIds.has(child.id));
 
       return matchesSearch && matchesFilter && matchesTags;
     });
-  };
+
+    // Sort by created_at
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sort === "newest" ? dateB - dateA : dateA - dateB;
+    });
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -298,6 +257,18 @@ export function TaskPool(props: TaskPoolProps) {
           >
             Active
           </button>
+          <button
+            onClick={() => setSortOrder(sortOrder() === "newest" ? "oldest" : "newest")}
+            class={cn(
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              sortOrder() === "oldest"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            )}
+            title={sortOrder() === "oldest" ? "Sorted: Oldest First" : "Sorted: Newest First (click for Oldest)"}
+          >
+            {sortOrder() === "oldest" ? "↑ Oldest" : "Newest"}
+          </button>
           <TagFilter
             availableTags={props.availableTags}
             selectedTags={selectedTags()}
@@ -307,10 +278,33 @@ export function TaskPool(props: TaskPoolProps) {
       </div>
 
       <div class="flex-1 overflow-y-auto px-4 pt-4 pb-16">
-        <div class="space-y-2">
-          <For each={filteredTasks()}>
-            {(task) => (
-              <div class="space-y-1">
+        <Show
+          when={filteredTasks().length > 0}
+          fallback={
+            <div class="flex flex-col items-center justify-center h-full text-center text-muted-foreground py-12">
+              <Show
+                when={searchQuery() || activeFilters().size > 0 || selectedTags().length > 0}
+                fallback={
+                  <>
+                    <p class="text-lg mb-4">No tasks yet</p>
+                    <p class="text-sm mb-6">Create your first task to get started</p>
+                    <Button onClick={props.onCreateTask} class="gap-2">
+                      <PlusIcon />
+                      Create Task
+                    </Button>
+                  </>
+                }
+              >
+                <p class="text-lg mb-4">No tasks found</p>
+                <p class="text-sm">Try adjusting your search or filters</p>
+              </Show>
+            </div>
+          }
+        >
+          <div class="space-y-2">
+            <For each={filteredTasks()}>
+              {(task) => (
+                <div class="space-y-1">
                 <div
                   onClick={(e) => {
                     if (task.children && task.children.length > 0) {
@@ -485,7 +479,8 @@ export function TaskPool(props: TaskPoolProps) {
             </div>
             )}
           </For>
-        </div>
+          </div>
+        </Show>
       </div>
     </div>
   );

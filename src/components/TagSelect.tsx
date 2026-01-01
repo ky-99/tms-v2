@@ -2,6 +2,7 @@ import { Popover as KobaltePopover } from "@kobalte/core/popover";
 import { createSignal, For, Show } from "solid-js";
 import { cn, truncateText } from "../lib/utils";
 import type { Tag } from "../types/tag";
+import { ChevronDownIcon, CheckIcon, PlusIcon } from "./icons";
 
 interface TagSelectProps {
   selectedTags: string[];
@@ -9,44 +10,6 @@ interface TagSelectProps {
   onToggleTag: (tagName: string) => void;
   onOpenCreateMode?: () => void;
   placeholder?: string;
-}
-
-// Icon components
-function ChevronDownIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      class="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      class="h-4 w-4 text-primary"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      stroke-width="2"
-    >
-      <path d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14M12 5v14" />
-    </svg>
-  );
 }
 
 export function TagSelect(props: TagSelectProps) {
