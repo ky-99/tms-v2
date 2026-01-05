@@ -76,6 +76,12 @@ pub fn get_db_path(app_handle: &AppHandle) -> Result<std::path::PathBuf> {
     )
     .map_err(|_e| rusqlite::Error::InvalidQuery)?;
 
+    // データベースファイルの親ディレクトリを作成（存在しない場合）
+    if let Some(parent_dir) = path_buf.parent() {
+        std::fs::create_dir_all(parent_dir)
+            .map_err(|_e| rusqlite::Error::InvalidQuery)?;
+    }
+
     Ok(path_buf)
 }
 

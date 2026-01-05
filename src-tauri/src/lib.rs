@@ -57,11 +57,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // データベースパスを取得
-            let db_path = db::get_db_path(app.handle())?;
-
             // データベース初期化（既存のdb::initialize_database関数を使用）
+            // この関数内でディレクトリ作成とマイグレーションが実行される
             db::initialize_database(app.handle().clone())?;
+
+            // データベースパスを取得（既にディレクトリは作成済み）
+            let db_path = db::get_db_path(app.handle())?;
 
             // 接続プールを作成
             let pool = init_db_pool(db_path).map_err(|e| e.to_string())?;
